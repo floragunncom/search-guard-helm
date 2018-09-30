@@ -1,0 +1,15 @@
+apiVersion: v1
+name: sg-elasticsearch
+home: https://search-guard.com/
+version: 1.0.0
+description: Search Guard secured Elasticsearch
+icon: https://search-guard.com/wp-content/uploads/2018/01/sg_logo.png
+sources:
+  - https://github.com/lalamove/helm-elasticsearch
+  - https://www.elastic.co/products/elasticsearch
+  - https://github.com/pires/kubernetes-elasticsearch-cluster
+  - https://github.com/kubernetes/charts/tree/master/incubator/elasticsearch
+  - https://github.com/clockworksoul/helm-elasticsearch
+maintainers:
+  - name: nn
+    email: nn

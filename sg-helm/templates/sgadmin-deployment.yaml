@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-sgadmin
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}-sgadmin
+    role: sgadmin
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: {{ template "fullname" . }}
+      role: sgadmin
+  template:
+    metadata:
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: sgadmin
+    spec:
+      subdomain: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      containers:
+      - name: sgadmin
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: "floragunncom/sgadmin:6.4.1-23.1"
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+        resources:
+        volumeMounts:
+        - mountPath: /root/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: /root/sgcerts/
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "fullname" . }}-certificates-secrets
+        - configMap:
+            name: {{ template "fullname" . }}-searchguard-config
+          name: searchguard-config

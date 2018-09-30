@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+data:
+  elasticsearch.yml: |-
+    cluster:
+      name: {{ .Values.common.env.CLUSTER_NAME }}
+
+    node:
+      master: ${NODE_MASTER:true}
+      data: ${NODE_DATA:true}
+      name: ${NODE_NAME}
+      ingest: ${NODE_INGEST:true}
+      max_local_storage_nodes: ${MAX_LOCAL_STORAGE_NODES:1}
+
+    network.host: ${NETWORK_HOST:_local_}
+
+    path:
+      data: /storage/data
+      logs: /storage/logs
+
+    bootstrap:
+      memory_lock: ${MEMORY_LOCK:false}
+
+    http:
+      enabled: ${HTTP_ENABLE:true}
+      compression: true
+      cors:
+        enabled: ${HTTP_CORS_ENABLE:false}
+        allow-origin: ${HTTP_CORS_ALLOW_ORIGIN:"*"}
+
+    indices:
+      memory.index_buffer_size: 30%
+
+    #index:
+    #  refresh_interval: 30s
+
+    discovery:
+      zen:
+        ping.unicast.hosts: ${DISCOVERY_SERVICE:}
+        minimum_master_nodes: ${NUMBER_OF_MASTERS:1}
+
+    # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
+    processors: ${PROCESSORS:}
+    searchguard:
+      enterprise_modules_enabled: true
+      restapi:
+        roles_enabled: ["sg_all_access"]
+      authcz:
+        admin_dn:
+          - "CN=kirk,OU=client,O=client,L=test,C=de"
+      allow_unsafe_democertificates: ${ALLOW_DEMOCERTIFICATES:false}  
+      allow_default_init_sgindex: true
+      enable_snapshot_restore_privilege: true
+      check_snapshot_restore_write_privileges: true
+      audit:
+        type: internal_elasticsearch
+      ssl:
+        http:
+          enabled: true
+          pemkey_filepath: certificates-secrets/node_cert_key.pem
+          pemcert_filepath: certificates-secrets/node_cert.pem
+          pemtrustedcas_filepath: certificates-secrets/ca_cert.pem
+        transport:
+          enforce_hostname_verification: false
+          pemkey_filepath: certificates-secrets/node_cert_key.pem
+          pemcert_filepath: certificates-secrets/node_cert.pem
+          pemtrustedcas_filepath: certificates-secrets/ca_cert.pem
+
+{{- if .Values.common.config }}
+{{ toYaml .Values.common.config | indent 4 }}
+{{- end }}

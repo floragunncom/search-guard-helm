@@ -1,0 +1,278 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-searchguard-config
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+data:
+  sg_config.yml: |-
+    searchguard:
+      dynamic:
+        # Set filtered_alias_mode to 'disallow' to forbid more than 2 filtered aliases per index
+        # Set filtered_alias_mode to 'warn' to allow more than 2 filtered aliases per index but warns about it (default)
+        # Set filtered_alias_mode to 'nowarn' to allow more than 2 filtered aliases per index silently
+        filtered_alias_mode: warn
+        kibana:
+          # Kibana multitenancy - NOT FREE FOR COMMERCIAL USE
+          # see https://github.com/floragunncom/search-guard-docs/blob/master/multitenancy.md
+          # To make this work you need to install https://github.com/floragunncom/search-guard-module-kibana-multitenancy/wiki
+          multitenancy_enabled: true
+          server_username: kibanaserver
+          index: '.kibana'
+          do_not_fail_on_forbidden: false
+        http:
+          anonymous_auth_enabled: false
+          xff:
+            enabled: false
+        authc:
+          basic_internal_auth_domain: 
+            http_enabled: true
+            transport_enabled: true
+            order: 4
+            http_authenticator:
+              type: basic
+              challenge: true
+            authentication_backend:
+              type: intern
+          ldap:
+            http_enabled: false
+            transport_enabled: false
+            order: 5
+            http_authenticator:
+              type: basic
+              challenge: false
+            authentication_backend:
+              # LDAP authentication backend (authenticate users against a LDAP or Active Directory)
+              type: ldap # NOT FREE FOR COMMERCIAL USE
+              config:
+                # enable ldaps
+                enable_ssl: false
+                # enable start tls, enable_ssl should be false
+                enable_start_tls: false
+                # send client certificate
+                enable_ssl_client_auth: false
+                # verify ldap hostname
+                verify_hostnames: true
+                hosts:
+                  - localhost:8389
+                bind_dn: null
+                password: null
+                userbase: 'ou=people,dc=example,dc=com'
+                # Filter to search for users (currently in the whole subtree beneath userbase)
+                # {0} is substituted with the username 
+                usersearch: '(sAMAccountName={0})'
+                # Use this attribute from the user as username (if not set then DN is used)
+                username_attribute: null
+        authz:    
+          roles_from_myldap:
+            http_enabled: false
+            transport_enabled: false
+            authorization_backend:
+              # LDAP authorization backend (gather roles from a LDAP or Active Directory, you have to configure the above LDAP authentication backend settings too)
+              type: ldap # NOT FREE FOR COMMERCIAL USE
+              config:
+                # enable ldaps
+                enable_ssl: false
+                # enable start tls, enable_ssl should be false
+                enable_start_tls: false
+                # send client certificate
+                enable_ssl_client_auth: false
+                # verify ldap hostname
+                verify_hostnames: true
+                hosts:
+                  - localhost:8389
+                bind_dn: null
+                password: null
+                rolebase: 'ou=groups,dc=example,dc=com'
+                # Filter to search for roles (currently in the whole subtree beneath rolebase)
+                # {0} is substituted with the DN of the user
+                # {1} is substituted with the username 
+                # {2} is substituted with an attribute value from user's directory entry, of the authenticated user. Use userroleattribute to specify the name of the attribute            
+                rolesearch: '(member={0})'
+                # Specify the name of the attribute which value should be substituted with {2} above
+                userroleattribute: null
+                # Roles as an attribute of the user entry
+                userrolename: disabled
+                #userrolename: memberOf
+                # The attribute in a role entry containing the name of that role, Default is "name".
+                # Can also be "dn" to use the full DN as rolename.
+                rolename: cn
+                # Resolve nested roles transitive (roles which are members of other roles and so on ...)
+                resolve_nested_roles: true
+                userbase: 'ou=people,dc=example,dc=com'
+                # Filter to search for users (currently in the whole subtree beneath userbase)
+                # {0} is substituted with the username 
+                usersearch: '(uid={0})'
+                # Skip users matching a user name, a wildcard or a regex pattern
+                #skip_users: 
+                #  - 'cn=Michael Jackson,ou*people,o=TEST'
+                #  - '/\S*/'    
+  sg_roles.yml: |-
+    # Allows everything, but no changes to searchguard configuration index
+    sg_all_access:
+      readonly: true
+      cluster:
+        - UNLIMITED
+      indices:
+        '*':
+          '*':
+            - UNLIMITED
+      tenants:
+        admin_tenant: RW
+
+  sg_roles_mapping.yml: |-
+    sg_all_access:
+      readonly: true
+      backendroles:
+        - admin
+
+  sg_internal_users.yml: |-
+    # This is the internal user database
+    # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
+    admin:
+      readonly: true
+      hash: $2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG
+      roles:
+        - admin
+        
+  sg_action_groups.yml: |-
+    UNLIMITED:
+      readonly: true
+      permissions:
+        - "*"
+
+    ###### INDEX LEVEL ######
+
+    INDICES_ALL:
+      readonly: true
+      permissions:
+        - "indices:*"
+
+    # for backward compatibility
+    ALL:
+      readonly: true
+      permissions:
+        - INDICES_ALL
+
+    MANAGE:
+      readonly: true
+      permissions:
+        - "indices:monitor/*"
+        - "indices:admin/*"
+
+    CREATE_INDEX:
+      readonly: true
+      permissions:
+        - "indices:admin/create"
+        - "indices:admin/mapping/put"
+
+    MANAGE_ALIASES:
+      readonly: true
+      permissions:
+        - "indices:admin/aliases*"
+
+    # for backward compatibility
+    MONITOR:
+      readonly: true
+      permissions:
+        - INDICES_MONITOR
+
+    INDICES_MONITOR:
+      readonly: true
+      permissions:
+        - "indices:monitor/*"
+
+    DATA_ACCESS:
+      readonly: true
+      permissions:
+        - "indices:data/*"
+        - CRUD
+
+    WRITE:
+      readonly: true
+      permissions:
+        - "indices:data/write*"
+        - "indices:admin/mapping/put"
+
+    READ:
+      readonly: true
+      permissions:
+        - "indices:data/read*"
+        - "indices:admin/mappings/fields/get*"
+
+    DELETE:
+      readonly: true
+      permissions:
+        - "indices:data/write/delete*"
+
+    CRUD:
+      readonly: true
+      permissions:
+        - READ
+        - WRITE
+
+    SEARCH:
+      readonly: true
+      permissions:
+        - "indices:data/read/search*"
+        - "indices:data/read/msearch*"
+        - SUGGEST
+
+    SUGGEST:
+      readonly: true
+      permissions:
+        - "indices:data/read/suggest*"
+
+    INDEX:
+      readonly: true
+      permissions:
+        - "indices:data/write/index*"
+        - "indices:data/write/update*"
+        - "indices:admin/mapping/put"
+        - "indices:data/write/bulk*"
+
+    GET:
+      readonly: true
+      permissions:
+        - "indices:data/read/get*"
+        - "indices:data/read/mget*"
+
+    ###### CLUSTER LEVEL ######
+
+    CLUSTER_ALL:
+      readonly: true
+      permissions:
+        - "cluster:*"
+
+    CLUSTER_MONITOR:
+      readonly: true
+      permissions:
+        - "cluster:monitor/*"
+
+    CLUSTER_COMPOSITE_OPS_RO:
+      readonly: true
+      permissions:
+        - "indices:data/read/mget"
+        - "indices:data/read/msearch"
+        - "indices:data/read/mtv"
+        - "indices:data/read/coordinate-msearch*"
+        - "indices:admin/aliases/exists*"
+        - "indices:admin/aliases/get*"
+        - "indices:data/read/scroll"
+
+    CLUSTER_COMPOSITE_OPS:
+      readonly: true
+      permissions:
+        - "indices:data/write/bulk"
+        - "indices:admin/aliases*"
+        - "indices:data/write/reindex"
+        - CLUSTER_COMPOSITE_OPS_RO
+  
+    MANAGE_SNAPSHOTS:
+      readonly: true
+      permissions:
+        - "cluster:admin/snapshot/*"
+        - "cluster:admin/repository/*"

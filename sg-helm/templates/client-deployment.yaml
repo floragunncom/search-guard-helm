@@ -1,0 +1,164 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-client
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}-client
+    role: client
+spec:
+  replicas: {{ .Values.client.replicas }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: {{ template "fullname" . }}
+      role: client
+  template:
+    metadata:
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: client
+        {{- if .Values.client.labels }}
+{{ toYaml .Values.client.labels | indent 8 }}
+        {{- end }}
+      {{- if .Values.client.annotations }}
+      annotations:
+{{ toYaml .Values.client.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      subdomain: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      {{- if eq .Values.client.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+      {{- else if eq .Values.client.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: client
+      {{- end }}
+      initContainers:
+{{ include "init-containers" . | indent 6 }}
+      containers:
+      - name: elasticsearch
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
+        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
+        - name: NODE_DATA
+          value: "false"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "true"
+        - name: HTTP_ENABLE
+          value: "true"
+        - name: PROCESSORS
+          value: "{{ .Values.client.processors }}"
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.client.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+{{ toYaml .Values.client.resources | indent 10 }}
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_searchguard/health
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
+        resources:
+{{ toYaml .Values.client.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /storage/
+          name: storage
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "fullname" . }}-certificates-secrets
+        - configMap:
+            name: {{ template "fullname" . }}-config
+          name: config
+        - emptyDir:
+            medium: ""
+          name: storage
+        - configMap:
+            name: {{ template "fullname" . }}-searchguard-config
+          name: searchguard-config
