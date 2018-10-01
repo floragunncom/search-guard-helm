@@ -6,7 +6,9 @@ This is repo is considered experimental and not officially supported. Use at you
 
 ## Requirements
 
-* Kubernetes 1.10 or later 
+* Kubernetes 1.10 or later
+* Helm (tested with Helm v2.11.0)
+* Optional: Docker, if you like to build and push customized images 
 
 ## Deploying with Helm
 
@@ -25,11 +27,13 @@ $ search-guard-helm/init_helm.sh
 
 ## Run sgadmin
 
-Change the "sg-elasticsearch-searchguard-config" config map and locate the "sgadmin" pod and open a shell.
-Then run:
+* The nodes are automatically configured with the values from the "sg-elasticsearch-searchguard-config" config map.
+* But only if not already previously configured
+* To update the config change the "sg-elasticsearch-searchguard-config" config map and locate the "sg-elasticsearch-sgadmin" pod and open a shell (for example with kubectl exec).
+* Then run:
 
 ```
-kubectl exec -it exiled-moose-sg-elasticsearch-sgadmin-5969d44949-q6dt2 bash
+$ kubectl exec -it exiled-moose-sg-elasticsearch-sgadmin-5969d44949-q6dt2 bash
 To use sgadmin run: /root/sgadmin/tools/sgadmin.sh <OPTIONS>
 On K8s/Helm run: /root/sgadmin/tools/sgadmin.sh -h exiled-moose-sg-elasticsearch-discovery.default.svc -cd /root/sgconfig -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv
   or run /root/sgadmin_update.sh
