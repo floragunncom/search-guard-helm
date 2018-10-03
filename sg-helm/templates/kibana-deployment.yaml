@@ -1,0 +1,106 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-kibana
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}-kibana
+    role: kibana
+spec:
+  replicas: {{ .Values.kibana.replicas }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: {{ template "fullname" . }}
+      role: kibana
+  template:
+    metadata:
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: kibana
+        {{- if .Values.kibana.labels }}
+{{ toYaml .Values.kibana.labels | indent 8 }}
+        {{- end }}
+      {{- if .Values.kibana.annotations }}
+      annotations:
+{{ toYaml .Values.kibana.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      subdomain: {{ template "fullname" . }}
+      serviceAccountName: {{ template "fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      containers:
+      - name: kibana
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+        image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
+        imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
+        - name: COOKIE_PWD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "fullname" . }}-certificates-secrets
+              key: kibana_cookie_pwd
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.kibana.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+{{ toYaml .Values.kibana.resources | indent 10 }}
+        ports:
+        - containerPort: 5601
+          name: http
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: api/status
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
+        resources:
+{{ toYaml .Values.kibana.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /usr/share/kibana/config/kibana.yml
+          name: config
+          subPath: kibana.yml
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/kibana/config/certificates-secrets"
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "fullname" . }}-certificates-secrets
+        - configMap:
+            name: {{ template "fullname" . }}-kibana-config
+          name: config

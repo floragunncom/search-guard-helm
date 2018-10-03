@@ -29,8 +29,8 @@ data:
       memory_lock: ${MEMORY_LOCK:false}
 
     http:
-      enabled: ${HTTP_ENABLE:true}
-      compression: true
+      enabled: true
+      compression: false
       cors:
         enabled: ${HTTP_CORS_ENABLE:false}
         allow-origin: ${HTTP_CORS_ALLOW_ORIGIN:"*"}

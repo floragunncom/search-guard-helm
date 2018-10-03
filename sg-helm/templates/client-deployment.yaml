@@ -9,6 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "fullname" . }}-client
     role: client
+    estype: node
 spec:
   replicas: {{ .Values.client.replicas }}
   strategy:

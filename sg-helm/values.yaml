@@ -114,3 +114,21 @@ service:
 # https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 rbac:
   create: true
+  
+kibana:
+  image:
+    repository: floragunncom/sg-kibana
+    tag: "6.4.1-15"
+    pullPolicy: IfNotPresent
+  httpPort: 5601
+  replicas: 2
+  #serviceType: ClusterIP
+  #serviceType: NodePort
+  serviceType: LoadBalancer
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1500Mi
+    requests:
+      cpu: 100m
+      memory: 1500Mi

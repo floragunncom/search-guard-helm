@@ -122,12 +122,39 @@ data:
             - UNLIMITED
       tenants:
         admin_tenant: RW
+        
+    # For the kibana server
+    sg_kibana_server:
+      readonly: true
+      cluster:
+          - CLUSTER_MONITOR
+          - CLUSTER_COMPOSITE_OPS
+          - cluster:admin/xpack/monitoring*
+          - indices:admin/template*
+      indices:
+        '?kibana':
+          '*':
+            - INDICES_ALL
+        '?kibana-6':
+          '*':
+            - INDICES_ALL
+        '?reporting*':
+          '*':
+            - INDICES_ALL
+        '?monitoring*':
+          '*':
+            - INDICES_ALL
 
   sg_roles_mapping.yml: |-
     sg_all_access:
       readonly: true
       backendroles:
         - admin
+        
+    sg_kibana_server:
+      readonly: true
+      users:
+        - kibanaserver
 
   sg_internal_users.yml: |-
     # This is the internal user database
@@ -137,6 +164,11 @@ data:
       hash: $2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG
       roles:
         - admin
+        
+    #password is: kibanaserver  
+    kibanaserver:
+      readonly: true
+      hash: $2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H.
         
   sg_action_groups.yml: |-
     UNLIMITED:

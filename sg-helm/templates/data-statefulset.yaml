@@ -9,6 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "fullname" . }}
     role: data
+    estype: node
 spec:
   serviceName: {{ template "fullname" . }}-data
   replicas: {{ .Values.data.replicas }}
