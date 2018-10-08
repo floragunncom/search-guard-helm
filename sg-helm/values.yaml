@@ -21,7 +21,8 @@ common:
 
   env:
     CLUSTER_NAME: "searchguard-demo"
-    NETWORK_HOST: "_eth0_"
+    #NETWORK_HOST: "_eth0_"
+    NETWORK_HOST: "0.0.0.0"
     # see https://discuss.elastic.co/t/bootstrap-checks-failed-due-to-memory-is-not-locked/89178/3
     # TODO: enable memory lock
     MEMORY_LOCK: "false"
