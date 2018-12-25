@@ -57,7 +57,9 @@ do
 
     OPTIMIZE=""
 
-    if [ "${ELK_VERSION//./}" -gte "650" ];then
+    ELK_VERSION_NUMBER="${ELK_VERSION//./}"
+
+    if (( $ELK_VERSION_NUMBER >= 650 )); then
         OPTIMIZE="--no-optimize"
     fi
     
