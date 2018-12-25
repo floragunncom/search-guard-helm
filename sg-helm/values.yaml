@@ -2,8 +2,8 @@
 
 common:
   image:
-    repository: floragunncom/searchguard-6
-    tag: "6.4.1-23.1"
+    repository: floragunncom/sg-elasticsearch
+    tag: "6.5.3-oss-23.2"
     pullPolicy: IfNotPresent
 
   # Defines the service type for all outward-facing (non-discovery) services.
@@ -30,7 +30,7 @@ common:
     ALLOW_DEMOCERTIFICATES: "true"
     # The minimum number of masters that will be able to form a quorum. This
     # should be (#masters / 2) + 1. Default is 2.
-    NUMBER_OF_MASTERS: "2"
+    NUMBER_OF_MASTERS: "1"
 
 # Client/ingest nodes can execute pre-processing pipelines, composed of
 # one or more ingest processors. Depending on the type of operations performed
@@ -38,7 +38,7 @@ common:
 # have dedicated ingest nodes, that will only perform this specific task.
 client:
   # It isn't common to need more than 2 client nodes.
-  replicas: 2
+  replicas: 1
   antiAffinity: "soft"
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
@@ -63,11 +63,11 @@ client:
 # master and data roles.
 data:
   # This count will depend on your data and computation needs.
-  replicas: 3
+  replicas: 1
   antiAffinity: "soft"
   storage: 12Gi
-  storageClass: "default"
-  heapSize: 2g
+  storageClass: "standard"
+  heapSize: 1g
   enableHTTP: false
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -77,10 +77,10 @@ data:
   resources:
     limits:
       cpu: 1
-      memory: 2500Mi
+      memory: 1500Mi
     requests:
       cpu: 1
-      memory: 2500Mi
+      memory: 1500Mi
 
 # The master node is responsible for lightweight cluster-wide actions such as
 # creating or deleting an index, tracking which nodes are part of the
@@ -88,10 +88,10 @@ data:
 # important for cluster health to have a stable master node.
 master:
   # Master replica count should be (#clients / 2) + 1, and generally at least 3.
-  replicas: 3
+  replicas: 1
   antiAffinity: "soft"
   storage: 2Gi
-  storageClass: "default"
+  storageClass: "standard"
   heapSize: 1g
   enableHTTP: false
   # More info on what this setting does is in the config map. Only change this
@@ -119,13 +119,13 @@ rbac:
 kibana:
   image:
     repository: floragunncom/sg-kibana
-    tag: "6.4.1-15"
-    pullPolicy: IfNotPresent
+    tag: "6.5.3-oss-16"
+    pullPolicy: Always
   httpPort: 5601
-  replicas: 2
-  #serviceType: ClusterIP
+  replicas: 1
+  serviceType: ClusterIP
   #serviceType: NodePort
-  serviceType: LoadBalancer
+  #serviceType: LoadBalancer
   resources:
     limits:
       cpu: 500m

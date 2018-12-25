@@ -1,14 +1,12 @@
 FROM centos:7
 
-RUN curl -s https://download.java.net/java/GA/jdk10/10.0.2/19aef61b38124481863b1413dce1855f/13/openjdk-10.0.2_linux-x64_bin.tar.gz | tar -C /opt -zxf -
-ENV JAVA_HOME /opt/jdk-10.0.2
+RUN curl -s https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz | tar -C /opt -zxf -
+ENV JAVA_HOME /opt/jdk-11.0.1
 
 # Replace OpenJDK's built-in CA certificate keystore with the one from the OS
 # vendor. The latter is superior in several ways.
 # REF: https://github.com/elastic/elasticsearch-docker/issues/171
-RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-10.0.2/lib/security/cacerts
-
-ENV SG_VERSION "6.4.1-23.1"
+RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-11.0.1/lib/security/cacerts
 
 WORKDIR /root/
 
@@ -16,10 +14,15 @@ RUN yum update -y && \
     yum install -y wget ca-certificates openssl unzip bash && \
     yum clean all
 
-RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-6/$SG_VERSION/search-guard-6-$SG_VERSION-sgadmin-standalone.zip
-RUN unzip search-guard-6-$SG_VERSION-sgadmin-standalone.zip -d sgadmin/
 
-RUN rm -rf search-guard-6-$SG_VERSION-sgadmin-standalone.zip
+ARG ELK_VERSION
+ARG SG_VERSION
+ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
+
+RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-6/$SG_FULLVERSION/search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
+RUN unzip search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
+
+RUN rm -rf search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
 
 #FROM openjdk:8-jre-alpine
 #RUN apk add --no-cache bash

@@ -1,9 +1,13 @@
-#ARG ELK_VERSION
+ARG ELK_VERSION
+ARG ELK_FLAVOUR
 
 # https://github.com/elastic/kibana-docker
-FROM docker.elastic.co/kibana/kibana-oss:6.4.1
+FROM docker.elastic.co/kibana/kibana${ELK_FLAVOUR}:${ELK_VERSION}
 
 # Search Guard plugin
-ARG ELK_VERSION=6.4.1
-ENV SG_VERSION=${ELK_VERSION}-15
-RUN kibana-plugin install https://repo1.maven.org/maven2/com/floragunn/search-guard-kibana-plugin/${SG_VERSION}/search-guard-kibana-plugin-${SG_VERSION}.zip
+ARG SG_KIBANA_VERSION
+ARG ELK_VERSION
+ARG ELK_FLAVOUR
+
+ENV FULL_SG_VERSION=${ELK_VERSION}-${SG_KIBANA_VERSION}
+RUN kibana-plugin install https://repo1.maven.org/maven2/com/floragunn/search-guard-kibana-plugin/${FULL_SG_VERSION}/search-guard-kibana-plugin-${FULL_SG_VERSION}.zip
