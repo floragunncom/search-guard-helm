@@ -37,7 +37,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "floragunncom/sgadmin:6.4.1-23.1"
+        image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: "IfNotPresent"
         env:
         - name: DISCOVERY_SERVICE

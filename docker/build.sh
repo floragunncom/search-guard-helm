@@ -4,13 +4,6 @@ PUSH="$1"
 
 
 versions=(
-    "ELK_VERSION=6.4.0 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
-    "ELK_VERSION=6.4.1 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
-    "ELK_VERSION=6.4.2 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
-    "ELK_VERSION=6.4.3 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
-    "ELK_VERSION=6.4.0 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
-    "ELK_VERSION=6.4.1 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
-    "ELK_VERSION=6.4.2 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
     "ELK_VERSION=6.4.3 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
     "ELK_VERSION=6.5.1 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
     "ELK_VERSION=6.5.2 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
@@ -61,6 +54,12 @@ do
     eval "$versionstring"
 
     ELK_FLAVOUR=""
+
+    OPTIMIZE=""
+
+    if [ "${ELK_VERSION//./}" -gte "650" ];then
+        OPTIMIZE="--no-optimize"
+    fi
     
     cd "$DIR/elasticsearch"
     echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
@@ -69,7 +68,7 @@ do
 
     cd "$DIR/kibana"
     echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" . > /dev/null
+    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" --build-arg OPTIMIZE="$OPTIMIZE" . > /dev/null
     check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
 
     ELK_FLAVOUR="-oss"
@@ -81,7 +80,7 @@ do
 
     cd "$DIR/kibana"
     echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" . > /dev/null
+    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" --build-arg OPTIMIZE="$OPTIMIZE" . > /dev/null
     check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
 
     cd "$DIR/sgadmin"

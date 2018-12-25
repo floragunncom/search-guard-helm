@@ -79,7 +79,7 @@ spec:
 {{ include "init-containers" . | indent 6 }}
       containers:
       - name: elasticsearch
-        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.image.pullPolicy }}
         securityContext:
           capabilities:

@@ -1,9 +1,11 @@
 # Currently tested with Kubernetes 1.10 on AWS EKS 
 
+# Minkube
 common:
+  elkversion: "6.4.3"
+  sgversion: "24.0"
+  sgkibanaversion: "16"
   image:
-    repository: floragunncom/sg-elasticsearch
-    tag: "6.5.3-oss-23.2"
     pullPolicy: IfNotPresent
 
   # Defines the service type for all outward-facing (non-discovery) services.
@@ -118,8 +120,6 @@ rbac:
   
 kibana:
   image:
-    repository: floragunncom/sg-kibana
-    tag: "6.5.3-oss-16"
     pullPolicy: Always
   httpPort: 5601
   replicas: 1

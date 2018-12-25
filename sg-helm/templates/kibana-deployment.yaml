@@ -43,7 +43,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
+        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
         imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
         env:
         - name: NAMESPACE

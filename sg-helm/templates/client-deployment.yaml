@@ -82,7 +82,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.image.pullPolicy }}
         env:
         - name: NAMESPACE
