@@ -8,6 +8,10 @@ versions=(
     "ELK_VERSION=6.4.1 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
     "ELK_VERSION=6.4.2 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
     "ELK_VERSION=6.4.3 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
+    "ELK_VERSION=6.4.0 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
+    "ELK_VERSION=6.4.1 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
+    "ELK_VERSION=6.4.2 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
+    "ELK_VERSION=6.4.3 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
     "ELK_VERSION=6.5.1 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
     "ELK_VERSION=6.5.2 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
     "ELK_VERSION=6.5.3 SG_VERSION=24.0 SG_KIBANA_VERSION=17"
@@ -15,15 +19,6 @@ versions=(
 )
 
 ######################################################################################
-
-check_ret() {
-    local status=$?
-    if [ $status -ne 0 ]; then
-         echo "ERR - The command $1 failed with status $status"
-         exit $status
-    fi
-}
-
 
 function push_docker {
 
@@ -46,10 +41,19 @@ function push_docker {
         done
 
     else 
-        echo "Push disabled"
+        echo "Push disabled for $1"
     fi
 }
 
+check_and_push() {
+    local status=$?
+    if [ $status -ne 0 ]; then
+         echo "ERR - The command $1 failed with status $status"
+         #exit $status
+    else
+         push_docker "$1"
+    fi
+}
 
 for versionstring in "${versions[@]}"
 do
@@ -61,34 +65,28 @@ do
     cd "$DIR/elasticsearch"
     echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
     docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_ret
-    push_docker "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
 
     cd "$DIR/kibana"
     echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
     docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" . > /dev/null
-    check_ret
-    push_docker "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
 
     ELK_FLAVOUR="-oss"
 
     cd "$DIR/elasticsearch"
     echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
     docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_ret
-    push_docker "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
 
     cd "$DIR/kibana"
     echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
     docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION" . > /dev/null
-    check_ret
-    push_docker "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
 
     cd "$DIR/sgadmin"
     echo "Build image floragunncom/sg-sgadmin:$ELK_VERSION-$SG_VERSION"
     docker build -t "floragunncom/sg-sgadmin:$ELK_VERSION-$SG_VERSION" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_ret
-    push_docker "floragunncom/sg-sgadmin:$ELK_VERSION-$SG_VERSION"
-
+    check_and_push "floragunncom/sg-sgadmin:$ELK_VERSION-$SG_VERSION"
 done
 
