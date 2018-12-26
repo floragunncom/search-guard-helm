@@ -30,8 +30,9 @@ spec:
         {{- if .Values.master.labels }}
 {{ toYaml .Values.master.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.master.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- if .Values.master.annotations }}
 {{ toYaml .Values.master.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -84,7 +85,11 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
+      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE

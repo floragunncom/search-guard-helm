@@ -30,8 +30,9 @@ spec:
         {{- if .Values.data.labels }}
 {{ toYaml .Values.data.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.data.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- if .Values.data.annotations }}
 {{ toYaml .Values.data.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -79,7 +80,11 @@ spec:
 {{ include "init-containers" . | indent 6 }}
       containers:
       - name: elasticsearch
+      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         securityContext:
           capabilities:

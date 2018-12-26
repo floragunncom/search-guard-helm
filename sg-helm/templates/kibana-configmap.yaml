@@ -15,6 +15,7 @@ data:
 
 {{ if .Values.common.xpack_basic }}
     xpack.security.enabled: false
+    xpack.spaces.enabled: false
 {{ end }}
 
     

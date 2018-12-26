@@ -27,8 +27,9 @@ spec:
         {{- if .Values.kibana.labels }}
 {{ toYaml .Values.kibana.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.kibana.annotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/kibana-configmap.yaml") . | sha256sum }}
+      {{- if .Values.kibana.annotations }}
 {{ toYaml .Values.kibana.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -43,7 +44,11 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
+      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+      {{ else }}
+        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
+      {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE

@@ -15,6 +15,10 @@ data:
     xpack.security.enabled: false
 {{ end }}
 
+    network.host: "0.0.0.0"
+    bootstrap.memory_lock: false
+    cluster.name: {{ .Values.common.cluster_name }}
+
     node:
       master: ${NODE_MASTER:true}
       data: ${NODE_DATA:true}
@@ -36,7 +40,7 @@ data:
 
     # Search Guard
     searchguard:
-      enterprise_modules_enabled: true
+      enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
       restapi:
         roles_enabled: ["sg_all_access"]
       authcz:
