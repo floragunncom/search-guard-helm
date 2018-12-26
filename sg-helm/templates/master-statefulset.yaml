@@ -85,7 +85,7 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -105,8 +105,6 @@ spec:
           value: "true"
         - name: NODE_INGEST
           value: "false"
-        - name: HTTP_ENABLE
-          value: "{{ .Values.master.enableHTTP }}"
         - name: PROCESSORS
           value: "{{ .Values.master.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -123,24 +121,14 @@ spec:
         - containerPort: 9300
           name: transport
           protocol: TCP
-        {{- if .Values.master.enableHTTP }}
         - containerPort: 9200
           name: http
           protocol: TCP
-        {{- end }}
         readinessProbe:
-          {{- if .Values.master.enableHTTP }}
-          httpGet:
-            path: /_searchguard/health
-            port: http
-            scheme: HTTPS
-          {{- else }}
           tcpSocket:
             port: transport
-          {{- end }}
           initialDelaySeconds: 20
           periodSeconds: 10
-          failureThreshold: 30
         livenessProbe:
           tcpSocket:
             port: transport

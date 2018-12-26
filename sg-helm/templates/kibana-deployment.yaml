@@ -44,7 +44,7 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
         image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
-        imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -76,10 +76,10 @@ spec:
           name: http
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: api/status
-            port: http
-            scheme: HTTPS
+          exec:
+            command:
+              - pgrep
+              - node
           initialDelaySeconds: 60
           periodSeconds: 10
         readinessProbe:
@@ -89,7 +89,7 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 20
           timeoutSeconds: 10
-          failureThreshold: 30
+          failureThreshold: 10
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:

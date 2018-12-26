@@ -9,45 +9,32 @@ metadata:
     heritage: "{{ .Release.Service }}"
 data:
   elasticsearch.yml: |-
-    cluster:
-      name: {{ .Values.common.env.CLUSTER_NAME }}
+
+{{ if .Values.common.xpack_basic }}
+    # When xpack is installed we need to disable xpack security
+    xpack.security.enabled: false
+{{ end }}
 
     node:
       master: ${NODE_MASTER:true}
       data: ${NODE_DATA:true}
       name: ${NODE_NAME}
       ingest: ${NODE_INGEST:true}
-      max_local_storage_nodes: ${MAX_LOCAL_STORAGE_NODES:1}
-
-    network.host: ${NETWORK_HOST:_local_}
 
     path:
       data: /storage/data
       logs: /storage/logs
-
-    bootstrap:
-      memory_lock: ${MEMORY_LOCK:false}
-
-    http:
-      enabled: true
-      compression: false
-      cors:
-        enabled: ${HTTP_CORS_ENABLE:false}
-        allow-origin: ${HTTP_CORS_ALLOW_ORIGIN:"*"}
-
-    indices:
-      memory.index_buffer_size: 30%
-
-    #index:
-    #  refresh_interval: 30s
+    
+    # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
+    processors: ${PROCESSORS:}
 
     discovery:
       zen:
         ping.unicast.hosts: ${DISCOVERY_SERVICE:}
-        minimum_master_nodes: ${NUMBER_OF_MASTERS:1}
+        #(master/2)+1
+        minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
 
-    # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
-    processors: ${PROCESSORS:}
+    # Search Guard
     searchguard:
       enterprise_modules_enabled: true
       restapi:
@@ -55,7 +42,7 @@ data:
       authcz:
         admin_dn:
           - "CN=kirk,OU=client,O=client,L=test,C=de"
-      allow_unsafe_democertificates: ${ALLOW_DEMOCERTIFICATES:false}  
+      allow_unsafe_democertificates: {{ .Values.common.allow_democertificates }}
       allow_default_init_sgindex: true
       enable_snapshot_restore_privilege: true
       check_snapshot_restore_write_privileges: true

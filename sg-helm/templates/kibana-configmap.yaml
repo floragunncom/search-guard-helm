@@ -12,6 +12,12 @@ data:
 
     searchguard.multitenancy.enabled: true
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
+
+{{ if .Values.common.xpack_basic }}
+    xpack.security.enabled: false
+{{ end }}
+
+    
     
     
     # Allow cookies only via HTTPS. Cookies transmitted via HTTP will be discarded silently, i.e. a login is not possible.

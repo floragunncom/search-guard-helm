@@ -83,7 +83,7 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -102,8 +102,6 @@ spec:
         - name: NODE_MASTER
           value: "false"
         - name: NODE_INGEST
-          value: "true"
-        - name: HTTP_ENABLE
           value: "true"
         - name: PROCESSORS
           value: "{{ .Values.client.processors }}"

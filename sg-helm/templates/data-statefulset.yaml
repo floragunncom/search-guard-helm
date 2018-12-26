@@ -80,7 +80,7 @@ spec:
       containers:
       - name: elasticsearch
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         securityContext:
           capabilities:
             add:
@@ -105,8 +105,6 @@ spec:
           value: "false"
         - name: NODE_INGEST
           value: "false"
-        - name: HTTP_ENABLE
-          value: "{{ .Values.data.enableHTTP }}"
         - name: PROCESSORS
           value: "{{ .Values.data.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -123,21 +121,14 @@ spec:
         - containerPort: 9300
           name: transport
           protocol: TCP
-        {{- if .Values.data.enableHTTP }}
         - containerPort: 9200
           name: http
           protocol: TCP
-        {{- end }}
         readinessProbe:
-          {{- if .Values.data.enableHTTP }}
           httpGet:
             path: /_searchguard/health
             port: http
             scheme: HTTPS
-          {{- else }}
-          tcpSocket:
-            port: transport
-          {{- end }}
           initialDelaySeconds: 20
           periodSeconds: 10
           failureThreshold: 30

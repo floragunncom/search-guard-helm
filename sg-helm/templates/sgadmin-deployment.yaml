@@ -38,7 +38,7 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
         image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-        imagePullPolicy: "IfNotPresent"
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: DISCOVERY_SERVICE
           value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
