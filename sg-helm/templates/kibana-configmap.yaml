@@ -13,6 +13,9 @@ data:
 {{ if .Values.common.xpack_basic }}
     xpack.security.enabled: false
     xpack.spaces.enabled: false
+    xpack.ml.enabled: false
+    xpack.apm.enabled: false
+    xpack.graph.enabled: false
 {{ end }}
 
     server.name: kibana
@@ -40,7 +43,8 @@ data:
     logging.dest: stdout
 
     # Set this to true to suppress all logging output except for error messages.
-    logging.quiet: true
+    logging.quiet: false
+    logging.verbose: false
     
     #### Search Guard specific config ####
     searchguard.multitenancy.enabled: true

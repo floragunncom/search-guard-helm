@@ -1,4 +1,4 @@
-# Currently tested with Kubernetes 1.10 on Minkube
+# Currently tested with Kubernetes 1.10 on AWS EKS
 common:
   cluster_name: "searchguard"
   elkversion: "6.5.4"
@@ -18,9 +18,9 @@ common:
   do_not_fail_on_forbidden: false
 
   # Defines the service type for all outward-facing (non-discovery) services.
-  serviceType: ClusterIP
+  #serviceType: ClusterIP
   #serviceType: NodePort
-  #serviceType: LoadBalancer
+  serviceType: LoadBalancer
 
   # Any extra or specific configuration that is needed can be added here.
   # Will be added to all elasticsearch.yml files on all nodes
@@ -64,8 +64,8 @@ common:
 # have dedicated ingest nodes, that will only perform this specific task.
 client:
   # It isn't common to need more than 2 client nodes.
-  replicas: 1
-  antiAffinity: "soft"
+  replicas: 2
+  antiAffinity: "hard"
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -89,10 +89,10 @@ client:
 # master and data roles.
 data:
   # This count will depend on your data and computation needs.
-  replicas: 1
-  antiAffinity: "soft"
+  replicas: 2
+  antiAffinity: "hard"
   storage: 4Gi
-  storageClass: "standard"
+  storageClass: "gp2"
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -113,10 +113,10 @@ data:
 # important for cluster health to have a stable master node.
 master:
   # Master replica count should be (#clients / 2) + 1, and generally at least 3.
-  replicas: 1
-  antiAffinity: "soft"
+  replicas: 3
+  antiAffinity: "hard"
   storage: 2Gi
-  storageClass: "standard"
+  storageClass: "gp2"
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -133,10 +133,11 @@ master:
 
 kibana:
   httpPort: 5601
-  replicas: 1
-  serviceType: ClusterIP
+  replicas: 2
+  antiAffinity: "hard"
+  #serviceType: ClusterIP
   #serviceType: NodePort
-  #serviceType: LoadBalancer
+  serviceType: LoadBalancer
   config:
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
     # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'

@@ -39,6 +39,42 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       securityContext:
         fsGroup: 1000
+      {{- if eq .Values.kibana.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+      {{- else if eq .Values.kibana.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+      {{- end }}
       containers:
       - name: kibana
         securityContext:
@@ -99,7 +135,7 @@ spec:
             path: api/status
             port: http
             scheme: HTTPS
-          initialDelaySeconds: 20
+          initialDelaySeconds: 90
           timeoutSeconds: 10
           failureThreshold: 10
         resources:
