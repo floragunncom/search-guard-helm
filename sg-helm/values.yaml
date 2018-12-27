@@ -134,6 +134,7 @@ master:
 kibana:
   httpPort: 5601
   replicas: 1
+  antiAffinity: "soft"
   serviceType: ClusterIP
   #serviceType: NodePort
   #serviceType: LoadBalancer
