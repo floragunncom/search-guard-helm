@@ -1,4 +1,4 @@
-The elasticsearch cluster has been installed.
+The Search Guard protected elasticsearch cluster has been installed.
 
 Elasticsearch can be accessed:
 
@@ -15,8 +15,7 @@ Elasticsearch can be accessed:
     {{- else if contains "LoadBalancer" .Values.common.serviceType }}
 
      WARNING: You have likely exposed your Elasticsearch cluster direct to the internet.
-              Elasticsearch does not implement any security for public facing clusters by default.
-              As a minimum level of security; switch to ClusterIP/NodePort and place an Nginx gateway infront of the cluster in order to lock down access to dangerous HTTP endpoints and verbs.
+              Make sure Search Guard is properly configured
 
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
            You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'

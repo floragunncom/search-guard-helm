@@ -16,6 +16,7 @@ data:
 {{ end }}
 
     network.host: "0.0.0.0"
+    #TODO support memory_lock
     bootstrap.memory_lock: false
     cluster.name: {{ .Values.common.cluster_name }}
 
@@ -27,7 +28,7 @@ data:
 
     path:
       data: /storage/data
-      logs: /storage/logs
+      #logs: /storage/logs
     
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
@@ -45,7 +46,7 @@ data:
         roles_enabled: ["sg_all_access"]
       authcz:
         admin_dn:
-          - "CN=kirk,OU=client,O=client,L=test,C=de"
+{{ toYaml .Values.common.admin_dn | indent 10 }}
       allow_unsafe_democertificates: {{ .Values.common.allow_democertificates }}
       allow_default_init_sgindex: true
       enable_snapshot_restore_privilege: true
@@ -55,8 +56,8 @@ data:
       ssl:
         http:
           enabled: true
-          pemkey_filepath: certificates-secrets/node_cert_key.pem
-          pemcert_filepath: certificates-secrets/node_cert.pem
+          pemkey_filepath: certificates-secrets/node_https_key.pem
+          pemcert_filepath: certificates-secrets/node_https_cert.pem
           pemtrustedcas_filepath: certificates-secrets/ca_cert.pem
         transport:
           enforce_hostname_verification: false

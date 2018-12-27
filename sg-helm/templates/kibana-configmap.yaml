@@ -10,25 +10,10 @@ metadata:
 data:
   kibana.yml: |-
 
-    searchguard.multitenancy.enabled: true
-    elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
-
 {{ if .Values.common.xpack_basic }}
     xpack.security.enabled: false
     xpack.spaces.enabled: false
 {{ end }}
-
-    
-    
-    
-    # Allow cookies only via HTTPS. Cookies transmitted via HTTP will be discarded silently, i.e. a login is not possible.
-    searchguard.cookie.secure: true
-    # Password used to encrypt the session cookie. Must be at least 32 characters.
-    searchguard.cookie.password: "${COOKIE_PWD}"
-    # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'
-    searchguard.auth.type: basicauth
-    # Disallow login for service users
-    searchguard.basicauth.forbidden_usernames: ["kibanaserver", "logstash"]
 
     server.name: kibana
     server.host: "0"
@@ -36,12 +21,12 @@ data:
     elasticsearch.url: "https://${DISCOVERY_SERVICE}:9200"
 
     elasticsearch.username: "kibanaserver"
-    elasticsearch.password: "kibanaserver"
+    elasticsearch.password: "${SERVER_PWD}"
 
     # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
     server.ssl.enabled: true
-    server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/node_cert.pem
-    server.ssl.key: /usr/share/kibana/config/certificates-secrets/node_cert_key.pem
+    server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/kibana_cert.pem
+    server.ssl.key: /usr/share/kibana/config/certificates-secrets/kibana_cert_key.pem
 
     # If you need to provide a CA certificate for your Elasticsearch instance, put
     # the path of the pem file here.
@@ -49,15 +34,23 @@ data:
 
     # Set to false to have a complete disregard for the validity of the SSL
     # certificate.
-    elasticsearch.ssl.verificationMode: none
-
+    elasticsearch.ssl.verificationMode: certificate
 
     # If you would like to send the log output to a file you can set the path below.
     logging.dest: stdout
 
     # Set this to true to suppress all logging output except for error messages.
-    logging.quiet: false
+    logging.quiet: true
+    
+    #### Search Guard specific config ####
+    searchguard.multitenancy.enabled: true
 
+    # Allow cookies only via HTTPS. Cookies transmitted via HTTP will be discarded silently, i.e. a login is not possible.
+    searchguard.cookie.secure: true
+    # Password used to encrypt the session cookie. Must be at least 32 characters.
+    searchguard.cookie.password: "${COOKIE_PWD}"
+
+    #### Additional config ####
 {{- if .Values.kibana.config }}
 {{ toYaml .Values.kibana.config | indent 4 }}
 {{- end }}

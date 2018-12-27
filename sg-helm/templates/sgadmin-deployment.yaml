@@ -24,6 +24,10 @@ spec:
         app: {{ template "fullname" . }}
         component: {{ template "fullname" . }}
         role: sgadmin
+      {{ if .Values.common.update_sgconfig_on_change }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/searchguard-configmap.yaml") . | sha256sum }}
+      {{ end }}
     spec:
       subdomain: {{ template "fullname" . }}
       serviceAccountName: {{ template "fullname" . }}
@@ -39,6 +43,23 @@ spec:
               - SYS_RESOURCE
         image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.pullPolicy }}
+        {{ if .Values.common.update_sgconfig_on_change }}
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - |
+                  #!/usr/bin/env bash -e
+                  echo "Executing sgadmin ..."
+                  /root/sgadmin_update.sh
+                  RET=$?
+                  echo "Result $RET"
+                  exit $RET
+          #initialDelaySeconds: 60
+          #timeoutSeconds: 10
+          #failureThreshold: 10
+        {{ end }}
         env:
         - name: DISCOVERY_SERVICE
           value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc

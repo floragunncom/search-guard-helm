@@ -31,7 +31,9 @@ spec:
 {{ toYaml .Values.master.labels | indent 8 }}
         {{- end }}
       annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{ end }}
       {{- if .Values.master.annotations }}
 {{ toYaml .Values.master.annotations | indent 8 }}
       {{- end }}

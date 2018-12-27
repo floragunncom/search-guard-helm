@@ -2,6 +2,7 @@
 common:
   
   #namespace, separate logs from data
+  #ingress?
   #logdriver, ???
   #separate http certificates
   
@@ -11,9 +12,13 @@ common:
   sgkibanaversion: "17"
   xpack_basic: true
   allow_democertificates: true
+  admin_dn:
+    - "CN=kirk,OU=client,O=client,L=test,C=de"
 
   # NOT FREE FOR COMMERCIAL USE
   sg_enterprise_modules_enabled: true
+  update_sgconfig_on_change: true
+  restart_pods_on_config_change: true
 
   # Defines the service type for all outward-facing (non-discovery) services.
   serviceType: ClusterIP
@@ -115,6 +120,12 @@ kibana:
   #serviceType: ClusterIP
   #serviceType: NodePort
   serviceType: LoadBalancer
+  config:
+    elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
+    # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'
+    searchguard.auth.type: basicauth
+    # Disallow login for service users
+    searchguard.basicauth.forbidden_usernames: ["kibanaserver"]
   labels: {}
   annotations: {}
   resources:
