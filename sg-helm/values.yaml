@@ -1,11 +1,5 @@
 # Currently tested with Kubernetes 1.10 on AWS EKS and Minkube
 common:
-  
-  #namespace, separate logs from data
-  #ingress?
-  #logdriver, ???
-  #separate http certificates
-  
   cluster_name: "searchguard"
   elkversion: "6.5.4"
   sgversion: "24.0"
@@ -17,8 +11,11 @@ common:
 
   # NOT FREE FOR COMMERCIAL USE
   sg_enterprise_modules_enabled: true
+  
+  
   update_sgconfig_on_change: true
   restart_pods_on_config_change: true
+  do_not_fail_on_forbidden: false
 
   # Defines the service type for all outward-facing (non-discovery) services.
   serviceType: ClusterIP
@@ -34,6 +31,26 @@ common:
     #    enabled: false
     #    allow-origin: "*"
     #index.codec: best_compression
+  
+  users:
+    user1:
+      hash: $2a$12$ssCCgh2NUg07JGN0rjGbM.BdssqVR/YFJcgHp0UGns5JDymv..TMI
+      roles:
+        - beatsreader
+
+  rolesmapping:
+    sg_read_beats:
+      users:
+        - beatsreader
+
+  roles:
+    sg_read_beats:
+      cluster:
+        - CLUSTER_COMPOSITE_OPS_RO
+      indices:
+        '*beat*':
+          '*':
+            - READ
 
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}
@@ -117,9 +134,9 @@ master:
 kibana:
   httpPort: 5601
   replicas: 1
-  #serviceType: ClusterIP
+  serviceType: ClusterIP
   #serviceType: NodePort
-  serviceType: LoadBalancer
+  #serviceType: LoadBalancer
   config:
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
     # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'

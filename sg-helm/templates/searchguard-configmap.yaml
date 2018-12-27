@@ -15,7 +15,7 @@ data:
           multitenancy_enabled: true
           server_username: kibanaserver
           index: '.kibana'
-          do_not_fail_on_forbidden: false
+          do_not_fail_on_forbidden: {{ .Values.common.do_not_fail_on_forbidden }}
         http:
           xff:
             enabled: false
@@ -142,6 +142,10 @@ data:
           '*':
             - READ
 
+        {{- if .Values.common.roles }}
+{{ toYaml .Values.common.roles | indent 4 }}
+        {{- end }}
+
 
   sg_roles_mapping.yml: |-
     sg_all_access:
@@ -164,6 +168,10 @@ data:
       backendroles:
         - readall
 
+        {{- if .Values.common.rolesmapping }}
+{{ toYaml .Values.common.rolesmapping | indent 4 }}
+        {{- end }}
+
   sg_internal_users.yml: |-
     # This is the internal user database
     # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
@@ -184,6 +192,10 @@ data:
       roles:
         - kibanauser
         - readall
+
+        {{- if .Values.common.users }}
+{{ toYaml .Values.common.users | indent 4 }}
+        {{- end }}
         
   sg_action_groups.yml: |-
     UNLIMITED:
