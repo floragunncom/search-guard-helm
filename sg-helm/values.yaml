@@ -1,23 +1,50 @@
 # Currently tested with Kubernetes 1.10 on Minkube
 common:
+  # Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
+
+  # Elasticsearch and Kibana version
   elkversion: "6.5.4"
+
+  # Search Guard plugin version
   sgversion: "24.0"
+
+  # Search Guard Kibana plugin version
   sgkibanaversion: "17"
+
+  # If true then install also all free and basic x-pack features
+  # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
   xpack_basic: true
+
+  # Allow Search Guard demo certificates.
+  # Set this to 'false' in an internet-facing or production environment  
   allow_democertificates: true
+
+  # DN of the admin certificate
+  # See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
   admin_dn:
     - "CN=kirk,OU=client,O=client,L=test,C=de"
 
-  # NOT FREE FOR COMMERCIAL USE
+  # Enable or disable Search Guard enterprise modules
+  # If you run Search Guard in production you need to obtain a license
+  #  when set to 'true'
   sg_enterprise_modules_enabled: true
   
-  
+  # Run automatically sgadmin whenever neccessary 
   update_sgconfig_on_change: true
+
+  # Restart podsautomatically when their configuration was changed
   restart_pods_on_config_change: true
+  
+  # Search Guard can be run do not fail on forbidden mode. 
+  # With this mode enabled Search Guard filters all indices from a query a user does not have access to. 
+  # Thus not security exception is raised.
+  # See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
   do_not_fail_on_forbidden: false
 
-  # Defines the service type for all outward-facing (non-discovery) services.
+  # Defines the service type for all elasticsearch outward-facing (non-discovery) services.
+  # This does not apply to Kibana.
+  # WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
   serviceType: ClusterIP
   #serviceType: NodePort
   #serviceType: LoadBalancer
@@ -32,17 +59,20 @@ common:
     #    allow-origin: "*"
     #index.codec: best_compression
   
+  # Configure additional users (maps to sg_internal_users.yml)
   users:
     user1:
       hash: $2a$12$ssCCgh2NUg07JGN0rjGbM.BdssqVR/YFJcgHp0UGns5JDymv..TMI
       roles:
         - beatsreader
 
+  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
   rolesmapping:
     sg_read_beats:
       users:
         - beatsreader
 
+  # Configure additional role (maps to sg_roles.yml)
   roles:
     sg_read_beats:
       cluster:
@@ -63,9 +93,13 @@ common:
 # by the ingest processors and the required resources, it may make sense to
 # have dedicated ingest nodes, that will only perform this specific task.
 client:
-  # It isn't common to need more than 2 client nodes.
+  # For production we recommend at least 2 replicas
   replicas: 1
+  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  # 'soft' will do this "best effort"
+  # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
+  # For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -88,11 +122,15 @@ client:
 # The main benefit of having dedicated data nodes is the separation of the
 # master and data roles.
 data:
-  # This count will depend on your data and computation needs.
+  # For production we recommend at least 2 replicas
   replicas: 1
+  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  # 'soft' will do this "best effort"
+  # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 4Gi
   storageClass: "standard"
+  # For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -112,11 +150,15 @@ data:
 # cluster, and deciding which shards to allocate to which nodes. It is
 # important for cluster health to have a stable master node.
 master:
-  # Master replica count should be (#clients / 2) + 1, and generally at least 3.
+  # For production we recommend at least 3 replicas. Number must be odd.
   replicas: 1
+  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  # 'soft' will do this "best effort"
+  # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 2Gi
   storageClass: "standard"
+  # For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
   # if you set the cpu limit to over 1 full cpu.
@@ -132,12 +174,19 @@ master:
       memory: 1500Mi
 
 kibana:
+  # Incoming port of the service
   httpPort: 5601
   replicas: 1
+  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  # 'soft' will do this "best effort"
+  # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
+  # Defines the service type for all Kibana outward-facing (non-discovery) services.
+  # WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
   serviceType: ClusterIP
   #serviceType: NodePort
   #serviceType: LoadBalancer
+  # Additional config which will be appended to kibana.yml
   config:
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
     # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'
@@ -154,7 +203,7 @@ kibana:
       cpu: 100m
       memory: 2500Mi
 
-
+# Incoming port of the service
 service:
   httpPort: 9200
   transportPort: 9300
@@ -164,5 +213,8 @@ service:
 rbac:
   create: true
 
+# Kubelet image pull policy
+# https://kubernetes.io/docs/concepts/containers/images/
 pullPolicy: Always
+#pullPolicy: IfNotPresent
   

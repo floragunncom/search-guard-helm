@@ -2,7 +2,7 @@
 
 ## Status
 
-This is repo is considered beta status.
+This is repo is considered beta status. See also the WARNING below regarding Internet-facing or production deployments.
 
 ## Support
 
@@ -117,6 +117,15 @@ kubectl port-forward --namespace default $POD_NAME 5601:5601
   ```
 
   In that case, refer to the documentation of `update_sgconfig_on_change` in values.yaml so that your changes will not be overriden accidentally.
+
+## WARNING: Internet-facing or production deployments
+
+If this chart is deployed internet-facing or in a production environment make sure that you remove every file in the `secrets/` folder. Normally the files in this folder are not checked in into source control. You keep them local or in an [other safe store](https://kubernetes.io/docs/concepts/configuration/secret/).
+
+Create you own certificates and keys using the [Offline TLS Tool](https://docs.search-guard.com/latest/offline-tls-tool#tls-tool) and also change
+the Kibana cookie and the Kibana server password.
+
+IMPORTANT: Set `allow_democertificates` to false in values.yaml
 
 ## Credits
 
