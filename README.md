@@ -79,11 +79,11 @@ helm search "search guard"
 helm install --name sg-elk sg-helm/sg-helm --version 6.5.4-24.0-17.0-beta1
 ```
 Please refer to the [Helm Documentation](https://github.com/helm/helm/blob/master/docs/helm/helm_install.md) on how to override the chart default
-settings. 
+settings. See `sg-helm/values.yaml` for the documented set of settings you can override.
 
 ### Deploy via GitHub
 
-Optionally read the comments in values.yaml and customize them to suit your needs.
+Optionally read the comments in `sg-helm/values.yaml` and customize them to suit your needs.
 
 ```
 $ git clone https://github.com/floragunncom/search-guard-helm.git
@@ -104,7 +104,7 @@ kubectl port-forward --namespace default $POD_NAME 5601:5601
 
 * The nodes are initially automatically initialized and configured
 * To change the configuration 
-  * Edit values.yaml and run `helm upgrade`. The pods will be reconfigured or restarted if necceessary
+  * Edit `sg-helm/values.yaml` and run `helm upgrade`. The pods will be reconfigured or restarted if necceessary
   * or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necceessary
 * Alternatively you can exec into the sgadmin pod and run low-level sgadmin commands:
 
@@ -116,7 +116,7 @@ kubectl port-forward --namespace default $POD_NAME 5601:5601
     or run /root/sgadmin_generic.sh <OPTIONS>
   ```
 
-  In that case, refer to the documentation of `update_sgconfig_on_change` in values.yaml so that your changes will not be overriden accidentally.
+  In that case, refer to the documentation of `update_sgconfig_on_change` in `sg-helm/values.yaml` so that your changes will not be overriden accidentally.
 
 ## WARNING: Internet-facing or production deployments
 
@@ -125,7 +125,7 @@ If this chart is deployed internet-facing or in a production environment make su
 Create you own certificates and keys using the [Offline TLS Tool](https://docs.search-guard.com/latest/offline-tls-tool#tls-tool) and also change
 the Kibana cookie and the Kibana server password.
 
-IMPORTANT: Set `allow_democertificates` to false in values.yaml
+IMPORTANT: Set `allow_democertificates` to `false` in `sg-helm/values.yaml`
 
 ## Credits
 
