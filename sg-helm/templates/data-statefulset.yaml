@@ -30,8 +30,11 @@ spec:
         {{- if .Values.data.labels }}
 {{ toYaml .Values.data.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.data.annotations }}
       annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{ end }}
+      {{- if .Values.data.annotations }}
 {{ toYaml .Values.data.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -79,8 +82,12 @@ spec:
 {{ include "init-containers" . | indent 6 }}
       containers:
       - name: elasticsearch
-        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+      {{ if .Values.common.xpack_basic }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         securityContext:
           capabilities:
             add:
@@ -105,8 +112,6 @@ spec:
           value: "false"
         - name: NODE_INGEST
           value: "false"
-        - name: HTTP_ENABLE
-          value: "{{ .Values.data.enableHTTP }}"
         - name: PROCESSORS
           value: "{{ .Values.data.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -123,21 +128,14 @@ spec:
         - containerPort: 9300
           name: transport
           protocol: TCP
-        {{- if .Values.data.enableHTTP }}
         - containerPort: 9200
           name: http
           protocol: TCP
-        {{- end }}
         readinessProbe:
-          {{- if .Values.data.enableHTTP }}
           httpGet:
             path: /_searchguard/health
             port: http
             scheme: HTTPS
-          {{- else }}
-          tcpSocket:
-            port: transport
-          {{- end }}
           initialDelaySeconds: 20
           periodSeconds: 10
           failureThreshold: 30

@@ -27,8 +27,11 @@ spec:
         {{- if .Values.kibana.labels }}
 {{ toYaml .Values.kibana.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.kibana.annotations }}
       annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/kibana-configmap.yaml") . | sha256sum }}
+        {{ end }}
+      {{- if .Values.kibana.annotations }}
 {{ toYaml .Values.kibana.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -36,6 +39,42 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       securityContext:
         fsGroup: 1000
+      {{- if eq .Values.kibana.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+      {{- else if eq .Values.kibana.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "fullname" . }}
+                  role: kibana
+      {{- end }}
       containers:
       - name: kibana
         securityContext:
@@ -43,8 +82,12 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
-        imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+      {{ if .Values.common.xpack_basic }}
+        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+      {{ else }}
+        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
+      {{ end }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -61,6 +104,11 @@ spec:
             secretKeyRef:
               name: {{ template "fullname" . }}-certificates-secrets
               key: kibana_cookie_pwd
+        - name: SERVER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "fullname" . }}-certificates-secrets
+              key: kibana_server_pwd
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
@@ -76,10 +124,10 @@ spec:
           name: http
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: api/status
-            port: http
-            scheme: HTTPS
+          exec:
+            command:
+              - pgrep
+              - node
           initialDelaySeconds: 60
           periodSeconds: 10
         readinessProbe:
@@ -87,9 +135,9 @@ spec:
             path: api/status
             port: http
             scheme: HTTPS
-          initialDelaySeconds: 20
+          initialDelaySeconds: 90
           timeoutSeconds: 10
-          failureThreshold: 30
+          failureThreshold: 10
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:

@@ -30,8 +30,11 @@ spec:
         {{- if .Values.master.labels }}
 {{ toYaml .Values.master.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.master.annotations }}
       annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{ end }}
+      {{- if .Values.master.annotations }}
 {{ toYaml .Values.master.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -84,8 +87,12 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+      {{ if .Values.common.xpack_basic }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -105,8 +112,6 @@ spec:
           value: "true"
         - name: NODE_INGEST
           value: "false"
-        - name: HTTP_ENABLE
-          value: "{{ .Values.master.enableHTTP }}"
         - name: PROCESSORS
           value: "{{ .Values.master.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -123,24 +128,14 @@ spec:
         - containerPort: 9300
           name: transport
           protocol: TCP
-        {{- if .Values.master.enableHTTP }}
         - containerPort: 9200
           name: http
           protocol: TCP
-        {{- end }}
         readinessProbe:
-          {{- if .Values.master.enableHTTP }}
-          httpGet:
-            path: /_searchguard/health
-            port: http
-            scheme: HTTPS
-          {{- else }}
           tcpSocket:
             port: transport
-          {{- end }}
           initialDelaySeconds: 20
           periodSeconds: 10
-          failureThreshold: 30
         livenessProbe:
           tcpSocket:
             port: transport

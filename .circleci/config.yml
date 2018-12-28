@@ -1,0 +1,27 @@
+environment: &environment
+  machine:
+    docker_layer_caching: true
+  working_directory: ~/docker-images
+
+version: 2
+
+jobs:
+  empty:
+    <<: *environment
+    steps:
+      - run: date
+
+  build:
+    <<: *environment
+    steps:
+      - checkout
+      - run:
+          name: Echo Configuration
+          no_output_timeout: "30m"
+          command: docker/build.sh push
+
+workflows:
+  version: 2
+  build_push:
+    jobs:
+      - empty

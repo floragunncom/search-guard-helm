@@ -24,7 +24,7 @@ TODO: replace this with a daemon set
 {{- define "init-containers" -}}
 - name: init-sysctl
   image: busybox
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sysctl", "-w", "vm.max_map_count=262144"]
   resources:
     limits:
@@ -38,8 +38,8 @@ TODO: replace this with a daemon set
 
 {{- if .Values.common.plugins }}
 - name: es-plugin-install
-  image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
-  imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+  image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
   securityContext:
     capabilities:
       add:
@@ -75,6 +75,7 @@ TODO: replace this with a daemon set
 {{- end }}
 - name: permissions
   image: busybox
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sh", "-c", "chown -R 1000: /storage/; true"]
   resources:
     limits:

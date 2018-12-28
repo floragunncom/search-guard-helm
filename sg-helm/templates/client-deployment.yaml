@@ -28,8 +28,11 @@ spec:
         {{- if .Values.client.labels }}
 {{ toYaml .Values.client.labels | indent 8 }}
         {{- end }}
-      {{- if .Values.client.annotations }}
       annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{ end }}
+      {{- if .Values.client.annotations }}
 {{ toYaml .Values.client.annotations | indent 8 }}
       {{- end }}
     spec:
@@ -82,8 +85,12 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-        image: "{{ .Values.common.image.repository }}:{{ .Values.common.image.tag }}"
-        imagePullPolicy: {{ .Values.common.image.pullPolicy }}
+      {{ if .Values.common.xpack_basic }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -102,8 +109,6 @@ spec:
         - name: NODE_MASTER
           value: "false"
         - name: NODE_INGEST
-          value: "true"
-        - name: HTTP_ENABLE
           value: "true"
         - name: PROCESSORS
           value: "{{ .Values.client.processors }}"
