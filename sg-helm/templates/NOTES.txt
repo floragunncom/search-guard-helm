@@ -22,7 +22,7 @@ Elasticsearch can be accessed:
            You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
 
     #LoadBalancer
-    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
     echo https://$SERVICE_IP:9200
     {{- else if contains "ClusterIP"  .Values.common.serviceType }}
 
@@ -54,7 +54,7 @@ Kibana can be accessed:
            You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
 
     #LoadBalancer
-    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
     echo https://$SERVICE_IP:5601
     {{- else if contains "ClusterIP"  .Values.kibana.serviceType }}
 
