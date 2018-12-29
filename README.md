@@ -12,10 +12,25 @@ Please report issues via GitHub issue tracker or get in [contact with us](https:
 
 * Kubernetes 1.10 or later (Minikube and AWS EKS are tested)
 * Helm (tested with Helm v2.11.0)
+* kubectl
 * Optional: Docker, if you like to build and push customized images 
 
 If you use Minikube make sure that the VM has enough memory and CPUs assigned.
 We recommend at least 8 GB and 4 CPUs. By default, we deploy 5 pods (includes also Kibana).
+
+## Deploy on AWS (optional)
+
+You need to have the aws cli installed and configured
+
+```
+./examples/ag_aws_kops.sh -c mytestcluster
+```
+
+Delete the cluster when you are finished with testing Search Guard
+
+```
+./examples/ag_aws_kops.sh -d mytestcluster
+```
 
 ## Setup Minikube (optional)
 
