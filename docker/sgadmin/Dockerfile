@@ -10,10 +10,17 @@ RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-11.0.1/lib/security
 
 WORKDIR /root/
 
-RUN yum update -y && \
-    yum install -y wget ca-certificates openssl unzip bash && \
-    yum clean all
+RUN echo $'[kubernetes] \n\
+name=Kubernetes  \n\
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64  \n\
+enabled=1  \n\
+gpgcheck=1  \n\
+repo_gpgcheck=1  \n\
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'  > /etc/yum.repos.d/kubernetes.repo
 
+RUN yum update -y && \
+    yum install -y wget ca-certificates openssl unzip bash kubectl && \
+    yum clean all
 
 ARG ELK_VERSION
 ARG SG_VERSION
@@ -21,13 +28,11 @@ ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
 
 RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-6/$SG_FULLVERSION/search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
 RUN unzip search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
-
 RUN rm -rf search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
 
-#FROM openjdk:8-jre-alpine
-#RUN apk add --no-cache bash
-#COPY --from=builder /root/sgadmin /root/
-
+RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/1.6/search-guard-tlstool-1.6.zip
+RUN unzip search-guard-tlstool-1.6 -d tlstool/
+RUN rm -rf search-guard-tlstool-1.6.zip
 
 RUN echo '/root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv' > /root/sgadmin_update.sh
 RUN echo '/root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv "$@"' > /root/sgadmin_generic.sh

@@ -87,6 +87,7 @@ AWS_KEY="$(aws configure list | grep access_key)"
 
 if [ "$create" == 1 ]; then
     echo "WARNUNG: This script will create AWS resources like EC2 instances, S3 buckets and ebs volumes for which you will be charged"
+    echo "         Both Elasticsearch and Kibana will be exposed to the internet"
     echo "         Make sure aws-cli is configured to use the correct account, access_key ($AWS_KEY) and default region ($REGION)"
 fi
 
@@ -149,21 +150,22 @@ echo "Cluster is ready!"
 #kubectl get nodes
 
 echo "Install Helm tiller pod"
-kubectl create serviceaccount --quiet --namespace kube-system tiller > /dev/null 2>&1
+kubectl create serviceaccount --namespace kube-system tiller > /dev/null 2>&1
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller > /dev/null 2>&1
-helm init --service-account tiller --upgrade > /dev/null 2>&1
+helm init --wait --service-account tiller --upgrade > /dev/null 2>&1
 
 echo "Install Dashboard"
 
-cat >"/tmp/$CLUSTERNAME_dashboard_service_account.tmp.yaml" <<EOL
+cat >"/tmp/$CLUSTERNAME-rbac.tmp.yaml" <<EOL
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: admin-user
   namespace: kube-system
-EOL
 
-cat >"/tmp/$CLUSTERNAME_dashboard_role_binding.tmp.yaml" <<EOL
+---
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -176,13 +178,25 @@ subjects:
 - kind: ServiceAccount
   name: admin-user
   namespace: kube-system
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: sgadmin
+subjects:
+  - kind: ServiceAccount
+    name: sg-elk-sg-helm
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
 EOL
 
-kubectl apply -f "/tmp/$CLUSTERNAME_dashboard_service_account.tmp.yaml" > /dev/null 2>&1
-kubectl apply -f "/tmp/$CLUSTERNAME_dashboard_role_binding.tmp.yaml" > /dev/null 2>&1
-
-rm -f "/tmp/$CLUSTERNAME_dashboard_service_account.tmp.yaml"
-rm -f "/tmp/$CLUSTERNAME_dashboard_role_binding.tmp.yaml"
+kubectl apply -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml" > /dev/null  2>&1
+rm -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml"
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml > /dev/null  2>&1
 
@@ -202,11 +216,9 @@ echo "  Token: $DASHBOARD_TOKEN"
 
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
 
-sleep 20 #wait until tiller pod is ready
-
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-helm install --name sg-elk sg-helm/sg-helm \
+helm install --name sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
   --version 6.5.4-24.0-17.0-beta1 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
@@ -217,16 +229,21 @@ helm install --name sg-elk sg-helm/sg-helm \
   --set client.replicas=2 \
   --set kibana.replicas=1
 
+echo "Wait for ELB ..."
 ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+sleep 30
 
 echo "Elasticsearch: https://$ES_URL:9200"
 echo "Kibana: https://$KIBANA_URL:5601"
 
+echo ""
+echo "Done"
 
 exit 0
 
-helm upgrade sg-elk sg-helm/sg-helm \
+helm upgrade sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
   --version 6.5.4-24.0-17.0-beta1 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
@@ -235,7 +252,5 @@ helm upgrade sg-elk sg-helm/sg-helm \
   --set data.replicas=2  \
   --set master.replicas=3 \
   --set client.replicas=2 \
-  --set kibana.replicas=1 \
-  --set common.do_not_fail_on_forbidden=true \
-  --set common.sg_enterprise_modules_enabled=false
+  --set kibana.replicas=1
 

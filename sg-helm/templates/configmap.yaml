@@ -51,7 +51,7 @@ data:
         admin_dn:
 {{ toYaml .Values.common.admin_dn | indent 10 }}
       allow_unsafe_democertificates: {{ .Values.common.allow_democertificates }}
-      allow_default_init_sgindex: true
+      allow_default_init_sgindex: false
       enable_snapshot_restore_privilege: true
       check_snapshot_restore_write_privileges: true
       audit:

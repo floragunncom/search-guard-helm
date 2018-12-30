@@ -175,20 +175,25 @@ data:
   sg_internal_users.yml: |-
     # This is the internal user database
     # The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
-    #password is: admin
     admin:
       readonly: true
-      hash: $2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: _RPLC_ADMIN_HASH
       roles:
         - admin
-        
-    #password is: kibanaserver  
+ 
     kibanaserver:
       readonly: true
-      hash: $2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H.
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: _RPLC_KIBANA_SERVER_HASH
 
     kibanaro: 
-      hash: $2a$12$JJSXNfTowz7Uu5ttXfeYpeYE0arACvcwlPBStB1F.MI7f0U9Z4DGC
+      readonly: true
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: _RPLC_KIBANA_RO_HASH
       roles:
         - kibanauser
         - readall

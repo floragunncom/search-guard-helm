@@ -34,6 +34,98 @@ spec:
       securityContext:
         fsGroup: 1000
       initContainers:
+        - name: sgadmin-init
+          image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          env:
+            - name: DISCOVERY_SERVICE
+              value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+          volumeMounts:
+            - mountPath: /root/sgconfig/
+              name: searchguard-config
+            - name: secret-volume
+              readOnly: true
+              mountPath: /root/sgcerts/
+          command:
+            - sh
+            - -c
+            - |
+                #!/usr/bin/env bash -e
+
+                kubectl get secrets | grep {{ template "fullname" . }}-passwd-secrets
+                
+                if [ "$?" == "1" ]; then
+
+                echo "Will generate {{ template "fullname" . }}-passwd-secrets"
+
+                export kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                export admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                export kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                export kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+                cat >"{{ template "fullname" . }}-passwd-secrets.yaml" <<EOL
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  labels:
+                    app: {{ template "fullname" . }}
+                    component: sginit
+                    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                    heritage: "{{ .Release.Service }}"
+                    release: "{{ .Release.Name }}"
+                  name: {{ template "fullname" . }}-passwd-secrets
+                  namespace: {{ .Release.Namespace }}
+                type: Opaque
+                data:
+                  kibana_cookie_pwd: $(echo -n $kibana_cookie_pwd | base64)
+                  kibana_server_pwd: $(echo -n $kibana_server_pwd | base64)
+                  admin_pwd: $(echo -n $admin_pwd | base64)
+                  kibana_ro_pwd: $(echo -n $kibana_ro_pwd | base64)
+                EOL
+
+                kubectl apply -f "{{ template "fullname" . }}-passwd-secrets.yaml"
+                cp /root/sgconfig/sg_* /tmp/
+
+                sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
+                sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
+                sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
+
+                echo "Executing sgadmin first time ..."
+                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /tmp/ -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv
+                RET=$?
+                echo "Result $RET"
+                exit $RET
+
+                else
+
+                {{ if .Values.common.update_sgconfig_on_change }}
+                echo "{{ template "fullname" . }}-passwd-secrets exists"
+
+                export admin_pwd="$(kubectl get secrets sg-elk-sg-helm-passwd-secrets -o jsonpath="{.data.admin_pwd}" | base64 -d)"
+                export kibana_ro_pwd="$(kubectl get secrets sg-elk-sg-helm-passwd-secrets -o jsonpath="{.data.kibana_ro_pwd}" | base64 -d)"
+                export kibana_server_pwd="$(kubectl get secrets sg-elk-sg-helm-passwd-secrets -o jsonpath="{.data.kibana_server_pwd}" | base64 -d)"
+                
+                cp /root/sgconfig/sg_* /tmp/
+
+                sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
+                sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
+                sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
+                
+                echo "Executing sgadmin to update the configs ..."
+                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /tmp/ -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv
+                RET=$?
+                echo "Result $RET"
+                exit $RET
+                {{ end }}
+                :
+                fi
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
       containers:
       - name: sgadmin
         securityContext:
@@ -43,23 +135,6 @@ spec:
               - SYS_RESOURCE
         image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.pullPolicy }}
-        {{ if .Values.common.update_sgconfig_on_change }}
-        readinessProbe:
-          exec:
-            command:
-              - sh
-              - -c
-              - |
-                  #!/usr/bin/env bash -e
-                  echo "Executing sgadmin ..."
-                  /root/sgadmin_update.sh
-                  RET=$?
-                  echo "Result $RET"
-                  exit $RET
-          #initialDelaySeconds: 60
-          #timeoutSeconds: 10
-          #failureThreshold: 10
-        {{ end }}
         env:
         - name: DISCOVERY_SERVICE
           value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc

@@ -75,6 +75,27 @@ spec:
                   component: {{ template "fullname" . }}
                   role: kibana
       {{- end }}
+      initContainers:
+        - name: kibana-init
+          image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+                #!/usr/bin/env bash -e
+                until kubectl get secrets | grep {{ template "fullname" . }}-passwd-secrets; 
+                  echo 'Wait for {{ template "fullname" . }}-passwd-secrets'; 
+                  do sleep 10 ; 
+                done
+
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
       containers:
       - name: kibana
         securityContext:
@@ -102,12 +123,12 @@ spec:
         - name: COOKIE_PWD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}-certificates-secrets
+              name: {{ template "fullname" . }}-passwd-secrets
               key: kibana_cookie_pwd
         - name: SERVER_PWD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}-certificates-secrets
+              name: {{ template "fullname" . }}-passwd-secrets
               key: kibana_server_pwd
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
@@ -135,22 +156,27 @@ spec:
             path: api/status
             port: http
             scheme: HTTPS
-          initialDelaySeconds: 90
-          timeoutSeconds: 10
-          failureThreshold: 10
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:
         - mountPath: /usr/share/kibana/config/kibana.yml
           name: config
           subPath: kibana.yml
-        - name: secret-volume
+        - name: certificates-secrets-volume
           readOnly: true
           mountPath: "/usr/share/kibana/config/certificates-secrets"
+        - name: passwd-secrets-volume
+          readOnly: true
+          mountPath: "/usr/share/kibana/config/passwd-secrets"
       volumes:
-        - name: secret-volume
+        - name: certificates-secrets-volume
           secret:
             secretName: {{ template "fullname" . }}-certificates-secrets
+        - name: passwd-secrets-volume
+          secret:
+            secretName: {{ template "fullname" . }}-passwd-secrets
         - configMap:
             name: {{ template "fullname" . }}-kibana-config
           name: config
