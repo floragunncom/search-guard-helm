@@ -130,6 +130,7 @@ aws s3api put-bucket-versioning --bucket "$BUCKET" --region "$REGION"  --version
 
 echo "Create kops k8s cluster $CLUSTERNAME in $REGION"
 kops create cluster $CLUSTERNAME \
+  --state="$KOPS_STATE_STORE" \
   --zones="$REGION"a \
   --master-zones="$REGION"a \
   --master-size m4.large \
@@ -141,9 +142,10 @@ kops create cluster $CLUSTERNAME \
   --yes
   
   #> /dev/null  2>&1
+#check_ret "Cluster create"
 
 echo "Wait until cluster $CLUSTERNAME is valid ... (may take a few minutes)"
-until kops validate cluster > /dev/null 2>&1; do sleep 15 ; done
+until kops validate cluster --name="$CLUSTERNAME" --state="$KOPS_STATE_STORE" > /dev/null 2>&1; do sleep 15 ; done
 echo "Cluster is ready!"
 #kops validate cluster
 #kubectl cluster-info
@@ -153,8 +155,6 @@ echo "Install Helm tiller pod"
 kubectl create serviceaccount --namespace kube-system tiller > /dev/null 2>&1
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller > /dev/null 2>&1
 helm init --wait --service-account tiller --upgrade > /dev/null 2>&1
-
-echo "Install Dashboard"
 
 cat >"/tmp/$CLUSTERNAME-rbac.tmp.yaml" <<EOL
 
@@ -195,8 +195,35 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 EOL
 
-kubectl apply -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml" > /dev/null  2>&1
-rm -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml"
+#kubectl apply -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml" > /dev/null  2>&1
+#rm -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml"
+
+helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
+
+echo "Install ElasticSearch/Kibana secured by Search Guard"
+
+#helm install --name sg-elk sg-helm/sg-helm \
+helm install --name sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
+  --version 6.5.4-24.0-17.0-beta1 \
+  --set common.serviceType=LoadBalancer \
+  --set kibana.serviceType=LoadBalancer \
+  --set data.storageClass=gp2  \
+  --set master.storageClass=gp2 \
+  --set data.replicas=2  \
+  --set master.replicas=3 \
+  --set client.replicas=2 \
+  --set kibana.replicas=1
+
+echo "Wait for ELB ..."
+
+sleep 30
+
+ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+echo "Elasticsearch: https://$ES_URL:9200"
+echo "Kibana: https://$KIBANA_URL:5601"
+
+echo "Install Dashboard"
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml > /dev/null  2>&1
 
@@ -214,43 +241,26 @@ echo "  Username: admin"
 echo "  Password: $BASIC_PASS"
 echo "  Token: $DASHBOARD_TOKEN"
 
-helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
-
-echo "Install ElasticSearch/Kibana secured by Search Guard"
-
-helm install --name sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
-  --version 6.5.4-24.0-17.0-beta1 \
-  --set common.serviceType=LoadBalancer \
-  --set kibana.serviceType=LoadBalancer \
-  --set data.storageClass=gp2  \
-  --set master.storageClass=gp2 \
-  --set data.replicas=2  \
-  --set master.replicas=3 \
-  --set client.replicas=2 \
-  --set kibana.replicas=1
-
-echo "Wait for ELB ..."
-ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
-sleep 30
-
-echo "Elasticsearch: https://$ES_URL:9200"
-echo "Kibana: https://$KIBANA_URL:5601"
 
 echo ""
 echo "Done"
 
-exit 0
+cat << EOF
+To upgrade run a command similar to:
 
-helm upgrade sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
-  --version 6.5.4-24.0-17.0-beta1 \
-  --set common.serviceType=LoadBalancer \
-  --set kibana.serviceType=LoadBalancer \
-  --set data.storageClass=gp2  \
-  --set master.storageClass=gp2 \
-  --set data.replicas=2  \
-  --set master.replicas=3 \
-  --set client.replicas=2 \
-  --set kibana.replicas=1
+helm upgrade sg-elk sg-helm/sg-helm \\
+  --version 6.5.4-24.0-17.0-beta1 \\
+  --set common.serviceType=LoadBalancer \\
+  --set kibana.serviceType=LoadBalancer \\
+  --set data.storageClass=gp2  \\
+  --set master.storageClass=gp2 \\
+  --set data.replicas=3  \\
+  --set master.replicas=3 \\
+  --set client.replicas=2 \\
+  --set kibana.replicas=1 \\
+  --set common.sg_enterprise_modules_enabled=false \\
+  --set common.do_not_fail_on_forbidden=true
+EOF
+
+
 

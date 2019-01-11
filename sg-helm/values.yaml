@@ -23,7 +23,15 @@ common:
   # DN of the admin certificate
   # See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
   admin_dn:
-    - "CN=kirk,OU=client,O=client,L=test,C=de"
+    - "CN=sgadmin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
+
+  # Search Guard needs to securely and reliably identify internal communication between 
+  # Elasticsearch nodes (inter-node traffic). This communication happens for example if 
+  # one node receives a GET request on the HTTP layer, but needs to forward it to another 
+  # node that holds the actual data.
+  # See https://docs.search-guard.com/latest/tls-in-production#node-certificates
+  nodes_dn:
+    - "CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
   # Enable or disable Search Guard enterprise modules
   # If you run Search Guard in production you need to obtain a license

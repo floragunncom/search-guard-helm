@@ -84,10 +84,12 @@ spec:
             - -c
             - |
                 #!/usr/bin/env bash -e
-                until kubectl get secrets | grep {{ template "fullname" . }}-passwd-secrets; 
-                  echo 'Wait for {{ template "fullname" . }}-passwd-secrets'; 
-                  do sleep 10 ; 
+                until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
+                  echo 'Wait for {{ template "fullname" . }}-passwd-secret'; 
+                  sleep 10 ; 
                 done
+
+                echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
 
           resources:
             limits:
@@ -96,6 +98,7 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
+{{ include "generate-certificates-init-container" . | indent 8 }}
       containers:
       - name: kibana
         securityContext:
@@ -109,6 +112,9 @@ spec:
         image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
+        lifecycle:
+          preStop:
+{{ include "lifecycle-cleanup-certs" . | indent 12 }}
         env:
         - name: NAMESPACE
           valueFrom:
@@ -123,12 +129,12 @@ spec:
         - name: COOKIE_PWD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}-passwd-secrets
+              name: {{ template "fullname" . }}-passwd-secret
               key: kibana_cookie_pwd
         - name: SERVER_PWD
           valueFrom:
             secretKeyRef:
-              name: {{ template "fullname" . }}-passwd-secrets
+              name: {{ template "fullname" . }}-passwd-secret
               key: kibana_server_pwd
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
@@ -167,16 +173,23 @@ spec:
         - name: certificates-secrets-volume
           readOnly: true
           mountPath: "/usr/share/kibana/config/certificates-secrets"
-        - name: passwd-secrets-volume
+        - name: passwd-secret-volume
           readOnly: true
-          mountPath: "/usr/share/kibana/config/passwd-secrets"
+          mountPath: "/usr/share/kibana/config/passwd-secret"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
       volumes:
         - name: certificates-secrets-volume
           secret:
-            secretName: {{ template "fullname" . }}-certificates-secrets
-        - name: passwd-secrets-volume
+            secretName: {{ template "fullname" . }}-nodes-cert-secret
+            defaultMode: 0600
+        - name: passwd-secret-volume
           secret:
-            secretName: {{ template "fullname" . }}-passwd-secrets
+            secretName: {{ template "fullname" . }}-passwd-secret
+            defaultMode: 0600
         - configMap:
             name: {{ template "fullname" . }}-kibana-config
           name: config
+        - name: kubectl
+          emptyDir: {}

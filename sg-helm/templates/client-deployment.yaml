@@ -90,6 +90,9 @@ spec:
       {{ else }}
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
       {{ end }}
+        lifecycle:
+          preStop:
+{{ include "lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         env:
         - name: NAMESPACE
@@ -155,10 +158,14 @@ spec:
         - name: secret-volume
           readOnly: true
           mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
       volumes:
         - name: secret-volume
           secret:
-            secretName: {{ template "fullname" . }}-certificates-secrets
+            secretName: {{ template "fullname" . }}-nodes-cert-secret
+            defaultMode: 0600
         - configMap:
             name: {{ template "fullname" . }}-config
           name: config
@@ -168,3 +175,5 @@ spec:
         - configMap:
             name: {{ template "fullname" . }}-searchguard-config
           name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
