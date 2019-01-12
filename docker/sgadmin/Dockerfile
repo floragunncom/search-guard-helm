@@ -34,14 +34,5 @@ RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/1.6/s
 RUN unzip search-guard-tlstool-1.6 -d tlstool/
 RUN rm -rf search-guard-tlstool-1.6.zip
 
-RUN echo '/root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv' > /root/sgadmin_update.sh
-RUN echo '/root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv "$@"' > /root/sgadmin_generic.sh
-RUN chmod +x /root/sgadmin_update.sh /root/sgadmin_generic.sh /root/sgadmin/tools/sgadmin.sh
-
-RUN echo 'echo "To use sgadmin run: /root/sgadmin/tools/sgadmin.sh <OPTIONS>"' >> /root/.bashrc
-RUN echo 'echo "On K8s/Helm run: /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv"' >> /root/.bashrc
-RUN echo 'echo "  or run /root/sgadmin_update.sh"' >> /root/.bashrc
-RUN echo 'echo "  or run /root/sgadmin_generic.sh <OPTIONS>"' >> /root/.bashrc
-
 #ENTRYPOINT [ "/root/sgadmin/tools/sgadmin.sh" ]
 CMD tail -f /dev/null

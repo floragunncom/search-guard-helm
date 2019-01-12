@@ -91,6 +91,8 @@ spec:
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
       {{ end }}
         lifecycle:
+          postStart:
+{{ include "remove-demo-certs" . | indent 12 }}
           preStop:
 {{ include "lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}

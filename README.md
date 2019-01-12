@@ -2,7 +2,7 @@
 
 ## Status
 
-This is repo is considered beta status. See also the WARNING below regarding Internet-facing or production deployments.
+This is repo is considered beta status.
 
 ## Support
 
@@ -91,7 +91,7 @@ helm init --wait --service-account tiller --upgrade
 ```
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm
 helm search "search guard"
-helm install --name sg-elk sg-helm/sg-helm --version 6.5.4-24.0-17.0-beta1
+helm install --name sg-elk sg-helm/sg-helm --version 6.5.4-24.0-17.0-beta2
 ```
 Please refer to the [Helm Documentation](https://github.com/helm/helm/blob/master/docs/helm/helm_install.md) on how to override the chart default
 settings. See `sg-helm/values.yaml` for the documented set of settings you can override.
@@ -115,32 +115,29 @@ echo "Visit https://127.0.0.1:5601 and login with admin/admin to use Kibana"
 kubectl port-forward --namespace default $POD_NAME 5601:5601
 ```
 
+## Random passwords and certificates
+Passwords for the admin users, the Kibana user, the Kibana server and the Kibana cookie are generated randomly on initial deployment.
+They are stored in a secret named `passwd-secret`. All TLS certificates including a Root CA are also generated randomly. You can find
+the root ca in a secret named `root-ca-secret`, the admin certificate in `admin-cert-secret` and the node certificates in `nodes-cert-secret`.
+Whenever a node pod restarts we create a new certificate and remove the old one from `nodes-cert-secret`.
+
+
 ## Modify the configuration
 
 * The nodes are initially automatically initialized and configured
 * To change the configuration 
-  * Edit `sg-helm/values.yaml` and run `helm upgrade`. The pods will be reconfigured or restarted if necceessary
-  * or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necceessary
-* Alternatively you can exec into the sgadmin pod and run low-level sgadmin commands:
+  * Edit `sg-helm/values.yaml` and run `helm upgrade`. The pods will be reconfigured or restarted if necessary
+  * or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necessary
+* Alternatively you can exec into the sgadmin pod and run low-level sgadmin commands (experts only):
+
+  WARNING(!): You currently can not update sg_internal_users.yml because of the random passwords. If you do this anyhow you may lock you out of the cluster.
 
   ```
-  $ kubectl exec -it exiled-moose-sg-elasticsearch-sgadmin-5969d44949-q6dt2 bash
-  To use sgadmin run: /root/sgadmin/tools/sgadmin.sh <OPTIONS>
-  On K8s/Helm run: /root/sgadmin/tools/sgadmin.sh -h exiled-moose-sg-elasticsearch-discovery.default.svc -cd /root/sgconfig -icl -key /root/sgcerts/admin_cert_key.pem -cert /root/sgcerts/admin_cert.pem -cacert /root/sgcerts/ca_cert.pem -nhnv
-    or run /root/sgadmin_update.sh
-    or run /root/sgadmin_generic.sh <OPTIONS>
+  $ kubectl exec -it sg-elk-sg-helm-sgadmin-555b5f7df-9sqrm bash
+  [root@sg-elk-sg-helm-sgadmin-555b5f7df-9sqrm ~]# /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -si -icl -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
   ```
 
-  In that case, refer to the documentation of `update_sgconfig_on_change` in `sg-helm/values.yaml` so that your changes will not be overriden accidentally.
-
-## WARNING: Internet-facing or production deployments
-
-If this chart is deployed internet-facing or in a production environment make sure that you remove every file in the `secrets/` folder. Normally the files in this folder are not checked in into source control. You keep them local or in an [other safe store](https://kubernetes.io/docs/concepts/configuration/secret/).
-
-Create you own certificates and keys using the [Offline TLS Tool](https://docs.search-guard.com/latest/offline-tls-tool#tls-tool) and also change
-the Kibana cookie and the Kibana server password.
-
-IMPORTANT: Set `allow_democertificates` to `false` in `sg-helm/values.yaml`
+  In that case, refer to the documentation of `update_sgconfig_on_change` in `sg-helm/values.yaml` so that your changes will not be overridden accidentally.
 
 ## Credits
 

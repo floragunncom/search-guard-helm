@@ -21,9 +21,20 @@ exec:
     - sh
     - -c
     - |
-        #!/usr/bin/env bash -e
-        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json
-        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json
+        #!/usr/bin/env bash +e
+        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+{{- end -}}
+
+{{- define "remove-demo-certs" -}}
+exec:
+  command:
+    - sh
+    - -c
+    - |
+        #!/usr/bin/env bash +e
+        shopt -s dotglob
+        rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
 
 
@@ -68,6 +79,9 @@ TODO: replace this with a daemon set
 
         echo "OK, {{ template "fullname" . }}-root-ca-secret exists now"
 
+        KIBANA_ELB="$(kubectl get svc {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+        ES_ELB="$(kubectl get svc {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+
         cat >"{{ template "fullname" . }}-$NODE_NAME-node-cert.yml" <<EOL
         ca:
           root:
@@ -90,6 +104,8 @@ TODO: replace this with a daemon set
               - $NODE_NAME
               - {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
               - {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
+              - $KIBANA_ELB
+              - $ES_ELB
             ip: $POD_IP
         EOL
 

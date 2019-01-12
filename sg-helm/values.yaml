@@ -16,10 +16,6 @@ common:
   # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
   xpack_basic: true
 
-  # Allow Search Guard demo certificates.
-  # Set this to 'false' in an internet-facing or production environment  
-  allow_democertificates: true
-
   # DN of the admin certificate
   # See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
   admin_dn:
@@ -70,14 +66,14 @@ common:
   # Configure additional users (maps to sg_internal_users.yml)
   users:
     user1:
-      hash: $2a$12$ssCCgh2NUg07JGN0rjGbM.BdssqVR/YFJcgHp0UGns5JDymv..TMI
+      hash: $2a$12$ssCCgh2NUg07JGN0rjGbM.BdssqVR/YFJcgHp0UGns5JDymv..TMU
       roles:
         - beatsreader
 
   # Configure additional rolemappings (maps to sg_roles_mapping.yml)
   rolesmapping:
     sg_read_beats:
-      users:
+      backendroles:
         - beatsreader
 
   # Configure additional role (maps to sg_roles.yml)

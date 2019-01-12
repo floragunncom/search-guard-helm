@@ -94,8 +94,8 @@ spec:
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
-          preStop:
-{{ include "lifecycle-cleanup-certs" . | indent 12 }}
+          postStart:
+{{ include "remove-demo-certs" . | indent 12 }}
         env:
         - name: NAMESPACE
           valueFrom:

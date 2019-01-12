@@ -53,7 +53,7 @@ data:
 {{ toYaml .Values.common.admin_dn | indent 10 }}
       nodes_dn:
 {{ toYaml .Values.common.nodes_dn | indent 8 }}  
-      allow_unsafe_democertificates: {{ .Values.common.allow_democertificates }}
+      allow_unsafe_democertificates: false
       allow_default_init_sgindex: false
       enable_snapshot_restore_privilege: true
       check_snapshot_restore_write_privileges: true
