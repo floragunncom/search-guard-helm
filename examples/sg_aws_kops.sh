@@ -156,55 +156,12 @@ kubectl create serviceaccount --namespace kube-system tiller > /dev/null 2>&1
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller > /dev/null 2>&1
 helm init --wait --service-account tiller --upgrade > /dev/null 2>&1
 
-cat >"/tmp/$CLUSTERNAME-rbac.tmp.yaml" <<EOL
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: admin-user
-  namespace: kube-system
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin-user
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: admin-user
-  namespace: kube-system
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: sgadmin
-subjects:
-  - kind: ServiceAccount
-    name: sg-elk-sg-helm
-    namespace: default
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-EOL
-
-#kubectl apply -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml" > /dev/null  2>&1
-#rm -f "/tmp/$CLUSTERNAME-rbac.tmp.yaml"
-
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
 
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-#helm install --name sg-elk sg-helm/sg-helm \
-helm install --name sg-elk /Users/salyh/sgdev/search-guard-helm/sg-helm \
-  --version 6.5.4-24.0-17.0-beta1 \
+helm install --name sg-elk sg-helm/sg-helm \
+  --version 6.5.4-24.0-17.0-beta2 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
   --set data.storageClass=gp2  \
@@ -249,18 +206,17 @@ cat << EOF
 To upgrade run a command similar to:
 
 helm upgrade sg-elk sg-helm/sg-helm \\
-  --version 6.5.4-24.0-17.0-beta1 \\
+  --version 6.5.4-24.0-17.0-beta2 \\
   --set common.serviceType=LoadBalancer \\
   --set kibana.serviceType=LoadBalancer \\
   --set data.storageClass=gp2  \\
   --set master.storageClass=gp2 \\
-  --set data.replicas=3  \\
+  --set data.replicas=2  \\
   --set master.replicas=3 \\
   --set client.replicas=2 \\
-  --set kibana.replicas=1 \\
-  --set common.sg_enterprise_modules_enabled=false \\
-  --set common.do_not_fail_on_forbidden=true
+  --set kibana.replicas=1 
 EOF
 
-
-
+#\\
+#  --set common.sg_enterprise_modules_enabled=false \\
+#  --set common.do_not_fail_on_forbidden=true
