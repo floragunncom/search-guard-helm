@@ -91,6 +91,18 @@ TODO: replace this with a daemon set
         KIBANA_ELB="$(kubectl get svc {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
         ES_ELB="$(kubectl get svc {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
 
+        if [ -z "$KIBANA_ELB" ]; then
+              KIBANA_ELB=""
+        else
+              KIBANA_ELB="- $KIBANA_ELB"
+        fi
+
+        if [ -z "$ES_ELB" ]; then
+              ES_ELB=""
+        else
+              ES_ELB="- $ES_ELB"
+        fi
+
         cat >"{{ template "fullname" . }}-$NODE_NAME-node-cert.yml" <<EOL
         ca:
           root:
@@ -113,8 +125,8 @@ TODO: replace this with a daemon set
               - $NODE_NAME
               - {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
               - {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
-              - $KIBANA_ELB
-              - $ES_ELB
+              $KIBANA_ELB
+              $ES_ELB
             ip: $POD_IP
         EOL
 
