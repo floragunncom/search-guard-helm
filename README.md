@@ -4,6 +4,8 @@
 
 This is repo is considered beta status.
 
+For Elasticsearch/Search Guard 5 please refer to: https://github.com/floragunncom/search-guard-helm/tree/5.x
+
 ## Support
 
 Please report issues via GitHub issue tracker or get in [contact with us](https://search-guard.com/contacts/)
