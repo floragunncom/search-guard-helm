@@ -52,6 +52,8 @@ spec:
             - |
                 #!/usr/bin/env bash -e
 
+                export JAVA_HOME=/usr
+
                 kubectl get secrets | grep {{ template "fullname" . }}-passwd-secret
                 
                 if [ "$?" == "1" ]; then

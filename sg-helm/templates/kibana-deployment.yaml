@@ -106,11 +106,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
-      {{ else }}
-        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
-      {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
           postStart:
@@ -126,14 +122,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: DISCOVERY_SERVICE
-          value: {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
-        - name: COOKIE_PWD
+        - name: SERVER_SSL_CERTIFICATE
+          value: /usr/share/kibana/config/certificates-secrets/$(NODE_NAME).pem
+        - name: SERVER_SSL_KEY
+          value: /usr/share/kibana/config/certificates-secrets/$(NODE_NAME).key
+        - name: ELASTICSEARCH_URL
+          value: https://{{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200
+        - name: SEARCHGUARD_COOKIE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "fullname" . }}-passwd-secret
               key: kibana_cookie_pwd
-        - name: SERVER_PWD
+        - name: ELASTICSEARCH_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ template "fullname" . }}-passwd-secret

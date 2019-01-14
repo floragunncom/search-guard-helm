@@ -85,11 +85,7 @@ spec:
             add:
               - IPC_LOCK
               - SYS_RESOURCE
-      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-      {{ else }}
-        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
-      {{ end }}
         lifecycle:
           postStart:
 {{ include "remove-demo-certs" . | indent 12 }}
@@ -140,13 +136,9 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 10
         readinessProbe:
-          httpGet:
-            path: /_searchguard/health
-            port: http
-            scheme: HTTPS
+          tcpSocket:
+            port: transport
           initialDelaySeconds: 20
-          timeoutSeconds: 10
-          failureThreshold: 30
         resources:
 {{ toYaml .Values.client.resources | indent 10 }}
         volumeMounts:
@@ -155,7 +147,7 @@ spec:
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-5/sgconfig/
           name: searchguard-config
         - name: secret-volume
           readOnly: true

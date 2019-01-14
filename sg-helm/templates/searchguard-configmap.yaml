@@ -33,7 +33,6 @@ data:
   sg_roles.yml: |-
     # Allows everything, but no changes to searchguard configuration index
     sg_all_access:
-      readonly: true
       cluster:
         - UNLIMITED
       indices:
@@ -41,63 +40,31 @@ data:
           '*':
             - UNLIMITED
       tenants:
-        admin_tenant: RW
+        adm_tenant: RW
+        test_tenant_ro: RO
         
     # For users which use kibana, access to indices must be granted separately
     sg_kibana_user:
-      readonly: true
       cluster:
-        - INDICES_MONITOR
-        - CLUSTER_COMPOSITE_OPS
+        - CLUSTER_COMPOSITE_OPS_RO
+        - indices:data/read/scroll*
       indices:
-        '?kibana':
-          '*':
-            - MANAGE
-            - INDEX
-            - READ
-            - DELETE
-        '?kibana-6':
-          '*':
-            - MANAGE
-            - INDEX
-            - READ
-            - DELETE
-        '?kibana_*':
-          '*':
-            - MANAGE
-            - INDEX
-            - READ
-            - DELETE
-        '?tasks':
-          '*':
-            - INDICES_ALL
-        '?management-beats':
-          '*':
-            - INDICES_ALL        
         '*':
           '*':
-            - indices:data/read/field_caps*
-            - indices:data/read/xpack/rollup*
-            - indices:admin/mappings/get*
-            - indices:admin/get
+            - READ
+        '?kibana':
+          '*':
+            - INDICES_ALL
 
     # For the kibana server
     sg_kibana_server:
-      readonly: true
       cluster:
           - CLUSTER_MONITOR
           - CLUSTER_COMPOSITE_OPS
           - cluster:admin/xpack/monitoring*
           - indices:admin/template*
-          - indices:data/read/scroll*
       indices:
         '?kibana':
-          '*':
-            - INDICES_ALL
-        '?kibana-6':
-          '*':
-            - INDICES_ALL
-        '?kibana_*':
           '*':
             - INDICES_ALL
         '?reporting*':
@@ -106,23 +73,14 @@ data:
         '?monitoring*':
           '*':
             - INDICES_ALL
-        '?tasks':
-          '*':
-            - INDICES_ALL
-        '?management-beats*':
-          '*':
-            - INDICES_ALL
-        '*':
-          '*':
-            - "indices:admin/aliases*"
 
     # For logstash and beats
-    sg_logstash:  
+    sg_logstash:
       cluster:
-        - CLUSTER_MONITOR
-        - CLUSTER_COMPOSITE_OPS
         - indices:admin/template/get
         - indices:admin/template/put
+        - CLUSTER_MONITOR
+        - CLUSTER_COMPOSITE_OPS
       indices:
         'logstash-*':
           '*':
@@ -204,139 +162,93 @@ data:
         
   sg_action_groups.yml: |-
     UNLIMITED:
-      readonly: true
-      permissions:
-        - "*"
+      - "*"
 
     ###### INDEX LEVEL ######
 
     INDICES_ALL:
-      readonly: true
-      permissions:
-        - "indices:*"
+      - "indices:*"
 
     # for backward compatibility
     ALL:
-      readonly: true
-      permissions:
-        - INDICES_ALL
+      - INDICES_ALL
 
     MANAGE:
-      readonly: true
-      permissions:
-        - "indices:monitor/*"
-        - "indices:admin/*"
+      - "indices:monitor/*"
+      - "indices:admin/*"
 
     CREATE_INDEX:
-      readonly: true
-      permissions:
-        - "indices:admin/create"
-        - "indices:admin/mapping/put"
+      - "indices:admin/create"
+      - "indices:admin/mapping/put"
 
     MANAGE_ALIASES:
-      readonly: true
-      permissions:
-        - "indices:admin/aliases*"
+      - "indices:admin/aliases*"
 
     # for backward compatibility
     MONITOR:
-      readonly: true
-      permissions:
-        - INDICES_MONITOR
+      - INDICES_MONITOR
 
     INDICES_MONITOR:
-      readonly: true
-      permissions:
-        - "indices:monitor/*"
+      - "indices:monitor/*"
 
     DATA_ACCESS:
-      readonly: true
-      permissions:
-        - "indices:data/*"
-        - CRUD
+      - "indices:data/*"
+      - CRUD
 
     WRITE:
-      readonly: true
-      permissions:
-        - "indices:data/write*"
-        - "indices:admin/mapping/put"
+      - "indices:data/write*"
+      - "indices:admin/mapping/put"
 
     READ:
-      readonly: true
-      permissions:
-        - "indices:data/read*"
-        - "indices:admin/mappings/fields/get*"
+      - "indices:data/read*"
+      - "indices:admin/mappings/fields/get*"
 
     DELETE:
-      readonly: true
-      permissions:
-        - "indices:data/write/delete*"
+      - "indices:data/write/delete*"
 
     CRUD:
-      readonly: true
-      permissions:
-        - READ
-        - WRITE
+      - READ
+      - WRITE
 
     SEARCH:
-      readonly: true
-      permissions:
-        - "indices:data/read/search*"
-        - "indices:data/read/msearch*"
-        - SUGGEST
+      - "indices:data/read/search*"
+      - "indices:data/read/msearch*"
+      - SUGGEST
 
     SUGGEST:
-      readonly: true
-      permissions:
-        - "indices:data/read/suggest*"
+      - "indices:data/read/suggest*"
 
     INDEX:
-      readonly: true
-      permissions:
-        - "indices:data/write/index*"
-        - "indices:data/write/update*"
-        - "indices:admin/mapping/put"
-        - "indices:data/write/bulk*"
+      - "indices:data/write/index*"
+      - "indices:data/write/update*"
+      - "indices:admin/mapping/put"
+      - "indices:data/write/bulk*"
 
     GET:
-      readonly: true
-      permissions:
-        - "indices:data/read/get*"
-        - "indices:data/read/mget*"
+      - "indices:data/read/get*"
+      - "indices:data/read/mget*"
 
     ###### CLUSTER LEVEL ######
 
     CLUSTER_ALL:
-      readonly: true
-      permissions:
-        - "cluster:*"
+      - "cluster:*"
 
     CLUSTER_MONITOR:
-      readonly: true
-      permissions:
-        - "cluster:monitor/*"
+      - "cluster:monitor/*"
 
     CLUSTER_COMPOSITE_OPS_RO:
-      readonly: true
-      permissions:
-        - "indices:data/read/mget"
-        - "indices:data/read/msearch"
-        - "indices:data/read/mtv"
-        - "indices:data/read/coordinate-msearch*"
-        - "indices:admin/aliases/exists*"
-        - "indices:admin/aliases/get*"
-        - "indices:data/read/scroll"
+      - "indices:data/read/mget"
+      - "indices:data/read/msearch"
+      - "indices:data/read/mtv"
+      - "indices:data/read/coordinate-msearch*"
+      - "indices:admin/aliases/exists*"
+      - "indices:admin/aliases/get*"
 
     CLUSTER_COMPOSITE_OPS:
-      readonly: true
-      permissions:
-        - "indices:data/write/bulk"
-        - "indices:admin/aliases*"
-        - "indices:data/write/reindex"
-        - CLUSTER_COMPOSITE_OPS_RO
+      - "indices:data/write/bulk"
+      - "indices:admin/aliases*"
+      - CLUSTER_COMPOSITE_OPS_RO
       
     MANAGE_SNAPSHOTS:
-      readonly: true
-      permissions:
-        - "cluster:admin/snapshot/*"
-        - "cluster:admin/repository/*"
+      - "cluster:admin/snapshot/*"
+      - "cluster:admin/repository/*"

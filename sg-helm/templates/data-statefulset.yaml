@@ -82,11 +82,7 @@ spec:
 {{ include "init-containers" . | indent 6 }}
       containers:
       - name: elasticsearch
-      {{ if .Values.common.xpack_basic }}
         image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-      {{ else }}
-        image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
-      {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
           postStart:
@@ -135,13 +131,9 @@ spec:
           name: http
           protocol: TCP
         readinessProbe:
-          httpGet:
-            path: /_searchguard/health
-            port: http
-            scheme: HTTPS
+          tcpSocket:
+            port: transport
           initialDelaySeconds: 20
-          periodSeconds: 10
-          failureThreshold: 30
         livenessProbe:
           tcpSocket:
             port: transport
@@ -155,7 +147,7 @@ spec:
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-5/sgconfig/
           name: searchguard-config
         - name: secret-volume
           readOnly: true

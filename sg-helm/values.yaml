@@ -4,17 +4,13 @@ common:
   cluster_name: "searchguard"
 
   # Elasticsearch and Kibana version
-  elkversion: "6.5.4"
+  elkversion: "5.6.14"
 
   # Search Guard plugin version
-  sgversion: "24.0"
+  sgversion: "19.2"
 
   # Search Guard Kibana plugin version
-  sgkibanaversion: "17"
-
-  # If true then install also all free and basic x-pack features
-  # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
-  xpack_basic: true
+  sgkibanaversion: "7"
 
   # DN of the admin certificate
   # See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
@@ -192,11 +188,7 @@ kibana:
   #serviceType: LoadBalancer
   # Additional config which will be appended to kibana.yml
   config:
-    elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
-    # The authentication type, on of: 'basicauth', 'jwt', 'openid', 'saml', 'proxy', 'kerberos'
-    searchguard.auth.type: basicauth
-    # Disallow login for service users
-    searchguard.basicauth.forbidden_usernames: ["kibanaserver"]
+    elasticsearch.requestHeadersWhitelist: ["sgtenant","sg_tenant","authorization"]
   labels: {}
   annotations: {}
   resources:

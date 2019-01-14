@@ -10,26 +10,23 @@ metadata:
 data:
   kibana.yml: |-
 
-{{ if .Values.common.xpack_basic }}
     xpack.security.enabled: false
-    xpack.spaces.enabled: false
     xpack.ml.enabled: false
-    xpack.apm.enabled: false
     xpack.graph.enabled: false
-{{ end }}
+
 
     server.name: kibana
     server.host: "0"
 
-    elasticsearch.url: "https://${DISCOVERY_SERVICE}:9200"
+    #elasticsearch.url: VIAENV
 
     elasticsearch.username: "kibanaserver"
-    elasticsearch.password: "${SERVER_PWD}"
+    #elasticsearch.password: VIAENV
 
     # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
     server.ssl.enabled: true
-    server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.pem
-    server.ssl.key: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.key
+    #server.ssl.certificate: VIAENV
+    #server.ssl.key: VIAENV
 
     # If you need to provide a CA certificate for your Elasticsearch instance, put
     # the path of the pem file here.
@@ -52,7 +49,7 @@ data:
     # Allow cookies only via HTTPS. Cookies transmitted via HTTP will be discarded silently, i.e. a login is not possible.
     searchguard.cookie.secure: true
     # Password used to encrypt the session cookie. Must be at least 32 characters.
-    searchguard.cookie.password: "${COOKIE_PWD}"
+    #searchguard.cookie.password: VIAENV
 
     #### Additional config ####
 {{- if .Values.kibana.config }}

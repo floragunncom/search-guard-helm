@@ -34,7 +34,16 @@ exec:
     - |
         #!/usr/bin/env bash +e
         shopt -s dotglob
-        rm -f /usr/share/elasticsearch/config/*.pem
+        rm -f /usr/share/elasticsearch/config/*.pem || true
+
+        {{ if .Values.common.sg_enterprise_modules_enabled }}
+        echo "Enterprise modules enabled"
+        {{ else }}
+        echo "Enterprise modules enabled"
+        rm -f /usr/share/elasticsearch/plugins/search-guard-5/dlic* || true
+        {{ end }}
+
+
 {{- end -}}
 
 

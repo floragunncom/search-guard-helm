@@ -10,18 +10,15 @@ metadata:
 data:
   elasticsearch.yml: |-
 
-{{ if .Values.common.xpack_basic }}
-    # When xpack is installed we need to disable xpack security
     xpack.security.enabled: false
     xpack.ml.enabled: false
     xpack.watcher.enabled: false
-    xpack.monitoring.collection.enabled: true
-{{ end }}
+
 
     #network.host: "0.0.0.0"
     network.host: ${NODE_NAME}
     #TODO support memory_lock
-    bootstrap.memory_lock: false
+    #bootstrap.memory_lock: false
     cluster.name: {{ .Values.common.cluster_name }}
 
     node:
@@ -45,16 +42,11 @@ data:
 
     # Search Guard
     searchguard:
-      enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
-      restapi:
-        roles_enabled: ["sg_all_access"]
       authcz:
         admin_dn:
 {{ toYaml .Values.common.admin_dn | indent 10 }}
       nodes_dn:
 {{ toYaml .Values.common.nodes_dn | indent 8 }}  
-      allow_unsafe_democertificates: false
-      allow_default_init_sgindex: false
       enable_snapshot_restore_privilege: true
       check_snapshot_restore_write_privileges: true
       audit:
