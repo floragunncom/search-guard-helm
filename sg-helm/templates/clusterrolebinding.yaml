@@ -47,7 +47,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ template "fullname" .}}
-    namespace: default
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: cluster-admin
