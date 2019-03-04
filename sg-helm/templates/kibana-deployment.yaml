@@ -51,7 +51,7 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-            - topologyKey: "kubernetes.io/hostname"
+              topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
                   component: {{ template "fullname" . }}
@@ -85,8 +85,8 @@ spec:
             - |
                 #!/usr/bin/env bash -e
                 until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
-                  echo 'Wait for {{ template "fullname" . }}-passwd-secret'; 
-                  sleep 10 ; 
+                  echo 'Wait for {{ template "fullname" . }}-passwd-secret';
+                  sleep 10 ;
                 done
 
                 echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
