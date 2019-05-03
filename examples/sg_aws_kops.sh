@@ -86,7 +86,7 @@ REGION="$(aws configure get region)"
 AWS_KEY="$(aws configure list | grep access_key)"
 
 if [ "$create" == 1 ]; then
-    echo "WARNUNG: This script will create AWS resources like EC2 instances, S3 buckets and ebs volumes for which you will be charged"
+    echo "WARNING: This script will create AWS resources like EC2 instances, S3 buckets and ebs volumes for which you will be charged"
     echo "         Both Elasticsearch and Kibana will be exposed to the internet"
     echo "         Make sure aws-cli is configured to use the correct account, access_key ($AWS_KEY) and default region ($REGION)"
 fi
@@ -160,8 +160,8 @@ helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/nu
 
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-helm install --name sg-elk sg-helm/sg-helm \
-  --version 6.5.4-24.0-17.0-beta3 \
+helm install --name sg-elk sg-helm \
+  --version sgh-beta3 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
   --set data.storageClass=gp2  \
@@ -169,7 +169,17 @@ helm install --name sg-elk sg-helm/sg-helm \
   --set data.replicas=2  \
   --set master.replicas=3 \
   --set client.replicas=2 \
-  --set kibana.replicas=1
+  --set kibana.replicas=1 \
+  --set common.do_not_fail_on_forbidden=true
+  
+check_ret "Helm install"
+
+  # \
+  #--set common.elkversion=6.6.2 \
+  #--set common.sgversion=24.2 \
+  #--set common.sgkibanaversion=18.1 
+  #\
+  #--set common.config.searchguard.restapi.password_validation_regex='(?=.*[A-Z])(?=.*[^a-zA-Z\d])(?=.*[0-9])(?=.*[a-z]).{8\,}'
 
 echo "Wait for ELB ..."
 

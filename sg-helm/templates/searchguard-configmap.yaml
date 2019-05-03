@@ -179,7 +179,7 @@ data:
       readonly: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: _RPLC_ADMIN_HASH
+      hash: ${envbc.SG_ADMIN_PWD}
       roles:
         - admin
  
@@ -187,13 +187,13 @@ data:
       readonly: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: _RPLC_KIBANA_SERVER_HASH
+      hash: ${envbc.SG_KIBANA_SERVER_PWD}
 
     kibanaro: 
       readonly: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: _RPLC_KIBANA_RO_HASH
+      hash: ${envbc.SG_KIBANA_RO_PWD}
       roles:
         - kibanauser
         - readall

@@ -79,6 +79,13 @@ TODO: replace this with a daemon set
 
         echo "OK, {{ template "fullname" . }}-root-ca-secret exists now"
 
+        until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
+          echo 'Wait for {{ template "fullname" . }}-passwd-secret'; 
+          sleep 10 ; 
+        done
+
+        echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
+
         KIBANA_ELB="$(kubectl get svc {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
         ES_ELB="$(kubectl get svc {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
 

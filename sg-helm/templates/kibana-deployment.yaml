@@ -117,6 +117,9 @@ spec:
 {{ include "remove-demo-certs" . | indent 12 }}
           preStop:
 {{ include "lifecycle-cleanup-certs" . | indent 12 }}
+        envFrom:
+        - secretRef:
+            name: {{ template "fullname" . }}-passwd-secret
         env:
         - name: NAMESPACE
           valueFrom:
@@ -128,16 +131,6 @@ spec:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
           value: {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
-        - name: COOKIE_PWD
-          valueFrom:
-            secretKeyRef:
-              name: {{ template "fullname" . }}-passwd-secret
-              key: kibana_cookie_pwd
-        - name: SERVER_PWD
-          valueFrom:
-            secretKeyRef:
-              name: {{ template "fullname" . }}-passwd-secret
-              key: kibana_server_pwd
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
@@ -175,9 +168,9 @@ spec:
         - name: certificates-secrets-volume
           readOnly: true
           mountPath: "/usr/share/kibana/config/certificates-secrets"
-        - name: passwd-secret-volume
-          readOnly: true
-          mountPath: "/usr/share/kibana/config/passwd-secret"
+        #- name: passwd-secret-volume
+        #  readOnly: true
+        #  mountPath: "/usr/share/kibana/config/passwd-secret"
         - name: kubectl
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
@@ -186,10 +179,10 @@ spec:
           secret:
             secretName: {{ template "fullname" . }}-nodes-cert-secret
             defaultMode: 0600
-        - name: passwd-secret-volume
-          secret:
-            secretName: {{ template "fullname" . }}-passwd-secret
-            defaultMode: 0600
+        #- name: passwd-secret-volume
+        #  secret:
+        #    secretName: {{ template "fullname" . }}-passwd-secret
+        #    defaultMode: 0600
         - configMap:
             name: {{ template "fullname" . }}-kibana-config
           name: config

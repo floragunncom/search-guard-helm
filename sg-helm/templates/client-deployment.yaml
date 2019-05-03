@@ -96,6 +96,9 @@ spec:
           preStop:
 {{ include "lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ template "fullname" . }}-passwd-secret
         env:
         - name: NAMESPACE
           valueFrom:

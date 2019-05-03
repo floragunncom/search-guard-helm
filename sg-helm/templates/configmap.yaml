@@ -24,52 +24,39 @@ data:
     bootstrap.memory_lock: false
     cluster.name: {{ .Values.common.cluster_name }}
 
-    node:
-      master: ${NODE_MASTER:true}
-      data: ${NODE_DATA:true}
-      name: ${NODE_NAME}
-      ingest: ${NODE_INGEST:true}
+    node.master: ${NODE_MASTER:true}
+    node.data: ${NODE_DATA:true}
+    node.name: ${NODE_NAME}
+    node.ingest: ${NODE_INGEST:true}
 
-    path:
-      data: /storage/data
-      #logs: /storage/logs
-    
+    path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
 
-    discovery:
-      zen:
-        ping.unicast.hosts: ${DISCOVERY_SERVICE:}
-        #(master/2)+1
-        minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
+    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
+    #(master/2)+1
+    discovery.zen.minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
 
     # Search Guard
-    searchguard:
-      enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
-      restapi:
-        roles_enabled: ["sg_all_access"]
-      authcz:
-        admin_dn:
-{{ toYaml .Values.common.admin_dn | indent 10 }}
-      nodes_dn:
-{{ toYaml .Values.common.nodes_dn | indent 8 }}  
-      allow_unsafe_democertificates: false
-      allow_default_init_sgindex: false
-      enable_snapshot_restore_privilege: true
-      check_snapshot_restore_write_privileges: true
-      audit:
-        type: internal_elasticsearch
-      ssl:
-        http:
-          enabled: true
-          pemkey_filepath: certificates-secrets/${NODE_NAME}.key
-          pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
-          pemtrustedcas_filepath: certificates-secrets/root-ca.pem
-        transport:
-          #enforce_hostname_verification: false
-          pemkey_filepath: certificates-secrets/${NODE_NAME}.key
-          pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
-          pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+    searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
+    searchguard.restapi.roles_enabled: ["sg_all_access"]
+    searchguard.authcz.admin_dn:
+{{ toYaml .Values.common.admin_dn | indent 6 }}
+    searchguard.nodes_dn:
+{{ toYaml .Values.common.nodes_dn | indent 6 }}  
+    searchguard.allow_unsafe_democertificates: false
+    searchguard.allow_default_init_sgindex: false
+    searchguard.enable_snapshot_restore_privilege: true
+    searchguard.check_snapshot_restore_write_privileges: true
+    searchguard.audit.type: internal_elasticsearch
+    searchguard.ssl.http.enabled: true
+    searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+    searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+    searchguard.ssl.http.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+    searchguard.ssl.transport.enforce_hostname_verification: false
+    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+    searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+    searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
 
 {{- if .Values.common.config }}
 {{ toYaml .Values.common.config | indent 4 }}

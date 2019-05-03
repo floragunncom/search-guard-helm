@@ -127,10 +127,10 @@ spec:
                 #kubectl apply -f "{{ template "fullname" . }}-admin-cert-sec.yaml"
                 echo "Will generate {{ template "fullname" . }}-passwd-secret"
 
-                export kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-                export admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-                export kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-                export kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+                kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
 
                 cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
                 apiVersion: v1
@@ -147,21 +147,28 @@ spec:
                   namespace: {{ .Release.Namespace }}
                 type: Opaque
                 data:
-                  kibana_cookie_pwd: $(echo -n $kibana_cookie_pwd | base64 -w0)
-                  kibana_server_pwd: $(echo -n $kibana_server_pwd | base64 -w0)
-                  admin_pwd: $(echo -n $admin_pwd | base64 -w0)
-                  kibana_ro_pwd: $(echo -n $kibana_ro_pwd | base64 -w0)
+                  KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                  SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                  SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                  SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
                 EOL
 
                 kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
-                cp /root/sgconfig/sg_* /tmp/
 
-                sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
-                sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
-                sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
+                unset kibana_cookie_pwd
+                unset admin_pwd
+                unset kibana_ro_pwd
+                unset kibana_server_pwd
+
+
+                #cp /root/sgconfig/sg_* /tmp/
+
+                #sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
+                #sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
+                #sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
 
                 echo "Executing sgadmin first time ..."
-                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /tmp/ -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
+                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
                 RET=$?
                 echo "Result $RET"
                 exit $RET
@@ -171,18 +178,18 @@ spec:
                 {{ if .Values.common.update_sgconfig_on_change }}
                 echo "{{ template "fullname" . }}-passwd-secret exists"
 
-                export admin_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.admin_pwd}" | base64 -d)"
-                export kibana_ro_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.kibana_ro_pwd}" | base64 -d)"
-                export kibana_server_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.kibana_server_pwd}" | base64 -d)"
+                #export admin_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.admin_pwd}" | base64 -d)"
+                #export kibana_ro_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.kibana_ro_pwd}" | base64 -d)"
+                #export kibana_server_pwd="$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.kibana_server_pwd}" | base64 -d)"
                 
-                cp /root/sgconfig/sg_* /tmp/
+                #cp /root/sgconfig/sg_* /tmp/
 
-                sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
-                sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
-                sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
+                #sed -i -e "s#_RPLC_ADMIN_HASH#$(/root/sgadmin/tools/hash.sh -env admin_pwd)#g" /tmp/sg_internal_users.yml
+                #sed -i -e "s#_RPLC_KIBANA_RO_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_ro_pwd)#g" /tmp/sg_internal_users.yml
+                #sed -i -e "s#_RPLC_KIBANA_SERVER_HASH#$(/root/sgadmin/tools/hash.sh -env kibana_server_pwd)#g" /tmp/sg_internal_users.yml
 
                 echo "Executing sgadmin to update the configs ..."
-                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /tmp/ -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
+                /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
                 RET=$?
                 echo "Result $RET"
                 exit $RET

@@ -4,13 +4,16 @@ common:
   cluster_name: "searchguard"
 
   # Elasticsearch and Kibana version
-  elkversion: "6.5.4"
+  # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
+  elkversion: "6.7.2"
 
   # Search Guard plugin version
-  sgversion: "24.0"
+  # Helm charts since beta3 needs minimum 25.0 release to work properly
+  sgversion: "25.0"
 
   # Search Guard Kibana plugin version
-  sgkibanaversion: "17"
+  # See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  sgkibanaversion: "18.3"
 
   # If true then install also all free and basic x-pack features
   # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -66,7 +69,7 @@ common:
   # Configure additional users (maps to sg_internal_users.yml)
   users:
     user1:
-      hash: $2a$12$ssCCgh2NUg07JGN0rjGbM.BdssqVR/YFJcgHp0UGns5JDymv..TMU
+      hash: ${envbc.SG_USER1_PWD}
       roles:
         - beatsreader
 
