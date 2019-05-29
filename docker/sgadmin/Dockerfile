@@ -25,10 +25,11 @@ RUN yum update -y && \
 ARG ELK_VERSION
 ARG SG_VERSION
 ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
+RUN echo $ELK_VERSION | cut -c1-1 > /major
 
-RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-6/$SG_FULLVERSION/search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
-RUN unzip search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
-RUN rm -rf search-guard-6-$SG_FULLVERSION-sgadmin-standalone.zip
+RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-$(cat /major)/$SG_FULLVERSION/search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
+RUN unzip search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
+RUN rm -rf search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
 
 RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/1.6/search-guard-tlstool-1.6.zip
 RUN unzip search-guard-tlstool-1.6 -d tlstool/
