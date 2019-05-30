@@ -161,7 +161,7 @@ helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/nu
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
 helm install --name sg-elk sg-helm \
-  --version sgh-beta3 \
+  --version sgh-beta4 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
   --set data.storageClass=gp2  \
@@ -176,10 +176,8 @@ check_ret "Helm install"
 
   # \
   #--set common.elkversion=6.6.2 \
-  #--set common.sgversion=24.2 \
-  #--set common.sgkibanaversion=18.1 
-  #\
-  #--set common.config.searchguard.restapi.password_validation_regex='(?=.*[A-Z])(?=.*[^a-zA-Z\d])(?=.*[0-9])(?=.*[a-z]).{8\,}'
+  #--set common.sgversion=24.3 \
+  #--set common.sgkibanaversion=18.3
 
 echo "Wait for ELB ..."
 
@@ -216,7 +214,7 @@ cat << EOF
 To upgrade run a command similar to:
 
 helm upgrade sg-elk sg-helm/sg-helm \\
-  --version 6.5.4-24.0-17.0-beta3 \\
+  --version sgh-beta4 \\
   --set common.serviceType=LoadBalancer \\
   --set kibana.serviceType=LoadBalancer \\
   --set data.storageClass=gp2  \\

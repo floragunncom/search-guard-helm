@@ -26,7 +26,7 @@ spec:
         role: sgadmin
       {{ if .Values.common.update_sgconfig_on_change }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/searchguard-configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/searchguard-configmap_ES" (.Values.common.elkversion | substr 0 1) ".yaml") . | sha256sum }}
       {{ end }}
     spec:
       subdomain: {{ template "fullname" . }}
@@ -227,5 +227,5 @@ spec:
           secret:
             secretName: {{ template "fullname" . }}-admin-cert-secret
         - configMap:
-            name: {{ template "fullname" . }}-searchguard-config
+            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
           name: searchguard-config

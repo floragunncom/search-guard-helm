@@ -1,7 +1,7 @@
 apiVersion: v1
 name: sg-helm
 home: https://search-guard.com/
-version: sgh-beta3
+version: sgh-beta4
 description: Search Guard secured Elasticsearch
 icon: https://search-guard.com/wp-content/uploads/2018/01/sg_logo.png
 sources:

@@ -158,7 +158,7 @@ spec:
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/plugins/search-guard-6/sgconfig/
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-{{ .Values.common.elkversion | substr 0 1  }}/sgconfig/
           name: searchguard-config
         - name: secret-volume
           readOnly: true
@@ -178,7 +178,7 @@ spec:
             medium: ""
           name: storage
         - configMap:
-            name: {{ template "fullname" . }}-searchguard-config
+            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
           name: searchguard-config
         - name: kubectl
           emptyDir: {}

@@ -33,9 +33,22 @@ data:
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
 
+    {{- if eq (.Values.common.elkversion | substr 0 1) "7" }}
+
+    {{- $master_name := printf "- %s-%s-%s" .Release.Name .Chart.Name "master" }}
+
+    cluster.initial_master_nodes:
+      {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
+      {{ $master_name }}-{{ $ordinal }}
+      {{- end }}
+
+    discovery.seed_hosts: ${DISCOVERY_SERVICE:}
+
+    {{ else }}
     discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
     #(master/2)+1
     discovery.zen.minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
+    {{ end }}
 
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}

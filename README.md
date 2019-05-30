@@ -2,7 +2,7 @@
 
 ## Status
 
-This is repo is considered beta status.
+This is repo is considered beta status and supports Search Guard for Elasticsearch 6 and 7.
 
 For Elasticsearch/Search Guard 5 please refer to: https://github.com/floragunncom/search-guard-helm/tree/5.x
 
@@ -93,7 +93,7 @@ helm init --wait --service-account tiller --upgrade
 ```
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm
 helm search "search guard"
-helm install --name sg-elk sg-helm/sg-helm --version 6.5.4-24.0-17.0-beta3
+helm install --name sg-elk sg-helm/sg-helm --version sgh-beta4
 ```
 Please refer to the [Helm Documentation](https://github.com/helm/helm/blob/master/docs/helm/helm_install.md) on how to override the chart default
 settings. See `sg-helm/values.yaml` for the documented set of settings you can override.
