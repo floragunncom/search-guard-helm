@@ -52,7 +52,7 @@ data:
 
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
-    searchguard.restapi.roles_enabled: ["sg_all_access"]
+    searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
     searchguard.authcz.admin_dn:
 {{ toYaml .Values.common.admin_dn | indent 6 }}
     searchguard.nodes_dn:
