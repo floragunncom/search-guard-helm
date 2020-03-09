@@ -1,12 +1,7 @@
 FROM centos:7
 
-RUN curl -s https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz | tar -C /opt -zxf -
-ENV JAVA_HOME /opt/jdk-11.0.1
-
-# Replace OpenJDK's built-in CA certificate keystore with the one from the OS
-# vendor. The latter is superior in several ways.
-# REF: https://github.com/elastic/elasticsearch-docker/issues/171
-RUN ln -sf /etc/pki/ca-trust/extracted/java/cacerts /opt/jdk-11.0.1/lib/security/cacerts
+ARG TLS_TOOL_VERSION=1.7
+ARG JAVA_VERSION=12
 
 WORKDIR /root/
 
@@ -18,8 +13,15 @@ gpgcheck=1  \n\
 repo_gpgcheck=1  \n\
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg'  > /etc/yum.repos.d/kubernetes.repo
 
+RUN echo $'[AdoptOpenJDK] \n\      
+name=AdoptOpenJDK \n\
+baseurl=http://adoptopenjdk.jfrog.io/adoptopenjdk/rpm/centos/7/x86_64 \n\
+enabled=1 \n\
+gpgcheck=1 \n\
+gpgkey=https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public' > /etc/yum.repos.d/adoptopenjdk.repo
+
 RUN yum update -y && \
-    yum install -y wget ca-certificates openssl unzip bash kubectl && \
+    yum install -y wget ca-certificates openssl unzip bash kubectl adoptopenjdk-${JAVA_VERSION}-hotspot && \
     yum clean all
 
 ARG ELK_VERSION
@@ -27,13 +29,14 @@ ARG SG_VERSION
 ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
 RUN echo $ELK_VERSION | cut -c1-1 > /major
 
-RUN wget https://oss.sonatype.org/content/repositories/releases/com/floragunn/search-guard-$(cat /major)/$SG_FULLVERSION/search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
+
+RUN wget https://releases.floragunn.com/search-guard-$(cat /major)/$SG_FULLVERSION/search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
 RUN unzip search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
 RUN rm -rf search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
 
-RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/1.6/search-guard-tlstool-1.6.zip
-RUN unzip search-guard-tlstool-1.6 -d tlstool/
-RUN rm -rf search-guard-tlstool-1.6.zip
+RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
+RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION} -d tlstool/
+RUN rm -rf search-guard-tlstool-${TLS_TOOL_VERSION}.zip
 
 #ENTRYPOINT [ "/root/sgadmin/tools/sgadmin.sh" ]
 CMD tail -f /dev/null

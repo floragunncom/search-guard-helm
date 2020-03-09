@@ -9,6 +9,8 @@ ARG SG_KIBANA_VERSION
 ARG ELK_VERSION
 ARG ELK_FLAVOUR
 ARG OPTIMIZE=""
+ARG ALLOW_ROOT=""
 
 ENV FULL_SG_VERSION=${ELK_VERSION}-${SG_KIBANA_VERSION}
-RUN kibana-plugin install https://repo1.maven.org/maven2/com/floragunn/search-guard-kibana-plugin/${FULL_SG_VERSION}/search-guard-kibana-plugin-${FULL_SG_VERSION}.zip ${OPTIMIZE}
+#RUN echo $ELK_VERSION | cut -c1-1 > /major
+RUN kibana-plugin install https://releases.floragunn.com/search-guard-kibana-plugin-7/${FULL_SG_VERSION}/search-guard-kibana-plugin-7-${FULL_SG_VERSION}.zip ${OPTIMIZE} ${ALLOW_ROOT}
