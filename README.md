@@ -80,13 +80,6 @@ If not then execute the steps above (Warning: `minikube delete` will delete your
 
 ## Deploying with Helm
 
-If the Helm tiller pod is not already running on your cluster
-
-```
-kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-helm init --wait --service-account tiller --upgrade
-```
 
 ### Deploy via repository
 
