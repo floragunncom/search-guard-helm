@@ -86,7 +86,7 @@ If not then execute the steps above (Warning: `minikube delete` will delete your
 ```
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm
 helm search "search guard"
-helm install --name sg-elk sg-helm/sg-helm --version sgh-beta4
+helm install sg-elk sg-helm/sg-helm --version sgh-beta4
 ```
 Please refer to the [Helm Documentation](https://github.com/helm/helm/blob/master/docs/helm/helm_install.md) on how to override the chart default
 settings. See `sg-helm/values.yaml` for the documented set of settings you can override.
@@ -96,8 +96,8 @@ settings. See `sg-helm/values.yaml` for the documented set of settings you can o
 Optionally read the comments in `sg-helm/values.yaml` and customize them to suit your needs.
 
 ```
-$ git clone https://github.com/floragunncom/search-guard-helm.git
-$ helm install search-guard-helm/sg-helm
+$ git clone git@git.floragunn.com:gh/search-guard-helm.git
+$ helm install sg-elk search-guard-helm/sg-helm
 ```
 
 ## Accessing Kibana
