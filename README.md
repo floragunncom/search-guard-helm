@@ -12,8 +12,8 @@ Please report issues via GitHub issue tracker or get in [contact with us](https:
 
 ## Requirements
 
-* Kubernetes 1.10 or later (Minikube and AWS EKS are tested)
-* Helm (tested with Helm v2.11.0)
+* Kubernetes 1.16 or later (Minikube and AWS EKS are tested)
+* Helm (tested with Helm v.3.2.4)
 * kubectl
 * Optional: Docker, if you like to build and push customized images 
 

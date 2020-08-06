@@ -147,20 +147,12 @@ kops create cluster $CLUSTERNAME \
 echo "Wait until cluster $CLUSTERNAME is valid ... (may take a few minutes)"
 until kops validate cluster --name="$CLUSTERNAME" --state="$KOPS_STATE_STORE" > /dev/null 2>&1; do sleep 15 ; done
 echo "Cluster is ready!"
-#kops validate cluster
-#kubectl cluster-info
-#kubectl get nodes
-
-echo "Install Helm tiller pod"
-kubectl create serviceaccount --namespace kube-system tiller > /dev/null 2>&1
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller > /dev/null 2>&1
-helm init --wait --service-account tiller --upgrade > /dev/null 2>&1
 
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
 
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-helm install --name sg-elk sg-helm \
+helm install sg-elk sg-helm \
   --version sgh-beta4 \
   --set common.serviceType=LoadBalancer \
   --set kibana.serviceType=LoadBalancer \
@@ -190,20 +182,22 @@ echo "Kibana: https://$KIBANA_URL:5601"
 
 echo "Install Dashboard"
 
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml > /dev/null  2>&1
+#Previously used dashboard yaml is kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml #> /dev/null  2>&1
+
 
 BASIC_PASS_CMD="kubectl config view -o=jsonpath='{.users[?(@.name=="\"$CLUSTERNAME-basic-auth\"")].user.password}'"
 BASIC_PASS=$($BASIC_PASS_CMD | tr -d "'")
 DASHBOARD_TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}') | grep "token: " | awk '{print $2}')
 APISERVER=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
-DASHBOARD="$APISERVER/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview"
+#DASHBOARD="$APISERVER/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview"
 
 kubectl cluster-info
-echo ""
+echo "To acess dashboard run: kubectl proxy"
 
-echo "Kubernetes Dashboard URL: $DASHBOARD"
-echo "  Username: admin"
-echo "  Password: $BASIC_PASS"
+echo "Kubernetes Dashboard URL: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"
+#echo "  Username: admin"
+#echo "  Password: $BASIC_PASS"
 echo "  Token: $DASHBOARD_TOKEN"
 
 
