@@ -43,7 +43,7 @@ spec:
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: "failure-domain.beta.kubernetes.io/zone"
+            - topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "fullname" . }}
@@ -62,7 +62,7 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "fullname" . }}
@@ -168,21 +168,11 @@ spec:
         - name: certificates-secrets-volume
           readOnly: true
           mountPath: "/usr/share/kibana/config/certificates-secrets"
-        #- name: passwd-secret-volume
-        #  readOnly: true
-        #  mountPath: "/usr/share/kibana/config/passwd-secret"
-        - name: kubectl
-          subPath: kubectl
-          mountPath: /usr/local/bin/kubectl
       volumes:
         - name: certificates-secrets-volume
           secret:
             secretName: {{ template "fullname" . }}-nodes-cert-secret
             defaultMode: 0600
-        #- name: passwd-secret-volume
-        #  secret:
-        #    secretName: {{ template "fullname" . }}-passwd-secret
-        #    defaultMode: 0600
         - configMap:
             name: {{ template "fullname" . }}-kibana-config
           name: config

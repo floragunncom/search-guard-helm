@@ -8,6 +8,11 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: {{ template "fullname" . }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -26,6 +31,11 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: admin-user
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -44,6 +54,11 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: sgadmin
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
 subjects:
   - kind: ServiceAccount
     name: {{ template "fullname" .}}

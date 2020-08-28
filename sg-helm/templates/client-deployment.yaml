@@ -46,7 +46,7 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "fullname" . }}
@@ -63,7 +63,7 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "fullname" . }}
@@ -163,9 +163,6 @@ spec:
         - name: secret-volume
           readOnly: true
           mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
-        - name: kubectl
-          subPath: kubectl
-          mountPath: /usr/local/bin/kubectl
       volumes:
         - name: secret-volume
           secret:

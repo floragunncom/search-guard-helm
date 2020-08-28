@@ -1,6 +1,6 @@
 FROM centos:7
 
-ARG TLS_TOOL_VERSION=1.7
+ARG TLS_TOOL_VERSION=1.8
 ARG JAVA_VERSION=12
 
 WORKDIR /root/
@@ -30,12 +30,13 @@ ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
 RUN echo $ELK_VERSION | cut -c1-1 > /major
 
 
-RUN wget https://releases.floragunn.com/search-guard-$(cat /major)/$SG_FULLVERSION/search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
-RUN unzip search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip -d sgadmin/
-RUN rm -rf search-guard-$(cat /major)-$SG_FULLVERSION-sgadmin-standalone.zip
+RUN wget https://maven.search-guard.com/search-guard-suite-release/com/floragunn/search-guard-suite-plugin/${SG_FULLVERSION}/search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip
+RUN unzip search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip -d sgadmin/
+RUN rm -rf search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip
 
-RUN wget https://repo1.maven.org/maven2/com/floragunn/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
-RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION} -d tlstool/
+RUN wget https://maven.search-guard.com/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
+
+RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION}.zip -d tlstool/
 RUN rm -rf search-guard-tlstool-${TLS_TOOL_VERSION}.zip
 
 #ENTRYPOINT [ "/root/sgadmin/tools/sgadmin.sh" ]

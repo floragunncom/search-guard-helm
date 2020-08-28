@@ -5,15 +5,15 @@ common:
 
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "7.1.0"
+  elkversion: "7.8.1"
 
   # Search Guard plugin version
   # Helm charts since beta4 needs minimum 25.0 release to work properly
-  sgversion: "35.0.0"
+  sgversion: "43.0.0"
 
   # Search Guard Kibana plugin version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "35.0.0"
+  sgkibanaversion: "43.0.0"
 
   # If true then install also all free and basic x-pack features
   # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -223,6 +223,6 @@ rbac:
 
 # Kubelet image pull policy
 # https://kubernetes.io/docs/concepts/containers/images/
-pullPolicy: Always
-#pullPolicy: IfNotPresent
+#pullPolicy: Always
+pullPolicy: IfNotPresent
   

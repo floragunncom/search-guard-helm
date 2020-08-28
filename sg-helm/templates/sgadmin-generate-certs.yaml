@@ -1,0 +1,149 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "fullname" . }}-sgadmin"
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}-sgadmin
+    role: sgadmin
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-2"
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: sgadmin
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "fullname" . }}
+      containers:
+      - name: sgadmin-init
+        image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+              #!/usr/bin/env bash -e
+
+              kubectl get secrets | grep {{ template "fullname" . }}-passwd-secret
+              
+              if [ "$?" == "1" ]; then
+
+              cat >"{{ template "fullname" . }}-root-ca.yml" <<EOL
+              ca:
+                root:
+                    dn: CN={{ template "fullname" . }}-root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com
+                    keysize: 2048
+                    validityDays: 365
+                    pkPassword: none
+                    file: root-ca.pem
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -ca -v -c "{{ template "fullname" . }}-root-ca.yml" -t /tmp/
+
+              cat >"{{ template "fullname" . }}-root-ca-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgrootcacert: "true"
+                name: {{ template "fullname" . }}-root-ca-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+                key.pem: $(cat /tmp/root-ca.key | base64 -w0)
+              EOL
+
+              cat "{{ template "fullname" . }}-root-ca-sec.yaml"
+
+              kubectl apply -f "{{ template "fullname" . }}-root-ca-sec.yaml"
+
+              cat >"{{ template "fullname" . }}-admin-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+              clients:
+                - name: sgadmin
+                  admin: true
+                  dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "fullname" . }}-admin-cert.yml" -t /tmp/
+
+              cat >"{{ template "fullname" . }}-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "fullname" . }}-admin-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/sgadmin.pem | base64 -w0)
+                key.pem: $(cat /tmp/sgadmin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              #kubectl patch secret {{ template "fullname" . }}-admin-cert-secret -p="{\"data\":{\"crt.pem\": \"$(cat /tmp/sgadmin.pem | base64 -w0)\", \"key.pem\": \"$(cat /tmp/sgadmin.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
+              #mkdir -p /root/sgcerts/
+              echo "Creating Admin Secrets in k8s"
+              kubectl apply -f "{{ template "fullname" . }}-admin-cert-sec.yaml"
+              echo "Will generate {{ template "fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+              EOL
+
+              kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
+              
+              else
+
+              echo "Passwd secrets already exists"
+              :
+              fi
+
+

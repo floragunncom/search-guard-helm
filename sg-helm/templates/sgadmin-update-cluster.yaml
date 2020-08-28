@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "fullname" . }}-sgadmin-post"
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "fullname" . }}-sgadmin
+    role: sgadmin
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: sgadmin
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "fullname" . }}
+      containers:
+      - name: sgadmin-complete
+        env:
+          - name: DISCOVERY_SERVICE
+            value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+        image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+              #!/usr/bin/env bash -e
+              while kubectl get pods -l role=master|grep -v STATUS|grep  '0/'; do
+                echo 'Wait for $DISCOVERY_SERVICE service to be ready';
+                sleep 10 ;
+              done
+              echo "Executing sgadmin to update the configs ..."
+              /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
+              RET=$?
+              echo "Result $RET"
+              exit $RET
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+          - mountPath: /root/sgconfig/
+            name: searchguard-config
+          - name: secret-volume
+            readOnly: true
+            mountPath: /root/sgcerts/
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "fullname" . }}-admin-cert-secret
+        - configMap:
+            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
