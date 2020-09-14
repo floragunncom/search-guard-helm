@@ -73,39 +73,39 @@ do
 
     LASTCMDSEC="0"
     
-    cd "$DIR/elasticsearch"
-    echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
-
-    cd "$DIR/kibana"
-    echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
-    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
+#    cd "$DIR/elasticsearch"
+#    echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+#    docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
+#    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+#    echo "$(( SECONDS - LASTCMDSEC )) sec"
+#    echo ""
+#    LASTCMDSEC="$SECONDS"
+#
+#    cd "$DIR/kibana"
+#    echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+#    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
+#    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+#    echo "$(( SECONDS - LASTCMDSEC )) sec"
+#    echo ""
+#    LASTCMDSEC="$SECONDS"
 
     ELK_FLAVOUR=""
 
-    cd "$DIR/elasticsearch"
-    echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
-
-    cd "$DIR/kibana"
-    echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
-    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
+#    cd "$DIR/elasticsearch"
+#    echo "Build image floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+#    docker build -t "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
+#    check_and_push "floragunncom/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+#    echo "$(( SECONDS - LASTCMDSEC )) sec"
+#    echo ""
+#    LASTCMDSEC="$SECONDS"
+#
+#    cd "$DIR/kibana"
+#    echo "Build image floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+#    docker build -t "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
+#    check_and_push "floragunncom/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+#    echo "$(( SECONDS - LASTCMDSEC )) sec"
+#    echo ""
+#    LASTCMDSEC="$SECONDS"
 
     cd "$DIR/sgadmin"
     echo "Build image floragunncom/sg-sgadmin:$ELK_VERSION-$SG_VERSION"

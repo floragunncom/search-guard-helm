@@ -45,6 +45,7 @@ TODO: replace this with a daemon set
 
 */}}
 {{- define "generate-certificates-init-container" -}}
+{{- if (not .Values.common.external_ca_certificates_enabled) }}
 - name: generate-certificates
   image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -85,6 +86,8 @@ TODO: replace this with a daemon set
         done
 
         echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
+
+
 
         KIBANA_ELB="$(kubectl get svc {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
         ES_ELB="$(kubectl get svc {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
@@ -145,6 +148,7 @@ TODO: replace this with a daemon set
     requests:
       cpu: 100m
       memory: 256Mi
+{{- end }}
 {{- end -}}
 
 {{- define "init-containers" -}}

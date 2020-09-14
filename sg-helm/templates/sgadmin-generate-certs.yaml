@@ -39,6 +39,7 @@ spec:
               kubectl get secrets | grep {{ template "fullname" . }}-passwd-secret
               
               if [ "$?" == "1" ]; then
+              if [ "{{ .Values.common.sgadmin_certificates_enabled }}" == "true" ]; then
 
               cat >"{{ template "fullname" . }}-root-ca.yml" <<EOL
               ca:
@@ -106,8 +107,6 @@ spec:
                 root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
               EOL
 
-              #kubectl patch secret {{ template "fullname" . }}-admin-cert-secret -p="{\"data\":{\"crt.pem\": \"$(cat /tmp/sgadmin.pem | base64 -w0)\", \"key.pem\": \"$(cat /tmp/sgadmin.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
-              #mkdir -p /root/sgcerts/
               echo "Creating Admin Secrets in k8s"
               kubectl apply -f "{{ template "fullname" . }}-admin-cert-sec.yaml"
               echo "Will generate {{ template "fullname" . }}-passwd-secret"
@@ -139,9 +138,114 @@ spec:
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
-              
-              else
+              fi
+              if [ "{{ .Values.common.ca_certificates_enabled }}" == "true" ]; then
 
+              kubectl get secrets {{ template "fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl get secrets {{ template "fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+
+              cat /tmp/root-ca.pem
+              cat /tmp/root-ca.key
+
+              cat >"{{ template "fullname" . }}-admin-cert.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              clients:
+              - name: sgadmin
+                admin: true
+                dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "fullname" . }}-admin-cert.yml" -t /tmp/
+
+              cat >"{{ template "fullname" . }}-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "fullname" . }}-admin-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/sgadmin.pem | base64 -w0)
+                key.pem: $(cat /tmp/sgadmin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              echo "Creating Admin Secrets in k8s"
+              cat {{ template "fullname" . }}-admin-cert-sec.yaml
+
+              kubectl apply -f "{{ template "fullname" . }}-admin-cert-sec.yaml"
+              echo "Will generate {{ template "fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+              EOL
+
+              kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
+
+              fi
+              if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ]; then
+              echo "Will generate {{ template "fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+              EOL
+
+              kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
+              fi
+
+              else
               echo "Passwd secrets already exists"
               :
               fi

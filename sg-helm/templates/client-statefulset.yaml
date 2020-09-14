@@ -1,6 +1,6 @@
-{{ if (not .Values.common.external_ca_certificates_enabled) }}
+{{ if .Values.common.external_ca_certificates_enabled }}
 apiVersion:  apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ template "fullname" . }}-client
   labels:
@@ -12,9 +12,11 @@ metadata:
     role: client
     estype: node
 spec:
+  serviceName: {{ template "fullname" . }}-client
   replicas: {{ .Values.client.replicas }}
-  strategy:
+  updateStrategy:
     type: RollingUpdate
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       component: {{ template "fullname" . }}
@@ -172,12 +174,18 @@ spec:
         - configMap:
             name: {{ template "fullname" . }}-config
           name: config
-        - emptyDir:
-            medium: ""
-          name: storage
         - configMap:
             name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.client.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.client.storage }}
 {{ end }}

@@ -55,10 +55,12 @@ common:
   serviceType: ClusterIP
   #serviceType: NodePort
   #serviceType: LoadBalancer
-
+  external_ca_certificates_enabled: true
+  ca_certificates_enabled: false
+  sgadmin_certificates_enabled: false
   # Any extra or specific configuration that is needed can be added here.
   # Will be added to all elasticsearch.yml files on all nodes
-  config:   
+  config:
     #http:
     #  compression: false
     #  cors:
@@ -107,6 +109,10 @@ client:
   # 'soft' will do this "best effort"
   # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
+  # Specify this if external_ca_certificates_enabled: true
+  storage: 2Gi
+  storageClass: "standard"
+
   # For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
@@ -189,6 +195,11 @@ kibana:
   # 'soft' will do this "best effort"
   # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
+
+  # Specify this if external_ca_certificates_enabled: true
+  storage: 2Gi
+  storageClass: "standard"
+
   # Defines the service type for all Kibana outward-facing (non-discovery) services.
   # WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
   serviceType: ClusterIP

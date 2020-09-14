@@ -1,6 +1,6 @@
-{{ if (not .Values.common.external_ca_certificates_enabled) }}
+{{ if .Values.common.external_ca_certificates_enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ template "fullname" . }}-kibana
   labels:
@@ -11,9 +11,11 @@ metadata:
     component: {{ template "fullname" . }}-kibana
     role: kibana
 spec:
+  serviceName: {{ template "fullname" . }}-kibana
   replicas: {{ .Values.kibana.replicas }}
-  strategy:
+  updateStrategy:
     type: RollingUpdate
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       component: {{ template "fullname" . }}
@@ -163,6 +165,8 @@ spec:
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:
+        - mountPath: /storage/
+          name: storage
         - mountPath: /usr/share/kibana/config/kibana.yml
           name: config
           subPath: kibana.yml
@@ -179,4 +183,13 @@ spec:
           name: config
         - name: kubectl
           emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: {{ .Values.kibana.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.kibana.storage }}
 {{ end }}
