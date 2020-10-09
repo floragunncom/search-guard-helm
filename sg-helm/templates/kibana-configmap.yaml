@@ -28,9 +28,14 @@ data:
 
     # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
     server.ssl.enabled: true
+{{ if .Values.common.external_ca_single_certificate_enabled }}
+    server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/sg.pem
+    server.ssl.key: /usr/share/kibana/config/certificates-secrets/sg.key
+{{ end }}
+{{ if (not .Values.common.external_ca_single_certificate_enabled) }}
     server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.pem
     server.ssl.key: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.key
-
+{{ end }}
     # If you need to provide a CA certificate for your Elasticsearch instance, put
     # the path of the pem file here.
     elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/config/certificates-secrets/root-ca.pem"]

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "fullname" . }}-sgadmin"
+  name: "{{ template "fullname" . }}-sgadmin-preinstall"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -9,11 +9,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "fullname" . }}-sgadmin
     role: sgadmin
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "-2"
 spec:
   template:
     metadata:
@@ -213,7 +208,7 @@ spec:
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
 
               fi
-              if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ]; then
+              if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ] || [ "{{ .Values.common.external_ca_single_certificate_enabled }}" == "true" ]; then
               echo "Will generate {{ template "fullname" . }}-passwd-secret"
 
               kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"

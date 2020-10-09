@@ -63,12 +63,26 @@ data:
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
     searchguard.ssl.http.enabled: true
+{{ if (not .Values.common.external_ca_single_certificate_enabled) }}
     searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
     searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+{{ end }}
+
+{{ if .Values.common.external_ca_single_certificate_enabled }}
+    searchguard.ssl.http.pemkey_filepath: certificates-secrets/sg.key
+    searchguard.ssl.http.pemcert_filepath: certificates-secrets/sg.pem
+{{ end }}
     searchguard.ssl.http.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
     searchguard.ssl.transport.enforce_hostname_verification: false
-    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+{{ if .Values.common.external_ca_single_certificate_enabled }}
+    searchguard.ssl.transport.pemcert_filepath: certificates-secrets/sg.pem
+    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/sg.key
+{{ end }}
+{{ if (not .Values.common.external_ca_single_certificate_enabled) }}
     searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+{{ end }}
+
     searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
 
 {{- if .Values.common.config }}

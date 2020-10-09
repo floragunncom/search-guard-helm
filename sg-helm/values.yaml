@@ -5,15 +5,15 @@ common:
 
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "7.8.1"
+  elkversion: "7.9.1"
 
   # Search Guard plugin version
   # Helm charts since beta4 needs minimum 25.0 release to work properly
-  sgversion: "43.0.0"
+  sgversion: "45.0.0"
 
   # Search Guard Kibana plugin version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "43.0.0"
+  sgkibanaversion: "45.0.0"
 
   # If true then install also all free and basic x-pack features
   # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -42,8 +42,10 @@ common:
 
   # Restart podsautomatically when their configuration was changed
   restart_pods_on_config_change: true
-  
-  # Search Guard can be run do not fail on forbidden mode. 
+  #Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  pod_disruption_budget_enable: false
+
+  # Search Guard can be run do not fail on forbidden mode.
   # With this mode enabled Search Guard filters all indices from a query a user does not have access to. 
   # Thus not security exception is raised.
   # See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
@@ -55,9 +57,10 @@ common:
   serviceType: ClusterIP
   #serviceType: NodePort
   #serviceType: LoadBalancer
-  external_ca_certificates_enabled: true
+  external_ca_certificates_enabled: false
   ca_certificates_enabled: false
-  sgadmin_certificates_enabled: false
+  sgadmin_certificates_enabled: true
+  external_ca_single_certificate_enabled: false
   # Any extra or specific configuration that is needed can be added here.
   # Will be added to all elasticsearch.yml files on all nodes
   config:
