@@ -30,7 +30,17 @@ Elasticsearch can be accessed:
     export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=client" -o jsonpath="{.items[0].metadata.name}")
     echo "Visit https://127.0.0.1:9200 to use Elasticsearch"
     kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 9200:9200
+
+    {{- else if contains "true"  .Values.common.ingressNginx.enabled }}
+
+    #Ingress Nginx
+
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
+    echo "Access https://kibana.example.com"
+
     {{- end }}
+
 
 Kibana can be accessed:
 
@@ -62,4 +72,9 @@ Kibana can be accessed:
     export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=kibana" -o jsonpath="{.items[0].metadata.name}")
     echo "Visit https://127.0.0.1:5601 to use Kibana"
     kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 5601:5601
+
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+    echo "Add records to DNS: $INGRESS_ADDRESS -> kibana.example.com"
+    echo "Access https://kibana.example.com"
+
     {{- end }}

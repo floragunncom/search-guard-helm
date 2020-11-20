@@ -133,11 +133,11 @@ kops create cluster $CLUSTERNAME \
   --state="$KOPS_STATE_STORE" \
   --zones="$REGION"a \
   --master-zones="$REGION"a \
-  --master-size m4.large \
+  --master-size m5.large \
   --master-volume-size 10 \
-  --node-size m4.2xlarge \
+  --node-size m5.large \
   --node-volume-size 10 \
-  --node-count=3 \
+  --node-count=2 \
   --master-count=1 \
   --yes
   
@@ -154,16 +154,21 @@ echo "Install ElasticSearch/Kibana secured by Search Guard"
 
 helm install sg-elk sg-helm \
   --version sgh-beta4 \
-  --set common.serviceType=LoadBalancer \
-  --set kibana.serviceType=LoadBalancer \
   --set data.storageClass=gp2  \
   --set master.storageClass=gp2 \
-  --set data.replicas=2  \
-  --set master.replicas=3 \
-  --set client.replicas=2 \
+  --set data.replicas=1  \
+  --set master.replicas=1 \
+  --set client.replicas=1 \
   --set kibana.replicas=1 \
+  --set common.serviceType=NodePort \
+  --set kibana.serviceType=NodePort \
+  --set common.ingressNginx.enabled=true \
+  --set common.ingressNginx.ingressCertificates=self-signed \
+  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
+  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
   --set common.do_not_fail_on_forbidden=true
-  
+
+
 check_ret "Helm install"
 
   # \
@@ -171,14 +176,18 @@ check_ret "Helm install"
   #--set common.sgversion=24.3 \
   #--set common.sgkibanaversion=18.3
 
-echo "Wait for ELB ..."
+echo "Wait for Ingress to start ..."
+
+until kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' &> /dev/null; do sleep 15 ; done
+#ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+#KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+#echo "Elasticsearch: https://$ES_URL:9200"
+#echo "Kibana: https://$KIBANA_URL:5601"
 
 sleep 30
 
-ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-echo "Elasticsearch: https://$ES_URL:9200"
-echo "Kibana: https://$KIBANA_URL:5601"
+INGRESS_HOST=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'|cut -d. -f 1-5)
+echo "You can use IP of $INGRESS_HOST to assign to kibana.example.com, elasticsearch.example.com in DNS"
 
 echo "Install Dashboard"
 
@@ -207,16 +216,21 @@ echo "Done"
 cat << EOF
 To upgrade run a command similar to:
 
-helm upgrade sg-elk sg-helm/sg-helm \\
-  --version sgh-beta4 \\
-  --set common.serviceType=LoadBalancer \\
-  --set kibana.serviceType=LoadBalancer \\
-  --set data.storageClass=gp2  \\
-  --set master.storageClass=gp2 \\
-  --set data.replicas=2  \\
-  --set master.replicas=3 \\
-  --set client.replicas=2 \\
-  --set kibana.replicas=1 
+helm upgrade sg-elk sg-helm/sg-helm \
+  --version sgh-beta4 \
+  --set data.storageClass=gp2  \
+  --set master.storageClass=gp2 \
+  --set data.replicas=1  \
+  --set master.replicas=1 \
+  --set client.replicas=1 \
+  --set kibana.replicas=1 \
+  --set common.serviceType=NodePort \
+  --set kibana.serviceType=NodePort \
+  --set common.ingressNginx.enabled=true \
+  --set common.ingressNginx.ingressCertificates=self-signed \
+  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
+  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
+  --set common.do_not_fail_on_forbidden=true
 EOF
 
 #\\

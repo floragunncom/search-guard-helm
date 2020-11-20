@@ -13,3 +13,7 @@ sources:
 maintainers:
   - name: floragunn GmbH
     email: info@search-guard.com
+dependencies:
+  - name: ingress-nginx
+    version: "3.9.0"
+    repository: "https://kubernetes.github.io/ingress-nginx"

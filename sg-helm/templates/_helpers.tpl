@@ -170,7 +170,11 @@ TODO: replace this with a daemon set
 
 {{- if .Values.common.plugins }}
 - name: es-plugin-install
+{{ if .Values.common.xpack_basic }}
   image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+{{ else }}
+  image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+{{ end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   securityContext:
     capabilities:

@@ -133,6 +133,7 @@ spec:
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
+
               fi
               if [ "{{ .Values.common.ca_certificates_enabled }}" == "true" ]; then
 
@@ -206,6 +207,94 @@ spec:
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
+
+
+              if [ "{{ .Values.common.ingressNginx.enabled }}" == "true" ] && [ "{{ .Values.common.ingressNginx.ingressCertificates }}" == "self-signed" ]; then
+
+              cat >"{{ template "fullname" . }}-kibana-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: kibana
+                dn: CN={{ .Values.common.ingressNginx.ingressKibanaDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "fullname" . }}-kibana-svc.yml" -t /tmp/
+
+              cat >"{{ template "fullname" . }}-kibana-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "fullname" . }}-kibana-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/kibana.pem | base64 -w0)
+                tls.key: $(cat /tmp/kibana.key | base64 -w0)
+              EOL
+
+              echo "Creating Kibana service Secrets in k8s"
+              cat {{ template "fullname" . }}-kibana-sec.yaml
+
+              kubectl apply -f "{{ template "fullname" . }}-kibana-sec.yaml"
+              echo "Will generate {{ template "fullname" . }}-kibana-service-cert-secret"
+
+
+              cat >"{{ template "fullname" . }}-es-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: elasticsearch
+                dn: CN={{ .Values.common.ingressNginx.ingressElasticsearchDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "fullname" . }}-es-svc.yml" -t /tmp/
+
+              cat >"{{ template "fullname" . }}-es-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "fullname" . }}-es-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/elasticsearch.pem | base64 -w0)
+                tls.key: $(cat /tmp/elasticsearch.key | base64 -w0)
+              EOL
+
+              echo "Creating Elasticsearch service Secrets in k8s"
+              cat {{ template "fullname" . }}-es-sec.yaml
+
+              kubectl apply -f "{{ template "fullname" . }}-es-sec.yaml"
+              echo "Will generate {{ template "fullname" . }}-es-service-cert-secret"
+              fi
+
 
               fi
               if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ] || [ "{{ .Values.common.external_ca_single_certificate_enabled }}" == "true" ]; then
