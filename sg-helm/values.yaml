@@ -3,6 +3,18 @@ common:
   # Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
+  #Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
+  #If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
+  # - for SG Admin image: <images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
+  # - for Elasticsearch OSS image: <images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
+  # - for Elasticsearch non-OSS image: <images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
+  # - for Kibana OSS image: <images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
+  # - for Kibana non-OSS image: <images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
+  images:
+    provider: "floragunncom"
+    elasticsearch_base_image: "sg-elasticsearch"
+    kibana_base_image: "sg-kibana"
+    sgadmin_base_image: "sg-sgadmin"
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.9.1"

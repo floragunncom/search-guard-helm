@@ -26,7 +26,7 @@ spec:
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
-        image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
           - sh

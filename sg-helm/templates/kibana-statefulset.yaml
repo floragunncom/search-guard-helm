@@ -80,7 +80,7 @@ spec:
       {{- end }}
       initContainers:
         - name: kibana-init
-          image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
             - sh
@@ -110,9 +110,9 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
       {{ if .Values.common.xpack_basic }}
-        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
       {{ else }}
-        image: "floragunncom/sg-kibana:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:

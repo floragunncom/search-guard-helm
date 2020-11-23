@@ -47,7 +47,7 @@ TODO: replace this with a daemon set
 {{- define "generate-certificates-init-container" -}}
 {{- if (not .Values.common.external_ca_certificates_enabled) }}
 - name: generate-certificates
-  image: "floragunncom/sg-sgadmin:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
@@ -171,9 +171,9 @@ TODO: replace this with a daemon set
 {{- if .Values.common.plugins }}
 - name: es-plugin-install
 {{ if .Values.common.xpack_basic }}
-  image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
 {{ else }}
-  image: "floragunncom/sg-elasticsearch:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   securityContext:

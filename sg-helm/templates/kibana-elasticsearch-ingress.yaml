@@ -1,0 +1,39 @@
+{{ if .Values.common.ingressNginx.enabled }}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "fullname" . }}-ingress-nginx
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  tls:
+    - hosts:
+        - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+      # This secret must exist beforehand
+      # The cert must also contain the subj-name foo.bar.com
+      # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+      secretName: {{ template "fullname" . }}-kibana-service-cert-secret
+    - hosts:
+        - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+    # This secret must exist beforehand
+    # The cert must also contain the subj-name bar.baz.com
+    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
+      secretName: {{ template "fullname" . }}-es-service-cert-secret
+  rules:
+      - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+        http:
+          paths:
+            - backend:
+                serviceName: {{ template "fullname" . }}
+                servicePort: 5601
+              path: /
+      - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+        http:
+          paths:
+            - backend:
+                serviceName: {{ template "fullname" . }}-clients
+                servicePort: 9200
+              path: /
+{{ end }}
