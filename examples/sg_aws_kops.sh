@@ -216,21 +216,28 @@ echo "Done"
 cat << EOF
 To upgrade run a command similar to:
 
-helm upgrade sg-elk sg-helm/sg-helm \
-  --version sgh-beta4 \
-  --set data.storageClass=gp2  \
-  --set master.storageClass=gp2 \
-  --set data.replicas=1  \
-  --set master.replicas=1 \
-  --set client.replicas=1 \
-  --set kibana.replicas=1 \
-  --set common.serviceType=NodePort \
-  --set kibana.serviceType=NodePort \
-  --set common.ingressNginx.enabled=true \
-  --set common.ingressNginx.ingressCertificates=self-signed \
-  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
-  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
+
+helm upgrade sg-elk sg-helm/sg-helm \\
+  --version sgh-beta4 \\
+  --set data.storageClass=gp2  \\
+  --set master.storageClass=gp2 \\
+  --set data.replicas=1  \\
+  --set master.replicas=1 \\
+  --set client.replicas=1 \\
+  --set kibana.replicas=1 \\
+  --set common.serviceType=NodePort \\
+  --set kibana.serviceType=NodePort \\
+  --set common.ingressNginx.enabled=true \\
+  --set common.ingressNginx.ingressCertificates=self-signed \\
+  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \\
+  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \\
   --set common.do_not_fail_on_forbidden=true
+  --set common.elkversion="7.9.2" \\
+  --set common.sgversion="46.0.0" \\
+  --set common.sgkibanaversion="46.0.0"
+
+
+(NB: For upgrade you need two times more resources in the cluster to keep old and starting new instances at the same time)
 EOF
 
 #\\

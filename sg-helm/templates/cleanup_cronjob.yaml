@@ -1,0 +1,23 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cleanup-job
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ template "fullname" . }}
+          containers:
+            - name: cleanup-job
+              image: bitnami/kubectl:1.19
+              command:
+                - /bin/sh
+                - -c
+                - kubectl delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
+                - kubectl delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
+          restartPolicy: Never
+      backoffLimit: 2
