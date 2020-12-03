@@ -60,6 +60,6 @@ data:
     searchguard.cookie.password: "${KIBANA_COOKIE_PWD}"
 
     #### Additional config ####
-{{- if .Values.kibana.config }}
+{{ if .Values.kibana.config }}
 {{ toYaml .Values.kibana.config | indent 4 }}
-{{- end }}
+{{ end }}

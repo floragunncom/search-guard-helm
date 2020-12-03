@@ -4,8 +4,10 @@ metadata:
   name: cleanup-job
 spec:
   schedule: "*/1 * * * *"
-  successfulJobsHistoryLimit: 10
-  failedJobsHistoryLimit: 10
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  suspend: false
   jobTemplate:
     spec:
       template:
@@ -20,4 +22,4 @@ spec:
                 - kubectl delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
                 - kubectl delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
           restartPolicy: Never
-      backoffLimit: 2
+      backoffLimit: 1

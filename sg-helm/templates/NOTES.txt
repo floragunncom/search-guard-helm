@@ -35,7 +35,12 @@ Elasticsearch can be accessed:
 
     #Ingress Nginx
 
+    #For Cloud providers:
     export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+    #For minikube:
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
     echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
     echo "Access https://kibana.example.com"
 

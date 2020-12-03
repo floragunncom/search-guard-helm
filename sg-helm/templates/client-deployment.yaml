@@ -79,6 +79,10 @@ spec:
       {{- end }}
       initContainers:
 {{ include "init-containers" . | indent 6 }}
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: docker-auth
+      {{ end }}
       containers:
       - name: elasticsearch
         securityContext:

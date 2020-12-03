@@ -39,9 +39,9 @@ data:
     # or use the built-in search guard roles
     # See https://docs.search-guard.com/latest/roles-permissions
 
-        {{- if .Values.common.roles }}
+{{ if .Values.common.roles }}
 {{ toYaml .Values.common.roles | indent 4 }}
-        {{- end }}
+{{ end }}
 
 
   sg_roles_mapping.yml: |-
@@ -76,9 +76,9 @@ data:
       users:
       - "kibanaserver"
 
-        {{- if .Values.common.rolesmapping }}
+{{ if .Values.common.rolesmapping }}
 {{ toYaml .Values.common.rolesmapping | indent 4 }}
-        {{- end }}
+{{ end }}
 
   sg_internal_users.yml: |-
 
@@ -110,9 +110,9 @@ data:
         - kibanauser
         - readall
 
-        {{- if .Values.common.users }}
+{{ if .Values.common.users }}
 {{ toYaml .Values.common.users | indent 4 }}
-        {{- end }}
+{{ end }}
         
   sg_action_groups.yml: |-
     _sg_meta:
