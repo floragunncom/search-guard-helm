@@ -7,7 +7,7 @@ spec:
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
-  suspend: false
+  suspend: {{ .Values.common.debug_job_mode }}
   jobTemplate:
     spec:
       template:

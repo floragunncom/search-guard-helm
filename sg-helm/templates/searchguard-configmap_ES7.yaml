@@ -105,7 +105,7 @@ data:
       reserved: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: ${envbc.SG_KIBANA_RO_PWD}
+      hash: ${envbc.SG_KIBANARO_PWD}
       backend_roles:
         - kibanauser
         - readall

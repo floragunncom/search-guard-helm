@@ -113,7 +113,7 @@ spec:
 
               kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
 
               cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
@@ -134,7 +134,10 @@ spec:
                 KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
-                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range .Values.common.sg_users }}
+                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
@@ -273,7 +276,7 @@ spec:
 
               kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
 
               cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
@@ -294,7 +297,10 @@ spec:
                 KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
-                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range .Values.common.sg_users }}
+                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
@@ -393,7 +399,7 @@ spec:
 
               kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              kibana_ro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
               kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
 
               cat >"{{ template "fullname" . }}-passwd-secret.yaml" <<EOL
@@ -414,7 +420,10 @@ spec:
                 KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
-                SG_KIBANA_RO_PWD: $(echo -n $kibana_ro_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range .Values.common.sg_users }}
+                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
               EOL
 
               kubectl apply -f "{{ template "fullname" . }}-passwd-secret.yaml"
