@@ -74,6 +74,10 @@ Kibana can be accessed:
     export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
     #For minikube:
+    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
+
+    minikube tunnel
+
     export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
     echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
