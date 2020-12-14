@@ -45,7 +45,7 @@ TODO: replace this with a daemon set
 
 */}}
 {{- define "generate-certificates-init-container" -}}
-{{- if (not .Values.common.external_ca_certificates_enabled) }}
+{{- if (not .Values.common.external_ca_single_certificate_enabled) }}
 - name: generate-certificates
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}

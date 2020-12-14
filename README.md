@@ -25,13 +25,13 @@ We recommend at least 8 GB and 4 CPUs. By default, we deploy 5 pods (includes al
 You need to have the aws cli installed and configured
 
 ```
-./examples/sg_aws_kops.sh -c mytestcluster
+./tools/sg_aws_kops.sh -c mytestcluster
 ```
 
 Delete the cluster when you are finished with testing Search Guard
 
 ```
-./examples/sg_aws_kops.sh -d mytestcluster
+./tools/sg_aws_kops.sh -d mytestcluster
 ```
 
 ## Setup Minikube (optional)

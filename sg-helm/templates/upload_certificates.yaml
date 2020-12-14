@@ -11,7 +11,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/sgadmin/*.pem").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/sgadmin/*.pem" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if .Values.common.external_ca_certificates_enabled }}
@@ -26,7 +27,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/nodes/*").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/nodes/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if and (eq .Values.common.ingressNginx.enabled true) (eq .Values.common.ingressNginx.ingressCertificates "external") }}
@@ -41,7 +43,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/ingress_certificates/kibana/*").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/ingress_certificates/kibana/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if and (eq .Values.common.ingressNginx.enabled true) (eq .Values.common.ingressNginx.ingressCertificates "external") }}
@@ -56,7 +59,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/ingress_certificates/elasticsearch/*").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/ingress_certificates/elasticsearch/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if .Values.common.ca_certificates_enabled }}
@@ -71,7 +75,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/ca/*").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/ca/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if .Values.common.external_ca_single_certificate_enabled }}
@@ -86,7 +91,8 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/sgadmin/*.pem").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/sgadmin/*.pem" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}
 ---
 {{ if .Values.common.external_ca_single_certificate_enabled }}
@@ -101,5 +107,6 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{ tpl ((.Files.Glob "keys/sg-esnode/*").AsSecrets) . | indent 4 }}
+{{- $path := printf "%s/sg-esnode/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}

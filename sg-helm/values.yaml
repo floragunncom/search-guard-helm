@@ -15,6 +15,15 @@ common:
     elasticsearch_base_image: "sg-elasticsearch"
     kibana_base_image: "sg-kibana"
     sgadmin_base_image: "sg-sgadmin"
+
+  #Fill in to authenticate to private docker registry
+  docker_registry:
+    enabled: false
+  #    server: https://index.docker.io/v1/
+  #    username: username
+  #    password: password
+  #    email: info@domain.com
+
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.9.1"
@@ -98,18 +107,14 @@ common:
   external_ca_certificates_enabled: false
   #Set external_ca_certificates_enabled to true if add single certificates for all nodes and services to the folder ../keys/sg-esnode/ to use it for encryption
   external_ca_single_certificate_enabled: false
-#Fill in to authenticate to private docker registry
-  docker_registry:
-    enabled: false
-#    server: https://index.docker.io/v1/
-#    username: username
-#    password: password
-#    email: info@domain.com
-#  sg_users:
-#    - user1
+  #Set directory where certificates are stored
+  certificates_directory: "secrets"
+
 
   # Any extra or specific configuration that is needed can be added here.
   # Will be added to all elasticsearch.yml files on all nodes
+
+
 #  config:
 #    http:
 #      compression: false
@@ -117,7 +122,11 @@ common:
 #        enabled: false
 #        allow-origin: "*"
 #    index.codec: best_compression
-  
+
+  # Adding users list here to generate passwords for each one
+#  sg_users:
+#    - user1
+
   # Configure additional users (maps to sg_internal_users.yml)
 #  users:
 #    user1:
