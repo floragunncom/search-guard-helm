@@ -107,6 +107,6 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-4"
 data:
-{{- $path := printf "%s/sg-esnode/*" .Values.common.certificates_directory }}
+{{- $path := printf "%s/nodes/*" .Values.common.certificates_directory }}
 {{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}

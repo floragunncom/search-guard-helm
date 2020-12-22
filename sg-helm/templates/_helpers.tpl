@@ -45,7 +45,7 @@ TODO: replace this with a daemon set
 
 */}}
 {{- define "generate-certificates-init-container" -}}
-{{- if (not .Values.common.external_ca_single_certificate_enabled) }}
+{{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
 - name: generate-certificates
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -72,13 +72,12 @@ TODO: replace this with a daemon set
         #!/usr/bin/env bash -e
 
         cp /usr/bin/kubectl /kubectl/kubectl
-
-        until kubectl get secrets {{ template "fullname" . }}-root-ca-secret; do
-          echo 'Wait for {{ template "fullname" . }}-root-ca-secret'; 
-          sleep 10 ; 
+        until kubectl get secrets {{ template "fullname" . }}-admin-cert-secret; do
+            echo 'Wait for Admin certificate secrets to be generated or uploaded';
+            sleep 10 ;
         done
 
-        echo "OK, {{ template "fullname" . }}-root-ca-secret exists now"
+        echo "OK, {{ template "fullname" . }}-admin-cert-secret exists now"
 
         until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
           echo 'Wait for {{ template "fullname" . }}-passwd-secret'; 
