@@ -81,7 +81,7 @@ If not then execute the steps above (Warning: `minikube delete` will delete your
 ## Deploying with Helm
 
 
-### Deploy via repository
+### Deploy via repository (Not available now)
 
 ```
 helm repo add sg-helm https://floragunncom.github.io/search-guard-helm
@@ -105,12 +105,23 @@ $ helm install sg-elk search-guard-helm/sg-helm
 ## Accessing Kibana
 
 Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
-
+Run in separate window:
 ```
-export POD_NAME=$(kubectl get pods --namespace default -l "component=sg-elk-sg-helm,role=kibana" -o jsonpath="{.items[0].metadata.name}")
-echo "Visit https://127.0.0.1:5601 and login with admin/admin to use Kibana"
-kubectl port-forward --namespace default $POD_NAME 5601:5601
+minikube tunnel
 ```
+Get Kibana LoadBalancer IP:
+```
+kubectl get svc|grep LoadBalancer|awk '{print $4}'
+```
+Create record in local etc/hosts 
+```
+<LoadBalancer IP>   kibana.example.com
+```
+Get Kibana user 'kibanaro' password:
+```
+kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d
+```
+Access https://kibana.example.com with `kibanaro/<kibana user password>`
 
 ## Random passwords and certificates
 Passwords for the admin users, the Kibana user, the Kibana server and the Kibana cookie are generated randomly on initial deployment.

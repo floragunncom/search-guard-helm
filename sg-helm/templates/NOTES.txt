@@ -40,7 +40,25 @@ Kibana can be accessed:
     https://{{ template "fullname" . }}.{{ .Release.Namespace }}.svc:5601
 
   * From outside the cluster, run these commands in the same shell:
-    {{- if contains "NodePort" .Values.kibana.serviceType }}
+
+    {{- if .Values.common.ingressNginx.enabled }}
+
+    #Ingress Nginx
+
+    #For Cloud providers:
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+    #For minikube:
+    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
+
+    minikube tunnel
+
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+    echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
+    echo "Access https://kibana.example.com"
+
+    {{- else if contains "NodePort" .Values.kibana.serviceType }}
 
     #NodePort
     export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }})
@@ -66,21 +84,3 @@ Kibana can be accessed:
 
     {{- end }}
 
-    {{ if .Values.common.ingressNginx.enabled }}
-
-    #Ingress Nginx
-
-    #For Cloud providers:
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
-    #For minikube:
-    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
-
-    minikube tunnel
-
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-    echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
-    echo "Access https://kibana.example.com"
-
-    {{ end }}
