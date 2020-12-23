@@ -136,16 +136,6 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 * To change the configuration 
   * Edit `sg-helm/values.yaml` and run `helm upgrade`. The pods will be reconfigured or restarted if necessary
   * or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necessary
-* Alternatively you can exec into the sgadmin pod and run low-level sgadmin commands (experts only):
-
-  WARNING(!): You currently can not update sg_internal_users.yml because of the random passwords. If you do this anyhow you may lock you out of the cluster.
-
-  ```
-  $ kubectl exec -it sg-elk-sg-helm-sgadmin-555b5f7df-9sqrm bash
-  [root@sg-elk-sg-helm-sgadmin-555b5f7df-9sqrm ~]# /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -si -icl -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
-  ```
-
-  In that case, refer to the documentation of `update_sgconfig_on_change` in `sg-helm/values.yaml` so that your changes will not be overridden accidentally.
 
 ## Credits
 

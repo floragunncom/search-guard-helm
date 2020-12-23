@@ -7,7 +7,39 @@ Elasticsearch can be accessed:
     https://{{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200
 
   * From outside the cluster, run these commands in the same shell:
-    {{ if contains "NodePort" .Values.common.serviceType }}
+    {{ if .Values.common.ingressNginx.enabled }}
+
+    #Ingress Nginx
+
+    #Getting Elasticsearch external IP for Cloud providers:
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+
+     WARNING: You have likely exposed your Elasticsearch direct to the internet.
+              Make sure Search Guard is properly configured.
+
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+
+
+    #Getting Elasticsearch external IP for minikube:
+
+    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
+
+    minikube tunnel
+
+    #Get external IP for Kibana service
+    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+    echo "Add IP of $INGRESS_ADDRESS to records to DNS as elasticsearch.example.com"
+
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+
+    #Access https://elasticsearch.example.com
+    
+
+    {{ else if contains "NodePort" .Values.common.serviceType }}
 
     #NodePort
     export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }}-clients)
@@ -41,24 +73,44 @@ Kibana can be accessed:
 
   * From outside the cluster, run these commands in the same shell:
 
-    {{- if .Values.common.ingressNginx.enabled }}
+    {{ if .Values.common.ingressNginx.enabled }}
 
     #Ingress Nginx
 
-    #For Cloud providers:
+    #Getting Kibana external IP for Cloud providers:
     export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
-    #For minikube:
+
+     WARNING: You have likely exposed your Kibana direct to the internet.
+              Make sure Search Guard is properly configured.
+
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+
+
+    #Getting Kibana external IP for minikube:
+
     #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
 
     minikube tunnel
 
+    #Get external IP for Kibana service
     export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
     echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.example.com"
-    echo "Access https://kibana.example.com"
 
-    {{- else if contains "NodePort" .Values.kibana.serviceType }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+
+    #Get Kibana user and Kibana password
+
+    export KIBANARO_PASSWORD=$(kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
+    echo $KIBANARO_PASSWORD
+
+    #Access https://kibana.example.com with kibanaro/$KIBANARO_PASSWORD
+
+
+    {{ else if contains "NodePort" .Values.kibana.serviceType }}
 
     #NodePort
     export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }})
@@ -82,5 +134,5 @@ Kibana can be accessed:
     echo "Visit https://127.0.0.1:5601 to use Kibana"
     kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 5601:5601
 
-    {{- end }}
+    {{ end }}
 
