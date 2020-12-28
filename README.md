@@ -141,99 +141,100 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
 
 ##Configuration
-| Parameter | Description | Default value |
-|------|---------|-----------|
-| client.annotation |  Metadata to attach to client nodes | null |
-| client.antiAffinity | Affinity policy for client nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul>  | soft |
-| client.heapSize | HeapSize limit for client nodes | 1g |
-| client.labels | Metadata to attach to client nodes | null |
-| client.processors | Elasticsearch processors configuration on client nodes | 1|
-| client.replicas | Stable number of client replica Pods running at any given time  | 1 |
-| client.resources.limits.cpu | CPU limits for clint nodes | 500m |
-| client.resources.limits.memory | Memory limits for clint nodes | 1500Mi |
-| client.resources.requests.cpu | CPU resources requested on cluster start | 100m |
-| client.resources.requests.memory | Memory resources requested on cluster start | 1500Mi |
-| client.storage | Storage size for client nodes | 2Gi |
-| client.storageClass | Storage class for client nodes | standard |
-| common.admin_dn |  |  |
-| common.ca_certificates_enabled |  |  |
-| common.certificates_directory |  |  |
-| common.cluster_name |  |  |
-| common.config |  |  |
-| common.debug_job_mode |  |  |
-| common.do_not_fail_on_forbidden |  |  |
-| common.docker_registry.email |  |  |
-| common.docker_registry.enabled |  |  |
-| common.docker_registry.password |  |  |
-| common.docker_registry.server |  |  |
-| common.docker_registry.username |  |  |
-| common.elkversion |  |  |
-| common.external_ca_certificates_enabled |  |  |
-| common.external_ca_single_certificate_enabled |  |  |
-| common.images.elasticsearch_base_image |  |  |
-| common.images.kibana_base_image |  |  |
-| common.images.provider |  |  |
-| common.images.sgadmin_base_image |  |  |
-| common.ingressNginx.enabled |  |  |
-| common.ingressNginx.ingressCertificates |  |  |
-| common.ingressNginx.ingressElasticsearchDomain |  |  |
-| common.ingressNginx.ingressKibanaDomain |  |  |
-| common.nodes_dn |  |  |
-| common.plugins |  |  |
-| common.pod_disruption_budget_enable |  |  |
-| common.restart_pods_on_config_change |  |  |
-| common.roles |  |  |
-| common.rolesmapping |  |  |
-| common.serviceType |  |  |
-| common.sg_enterprise_modules_enabled |  |  |
-| common.sg_users |  |  |
-| common.sgadmin_certificates_enabled |  |  |
-| common.sgkibanaversion |  |  |
-| common.sgversion |  |  |
-| common.update_sgconfig_on_change |  |  |
-| common.users |  |  |
-| common.xpack_basic |  |  |
-| data.annotations | Metadata to attach to data nodes | null |
-| data.antiAffinity | Affinity policy for data nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
-| data.heapSize | HeapSize limit for data nodes | 1g |
-| data.labels | Metadata to attach to data nodes | null |
-| data.processors | Elasticsearch processors configuration on data nodes | null |
-| data.replicas |  Stable number of data replica Pods running at any given time  | 1 | 
-| data.resources.limits.cpu | CPU limits for data nodes | 1 |
-| data.resources.limits.memory |  Memory limits for data nodes | 2Gi |
-| data.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1 |
-| data.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 1500Mi |
-| data.storage | Storage size for data nodes | 4Gi |
-| data.storageClass | Storage type for data nodes | standard |
-| kibana.annotations | Metadata to attach to kibana nodes | null |
-| kibana.antiAffinity | Affinity policy for kibana nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
-| kibana.heapSize | HeapSize limit for kibana nodes | 1g |
-| kibana.labels | Metadata to attach to kibana nodes | null |
-| kibana.processors | Kibana processors configuration on Kibana nodes | 1 |
-| kibana.replicas | Stable number of kibana replica Pods running at any given time | 1 |
-| kibana.resources.limits.cpu | CPU limits for kibana nodes | 500m |
-| kibana.resources.limits.memory | Memory limits for kibana nodes | 1500Mi |
-| kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
-| kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
-| kibana.storage | Storage size for client nodes | 2Gi |
-| kibana.storageClass | Storage class for client nodes | standard |
-| master.annotations | Metadata to attach to master nodes | null |
-| master.antiAffinity | Affinity policy for master nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
-| master.heapSize | HeapSize limit for master nodes | 1g |
-| master.labels |  Metadata to attach to master nodes | null |
-| master.processors | Elasticsearch processors configuration for master nodes | null |
-| master.replicas | Stable number of master replica Pods running at any given time |  1|
-| master.resources.limits.cpu | CPU limits for master nodes | 500m |
-| master.resources.limits.memory | Memory limits for data nodes | 1500Mi |
-| master.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
-| master.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
-| master.storage | Storage size for master nodes | 2Gi |
-| master.storageClass | Storage class for master nodes | standard |
-| pullPolicy |  |  |
-| rbac.create |  |  |
-| service.httpPort |  |  |
-| service.transportPort |  |  |
-
+ | Parameter | Description | Default value |
+ |------|---------|-----------|
+ | client.annotation |  Metadata to attach to client nodes | null |
+ | client.antiAffinity | Affinity policy for client nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul>  | soft |
+ | client.heapSize | HeapSize limit for client nodes | 1g |
+ | client.labels | Metadata to attach to client nodes | null |
+ | client.processors | Elasticsearch processors configuration on client nodes | 1|
+ | client.replicas | Stable number of client replica Pods running at any given time  | 1 |
+ | client.resources.limits.cpu | CPU limits for client nodes | 500m |
+ | client.resources.limits.memory | Memory limits for client nodes | 1500Mi |
+ | client.resources.requests.cpu | CPU resources requested on cluster start | 100m |
+ | client.resources.requests.memory | Memory resources requested on cluster start | 1500Mi |
+ | client.storage | Storage size for client nodes | 2Gi |
+ | client.storageClass | Storage class for client nodes | standard |
+ | common.admin_dn | DN of certificate with admin privileges | CN=sgadmin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
+ | common.ca_certificates_enabled | Feature that enables possibility to upload customer CA and use it to sign cluster certificates | false |
+ | common.certificates_directory | Directory with customer certificates that are used in ES cluster | secrets |
+ | common.cluster_name | cluster.name parameter in elasticsearch.yml | searchguard |
+ | common.config.* | Additional configuration that will be added to elasticsearch.yml | |
+ | common.debug_job_mode | Feature to disable removal process of completed jobs | false |
+ | common.do_not_fail_on_forbidden | With this mode enabled Search Guard filters all indices from a query a user does not have access to. Thus not security exception is raised. See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden |  |
+ | common.docker_registry.email | Email information for Docker account in docker registry | null |
+ | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false |
+ | common.docker_registry.password | Password of docker registry account | null |
+ | common.docker_registry.server | Docker registry address | null |
+ | common.docker_registry.username | Login of docker registry account | null |
+ | common.elkversion | Version of Elasticsearch and Kibana in ES cluster | 7.9.1 |
+ | common.external_ca_certificates_enabled | Feature that enables possibility to upload customer ca signed certificates for each node in the ES cluster | false |
+ | common.external_ca_single_certificate_enabled | Feature that enables possibility to upload single customer ca signed certificate for all nodes in the ES cluster | false |
+ | common.images.elasticsearch_base_image | Docker image name with Elasticsearch and Search Guard plugin installed | sg-elasticsearch |
+ | common.images.kibana_base_image | Docker image name with Kibana and Search Guard plugin installed | sg-kibana |
+ | common.images.provider | Docker registry provider of docker images in the ES cluster | floragunncom |
+ | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin |
+ | common.ingressNginx.enabled | Enabling NGINX Ingress that exposes Elasticsearch and Kibana services outside the ES cluster | true |
+ | common.ingressNginx.ingressCertificates | Ingress Certificates types: "self-signed" for auto-generated with TLS tool self-signed certificates, "external" for customer ca signed certificates | self-signed |
+ | common.ingressNginx.ingressElasticsearchDomain | Elasticsearch service domain that is exposed outside the ES cluster | elasticsearch.example.com |
+ | common.ingressNginx.ingressKibanaDomain | Kibana service domain that is exposed outside the ES cluster | kibana.example.com |
+ | common.nodes_dn | Certificate DN of the nodes in the ES cluster |  |
+ | common.plugins | List of additional Elasticsearch plugins to be installed on the nodes of the ES cluster | null |
+ | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. |  |
+ | common.restart_pods_on_config_change | Fetaure to restart pods automatically when their configuration was changed |  |
+ | common.roles | Additional roles configuration in sg_roles.yml | null |
+ | common.rolesmapping | Additional roles mapping configuration in sg_roles_mapping.yml |  |
+ | common.serviceType | Type of Elasticsearch services exposing in the ES cluster | ClusterIP |
+ | common.sg_enterprise_modules_enabled | Enable or disable Search Guard enterprise modules | false |
+ | common.sg_users | List of additional users to configure in the ES cluster |  |
+ | common.sgadmin_certificates_enabled | Feature to use self-signed certificates generated by Search Guard TLS tool in the cluster | true |
+ | common.sgkibanaversion | Search Guard Kibana plugin version to use in the cluster | 45.0.0 |
+ | common.sgversion |  Search Guard Kibana plugin version to use in the cluster | 45.0.0 |
+ | common.update_sgconfig_on_change | Run automatically sgadmin whenever neccessary  | true |
+ | common.users | Additional users configuration in sg_internal_users.yml | null |
+ | common.xpack_basic | Enable/Disable X-Pack in the ES cluster | false |
+ | data.annotations | Metadata to attach to data nodes | null |
+ | data.antiAffinity | Affinity policy for data nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | data.heapSize | HeapSize limit for data nodes | 1g |
+ | data.labels | Metadata to attach to data nodes | null |
+ | data.processors | Elasticsearch processors configuration on data nodes | null |
+ | data.replicas |  Stable number of data replica Pods running at any given time  | 1 | 
+ | data.resources.limits.cpu | CPU limits for data nodes | 1 |
+ | data.resources.limits.memory |  Memory limits for data nodes | 2Gi |
+ | data.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1 |
+ | data.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 1500Mi |
+ | data.storage | Storage size for data nodes | 4Gi |
+ | data.storageClass | Storage type for data nodes | standard |
+ | kibana.annotations | Metadata to attach to kibana nodes | null |
+ | kibana.antiAffinity | Affinity policy for kibana nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | kibana.heapSize | HeapSize limit for kibana nodes | 1g |
+ | kibana.httpPort | Port to be exposed by Kibana service in the cluster | 5601 |
+ | kibana.labels | Metadata to attach to kibana nodes | null |
+ | kibana.processors | Kibana processors configuration on Kibana nodes | 1 |
+ | kibana.replicas | Stable number of kibana replica Pods running at any given time | 1 |
+ | kibana.resources.limits.cpu | CPU limits for kibana nodes | 500m |
+ | kibana.resources.limits.memory | Memory limits for kibana nodes | 1500Mi |
+ | kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
+ | kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
+ | kibana.serviceType | Type of Kibana service exposing in the ES cluster | ClusterIP |
+ | kibana.storage | Storage size for client nodes | 2Gi |
+ | kibana.storageClass | Storage class for client nodes | standard |
+ | master.annotations | Metadata to attach to master nodes | null |
+ | master.antiAffinity | Affinity policy for master nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | master.heapSize | HeapSize limit for master nodes | 1g |
+ | master.labels |  Metadata to attach to master nodes | null |
+ | master.processors | Elasticsearch processors configuration for master nodes | null |
+ | master.replicas | Stable number of master replica Pods running at any given time |  1|
+ | master.resources.limits.cpu | CPU limits for master nodes | 500m |
+ | master.resources.limits.memory | Memory limits for data nodes | 1500Mi |
+ | master.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
+ | master.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
+ | master.storage | Storage size for master nodes | 2Gi |
+ | master.storageClass | Storage class for master nodes | standard |
+ | pullPolicy | Kubernetes image pull policy | IfNotPresent |
+ | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true |
+ | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 |
+ | service.transportPort | Port to be exposed by Elasticsearch service for transport communication in the cluster | 9300 |
 
 ## Credits
 

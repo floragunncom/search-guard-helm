@@ -155,8 +155,8 @@ common:
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}
   # Do not add the searchguard plugin here, because its already installed in the main image
-  plugins:
-    - analysis-phonetic
+  #plugins:
+  #  - analysis-phonetic
 
 # Client/ingest nodes can execute pre-processing pipelines, composed of
 # one or more ingest processors. Depending on the type of operations performed
