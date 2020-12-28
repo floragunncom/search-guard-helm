@@ -141,6 +141,8 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
 
 ##Configuration
+
+
  | Parameter | Description | Default value |
  |------|------|------|
  | client.annotation |  Metadata to attach to client nodes | null |
