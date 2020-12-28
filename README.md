@@ -142,9 +142,9 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
 ##Configuration
  | Parameter | Description | Default value |
- |------|---------|-----------|
+ |------|------|------|
  | client.annotation |  Metadata to attach to client nodes | null |
- | client.antiAffinity | Affinity policy for client nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul>  | soft |
+ | client.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible  | soft |
  | client.heapSize | HeapSize limit for client nodes | 1g |
  | client.labels | Metadata to attach to client nodes | null |
  | client.processors | Elasticsearch processors configuration on client nodes | 1|
@@ -194,7 +194,7 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
  | common.users | Additional users configuration in sg_internal_users.yml | null |
  | common.xpack_basic | Enable/Disable X-Pack in the ES cluster | false |
  | data.annotations | Metadata to attach to data nodes | null |
- | data.antiAffinity | Affinity policy for data nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | data.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | data.heapSize | HeapSize limit for data nodes | 1g |
  | data.labels | Metadata to attach to data nodes | null |
  | data.processors | Elasticsearch processors configuration on data nodes | null |
@@ -206,7 +206,7 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
  | data.storage | Storage size for data nodes | 4Gi |
  | data.storageClass | Storage type for data nodes | standard |
  | kibana.annotations | Metadata to attach to kibana nodes | null |
- | kibana.antiAffinity | Affinity policy for kibana nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | kibana.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | kibana.heapSize | HeapSize limit for kibana nodes | 1g |
  | kibana.httpPort | Port to be exposed by Kibana service in the cluster | 5601 |
  | kibana.labels | Metadata to attach to kibana nodes | null |
@@ -220,7 +220,7 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
  | kibana.storage | Storage size for client nodes | 2Gi |
  | kibana.storageClass | Storage class for client nodes | standard |
  | master.annotations | Metadata to attach to master nodes | null |
- | master.antiAffinity | Affinity policy for master nodes: <ul><li>'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node</li><li>'soft' will do this "best effort"</li></ul> | soft |
+ | master.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | master.heapSize | HeapSize limit for master nodes | 1g |
  | master.labels |  Metadata to attach to master nodes | null |
  | master.processors | Elasticsearch processors configuration for master nodes | null |
