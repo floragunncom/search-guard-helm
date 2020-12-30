@@ -139,11 +139,72 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
 ## Examples
 
-Search Guard helm charts provides six usage scenarios:
+Search Guard Helm charts provides six usage scenario that deploys 4-nodes Elasticsearch cluster which includes master, ingest, data and kibana nodes. 
+These examples could be used only for testing purposes. All examples were tested with Helm v3.2.4 and Minikube v1.11.0.
+The examples covers following cases:
+ * basic setup which includes self-signed certificates for transport and http communication in the cluster
+ * setup with custom Elasticsearch and Search Guard configuration
+ * setup with custom Elasticsearch and Kibana services 
+ * setup with custom CA certificates
+ * setup with custom Elasticsearch cluster nodes certificates
+ * setup with single certificates for Elasticsearch cluster nodes
+
+### Basic setup 
+
+Go to your search-guard-helm folder with pre-installed dependencies and do:
+```
+$ helm install sg-elk sg-helm
+```
+In this case, you get Elasticsearch cluster with self-signed certificates for transport communication and service publishing on Ingress Nginx.
+To get access to Kibana:
+  * Run minikube tunnel in different window
+  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your etc/hosts file
+  * Access https://kibana.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
+
+###  Setup with custom Elasticsearch and Search Guard configuration
+
+Go to your search-guard-helm folder with pre-installed dependencies and do:
+```
+$ helm install -f sg-helm/examples/setup_custom_sg_config/values.yaml sg-elk sg-helm
+```
+In this case, you get Elasticsearch cluster from basic setup with additional `config.http` configuration in `elasticsearch.yml` and additional user `beatsuser`.
+Get the password of newly created user running `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_BEATSUSER_PWD}" | base64 -d`.
+
+ To get access to Kibana:
+  * Run minikube tunnel in different window
+  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your etc/hosts file
+  * Access https://kibana.example.com with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
+
+### Setup with custom Elasticsearch and Kibana services 
+
+Go to your search-guard-helm folder with pre-installed dependencies and do:
+```
+$ helm install -f sg-helm/examples/setup_custom_service_certs/values.yaml sg-elk sg-helm
+```
+This example shows how to specify your own Elasticsearch and Kibana domain names as `ingressKibanaDomain` and `ingressElasticsearchDomain` and provide custom ca signed certificates for them. 
+Please, substitute default values and files with your own items.
+
+ To get access to Kibana:
+  * Run minikube tunnel in different window
+  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to `ingressKibanaDomain` in your etc/hosts file
+  * Access https://`ingressKibanaDomain` with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
+
+### Setup with custom CA certificate
+
+Go to your search-guard-helm folder with pre-installed dependencies and do:
+```
+$ helm install -f sg-helm/examples/setup_custom_service_certs/values.yaml sg-elk sg-helm
+```
+Please, provide your own CA certificate by the `crt.pem` and `key.pem` files in `secrets/ca` folder.
+This CA certificate will be used to generate all Elasticsearch nodes certificates for transport communication and certificates for HTTPS service for Elasticsearch and Kibana.
+
+ To get access to Kibana:
+  * Run minikube tunnel in different window
+  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your etc/hosts file
+  * Access https://kibana.example.com with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
 
 
-
-##Configuration
+## Configuration
 
 
  | Parameter | Description | Default value |
