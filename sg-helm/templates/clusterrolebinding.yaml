@@ -1,6 +1,6 @@
 {{- if .Values.rbac.create -}}
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   labels:
     app: {{ template "fullname" .}}
@@ -8,6 +8,7 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
@@ -23,7 +24,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   labels:
     app: {{ template "fullname" .}}
@@ -31,6 +32,7 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: admin-user
+  namespace: {{ .Release.Namespace }}
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
@@ -46,7 +48,7 @@ subjects:
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   labels:
     app: {{ template "fullname" .}}
@@ -54,6 +56,7 @@ metadata:
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
   name: sgadmin
+  namespace: {{ .Release.Namespace }}
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
