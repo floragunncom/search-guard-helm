@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "fullname" . }}-cleanup-sg-data"
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: sgadmin
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ template "fullname" . }}-cleanup-sg-data"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "fullname" . }}
+        component: {{ template "fullname" . }}
+        role: sgadmin
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "fullname" . }}
+      containers:
+        - name: cleanup-sg-data
+          image: bitnami/kubectl:1.19
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+                kubectl delete secrets {{ template "fullname" . }}-nodes-cert-secret || true
+                kubectl delete secrets {{ template "fullname" . }}-admin-cert-secret || true
+                kubectl delete secrets {{ template "fullname" . }}-passwd-secret || true            -
+                kubectl delete secrets {{ .Release.Name }}-ingress-nginx-admission || true
+                kubectl delete secrets {{ template "fullname" . }}-nodes-cert-secret || true
+                kubectl delete secrets {{ template "fullname" . }}-kibana-service-cert-secret || true
+                kubectl delete secrets {{ template "fullname" . }}-es-service-cert-secret || true
+                kubectl delete secrets $(kubectl get secrets -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | grep {{ template "fullname" . }}-token ) || true
+                kubectl delete secrets {{ template "fullname" . }}-root-ca-secret || true
