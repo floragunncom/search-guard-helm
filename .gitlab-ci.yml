@@ -18,7 +18,7 @@ before_script:
 stages:
   - build
 
-retry_aws_job:
+build_oss_images:
   stage: build
   script:
     - echo "Executing $CI_JOB"
