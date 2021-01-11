@@ -25,7 +25,7 @@ build_oss_images:
     - export ELK_VERSION=$ELK_VERSION
     - export SG_VERSION=$SG_VERSION
     - export SG_KIBANA_VERSION=$SG_KIBANA_VERSION
-    - ./build.sh push
+    - ./docker/build.sh push
   only:
     variables:
       - $CI_JOB == "build_oss"
