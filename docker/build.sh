@@ -2,7 +2,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PUSH="$1"
 
-docker system prune
+#docker system prune
 
 versions=(
     #"ELK_VERSION=6.4.3 SG_VERSION=24.0 SG_KIBANA_VERSION=16"
