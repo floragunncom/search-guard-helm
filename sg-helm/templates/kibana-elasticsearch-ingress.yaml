@@ -8,19 +8,24 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
   tls:
+{{ if not (eq .Values.common.ingressNginx.ingressKibanaDomain "none") }}
     - hosts:
         - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
       # This secret must exist beforehand
       # The cert must also contain the subj-name foo.bar.com
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
       secretName: {{ template "fullname" . }}-kibana-service-cert-secret
+{{ end }}
+{{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
     - hosts:
         - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
     # This secret must exist beforehand
     # The cert must also contain the subj-name bar.baz.com
     # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
       secretName: {{ template "fullname" . }}-es-service-cert-secret
+{{ end }}
   rules:
+{{ if not (eq .Values.common.ingressNginx.ingressKibanaDomain "none") }}
       - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
         http:
           paths:
@@ -28,6 +33,8 @@ spec:
                 serviceName: {{ template "fullname" . }}
                 servicePort: 5601
               path: /
+{{ end }}
+{{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
       - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
         http:
           paths:
@@ -35,4 +42,5 @@ spec:
                 serviceName: {{ template "fullname" . }}-clients
                 servicePort: 9200
               path: /
+{{ end }}
 {{ end }}

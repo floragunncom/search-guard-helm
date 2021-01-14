@@ -11,7 +11,7 @@ metadata:
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
-    "helm.sh/hook": pre-delete
+    "helm.sh/hook": post-delete
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": hook-succeeded
 spec:
@@ -34,12 +34,9 @@ spec:
             - /bin/sh
             - -c
             - |
-                kubectl delete secrets {{ template "fullname" . }}-nodes-cert-secret || true
-                kubectl delete secrets {{ template "fullname" . }}-admin-cert-secret || true
-                kubectl delete secrets {{ template "fullname" . }}-passwd-secret || true            -
-                kubectl delete secrets {{ .Release.Name }}-ingress-nginx-admission || true
-                kubectl delete secrets {{ template "fullname" . }}-nodes-cert-secret || true
-                kubectl delete secrets {{ template "fullname" . }}-kibana-service-cert-secret || true
-                kubectl delete secrets {{ template "fullname" . }}-es-service-cert-secret || true
-                kubectl delete secrets $(kubectl get secrets -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | grep {{ template "fullname" . }}-token ) || true
-                kubectl delete secrets {{ template "fullname" . }}-root-ca-secret || true
+{{ if .Values.common.remove_pvc_on_delete }}
+                kubectl delete $$(kubectl get pvc -l component={{ template "fullname" . }} -o name)
+{{ end }}
+                kubectl delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
+
+                kubectl delete $$(kubectl get secrets -l app={{ template "fullname" . }} -o name)
