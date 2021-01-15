@@ -31,7 +31,7 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: admin-user
+  name: search-guard-admin-user
   namespace: {{ .Release.Namespace }}
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -44,7 +44,7 @@ roleRef:
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  name: admin-user
+  name: search-guard-admin-user
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1

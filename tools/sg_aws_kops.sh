@@ -135,8 +135,8 @@ kops create cluster $CLUSTERNAME \
   --master-zones="$REGION"a \
   --master-size m5.large \
   --master-volume-size 10 \
-  --node-size m5.large \
-  --node-volume-size 10 \
+  --node-size m5.xlarge \
+  --node-volume-size 20 \
   --node-count=2 \
   --master-count=1 \
   --yes
@@ -149,27 +149,26 @@ until kops validate cluster --name="$CLUSTERNAME" --state="$KOPS_STATE_STORE" > 
 echo "Cluster is ready!"
 
 #helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
-cd ../..
 
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-helm install sg-elk sg-helm
+#helm install sg-elk sg-helm
 
-#helm install sg-elk sg-helm \
-#  --version sgh-beta4 \
-#  --set data.storageClass=gp2  \
-#  --set master.storageClass=gp2 \
-#  --set data.replicas=1  \
-#  --set master.replicas=1 \
-#  --set client.replicas=1 \
-#  --set kibana.replicas=1 \
-#  --set common.serviceType=NodePort \
-#  --set kibana.serviceType=NodePort \
-#  --set common.ingressNginx.enabled=true \
-#  --set common.ingressNginx.ingressCertificates=self-signed \
-#  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
-#  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
-#  --set common.do_not_fail_on_forbidden=true
+helm install sg-elk sg-helm \
+  --version sgh-beta4 \
+  --set data.storageClass=gp2  \
+  --set master.storageClass=gp2 \
+  --set data.replicas=1  \
+  --set master.replicas=1 \
+  --set client.replicas=1 \
+  --set kibana.replicas=1 \
+  --set common.serviceType=NodePort \
+  --set kibana.serviceType=NodePort \
+  --set common.ingressNginx.enabled=true \
+  --set common.ingressNginx.ingressCertificates=self-signed \
+  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
+  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
+  --set common.do_not_fail_on_forbidden=true
 
 
 check_ret "Helm install"
@@ -200,7 +199,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/a
 
 BASIC_PASS_CMD="kubectl config view -o=jsonpath='{.users[?(@.name=="\"$CLUSTERNAME-basic-auth\"")].user.password}'"
 BASIC_PASS=$($BASIC_PASS_CMD | tr -d "'")
-DASHBOARD_TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}') | grep "token: " | awk '{print $2}')
+DASHBOARD_TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep search-guard-admin-user | awk '{print $1}') | grep "token: " | awk '{print $2}')
 APISERVER=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
 #DASHBOARD="$APISERVER/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview"
 
@@ -220,7 +219,7 @@ cat << EOF
 To upgrade run a command similar to:
 
 
-helm upgrade sg-elk sg-helm/sg-helm \\
+helm upgrade sg-elk sg-helm \\
   --version sgh-beta4 \\
   --set data.storageClass=gp2  \\
   --set master.storageClass=gp2 \\
@@ -234,7 +233,7 @@ helm upgrade sg-elk sg-helm/sg-helm \\
   --set common.ingressNginx.ingressCertificates=self-signed \\
   --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \\
   --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \\
-  --set common.do_not_fail_on_forbidden=true
+  --set common.do_not_fail_on_forbidden=true \\
   --set common.elkversion="7.9.2" \\
   --set common.sgversion="46.0.0" \\
   --set common.sgkibanaversion="46.0.0"
