@@ -1,5 +1,10 @@
 # Currently tested with Kubernetes 1.10 on Minkube
 common:
+
+  #Disable sharding in the ES cluster during helm upgrade procedure and enabling afterwards.
+  disable_sharding: false
+  #Enable this flag if you want to upgrade ES cluster version according to https://www.elastic.co/guide/en/elasticsearch/reference/7.10/rolling-upgrades.html#rolling-upgrades
+  es_upgrade_order: false
   # Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
   #Set to true of you want to remove persistent storage claims with helm delete command
@@ -28,6 +33,7 @@ common:
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.9.2"
+
 
   # Search Guard plugin version
   # Helm charts since beta4 needs minimum 25.0 release to work properly

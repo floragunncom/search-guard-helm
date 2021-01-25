@@ -41,9 +41,8 @@ exec:
 {{/*
 init container template
 
-TODO: replace this with a daemon set
-
 */}}
+
 {{- define "generate-certificates-init-container" -}}
 {{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
 - name: generate-certificates
@@ -150,6 +149,118 @@ TODO: replace this with a daemon set
 {{- end }}
 {{- end -}}
 
+{{- define "master-wait-container" -}}
+- name: master-wait-container
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
+  volumeMounts:
+    - name: kubectl
+      mountPath: /kubectl
+  command:
+    - sh
+    - -c
+    - |
+        #!/usr/bin/env bash -e
+        echo "Checking Client and Data nodes startup"
+
+        echo "Checking that Client ES nodes with old version are going to be replaced"
+{{ if .Values.common.xpack_basic }}
+        while kubectl get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' | grep -v "{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES client nodes to upgrade to version {{ .Values.common.elkversion }}-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ else }}
+        while kubectl get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' | grep -v "{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES client nodes to upgrade to {{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ end }}
+        echo "Checking that all Client nodes with new version have been already started"
+
+        while kubectl get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+            echo "Waiting for all ES client nodes to start with new version";
+            sleep 10;
+        done
+        echo "Checking that Data ES nodes with old version are going to be replaced"
+{{ if .Values.common.xpack_basic }}
+        while kubectl get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' |  grep -v "{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES client nodes to upgrade to version {{ .Values.common.elkversion }}-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ else }}
+        while kubectl get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' |  grep -v "{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES client nodes to upgrade to version {{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ end }}
+        echo "Checking that all Data nodes with new version have been already started"
+
+        while kubectl get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+            echo "Waiting for all ES client nodes to start with new version";
+            sleep 10;
+        done
+
+        RET=$?
+        echo "Result $RET"
+        exit $RET
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+{{- end -}}
+
+
+{{- define "kibana-wait-container" -}}
+- name: kibana-wait-container
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
+  volumeMounts:
+    - name: kubectl
+      mountPath: /kubectl
+  command:
+    - sh
+    - -c
+    - |
+        #!/usr/bin/env bash -e
+        echo "Checking Master nodes startup"
+
+        echo "Checking that Master ES nodes with old version are going to be replaced"
+{{ if .Values.common.xpack_basic }}
+        while kubectl get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' | grep -v "{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES Master nodes to upgrade to version {{ .Values.common.elkversion }}-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ else }}
+        while kubectl get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:true' | grep -v "{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"; do
+            echo "Waiting for all ES Master nodes to upgrade to version {{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }} version";
+            sleep 10;
+        done
+{{ end }}
+        echo "Checking that all Master nodes with new version have been already started"
+
+        while kubectl get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+            echo "Waiting for all ES Master nodes to start with  new version";
+            sleep 10;
+        done
+
+        RET=$?
+        echo "Result $RET"
+        exit $RET
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+{{- end -}}
+
+
 {{- define "init-containers" -}}
 - name: init-sysctl
   image: busybox
@@ -166,6 +277,7 @@ TODO: replace this with a daemon set
     privileged: true
 
 {{ include "generate-certificates-init-container" . }}
+
 
 {{- if .Values.common.plugins }}
 - name: es-plugin-install

@@ -1,7 +1,8 @@
+{{ if .Values.common.disable_sharding }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "fullname" . }}-sgadmin-post"
+  name: "{{ template "fullname" . }}-sgadmin-preupgrade"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -9,24 +10,26 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "fullname" . }}-sgadmin
     role: sgadmin
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   template:
     metadata:
-      name: "{{ .Release.Name }}"
+      name: "{{ template "fullname" . }}-sgadmin-preupgrade"
       labels:
         release: "{{ .Release.Name }}"
         app: {{ template "fullname" . }}
         component: {{ template "fullname" . }}
         role: sgadmin
-        {{ if .Values.common.restart_pods_on_config_change }}
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/searchguard-configmap_ES7.yaml") . | sha256sum }}
-        {{ end }}
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "fullname" . }}
       containers:
-      - name: sgadmin-complete
+      - name: sgadmin-preupgrade
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
@@ -41,8 +44,17 @@ spec:
                 echo 'Wait for $DISCOVERY_SERVICE service to be ready';
                 sleep 10 ;
               done
-              echo "Executing sgadmin to update the configs ..."
-              /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
+              echo "Getting password for admin user"
+              export ADMIN_PWD=$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+              echo "Disabling shard allocation in ES cluster to https://{{ template "fullname" . }}-clients.default.svc:9200 "
+              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "fullname" . }}-clients.default.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+              {
+              "persistent": {
+                "cluster.routing.allocation.enable": "none",
+                "cluster.routing.rebalance.enable" : "none"
+              }
+              }
+              '
               RET=$?
               echo "Result $RET"
               exit $RET
@@ -54,8 +66,6 @@ spec:
             cpu: 100m
             memory: 256Mi
         volumeMounts:
-          - mountPath: /root/sgconfig/
-            name: searchguard-config
           - name: secret-volume
             readOnly: true
             mountPath: /root/sgcerts/
@@ -66,8 +76,6 @@ spec:
         - name: secret-volume
           secret:
             secretName: {{ template "fullname" . }}-admin-cert-secret
-        - configMap:
-            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
-          name: searchguard-config
         - name: kubectl
           emptyDir: {}
+{{ end }}
