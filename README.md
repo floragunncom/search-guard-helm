@@ -133,9 +133,17 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 ## Modify the configuration
 
 * The nodes are initially automatically initialized and configured
-* To change the configuration 
-  * Edit `sg-helm/values.yaml` and run `helm upgrade`. The pods will be reconfigured or restarted if necessary
-  * or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necessary
+* To change the configuration of SG
+
+  * Edit `sg-helm/values.yaml` and run `helm upgrade`. The job with SG Admin image will be restarted and new Search Guard configuraiton will be applied to the cluster.
+  Please, be aware that with disabled parameter `debug_job_mode`, the job will be removed in 5 minutes after completion. 
+* To change the configuration of Kibana and Elasticsearch:
+  pods will be reconfigured or restarted if necessary
+  * Edit `sg-helm/values.yaml` and run `helm upgrade` or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necessary. 
+  If you want to disable sharding during Elasticsearch cluster restart, please, use `helm upgrade --set common.disable_sharding=true`
+* To upgrade the version of Elasticseacrh, Kibana, Search Guard plugins:
+  * Edit `sg-helm/values.yaml` and run `helm upgrade` or run `helm upgrade --values` or `helm upgrade --set` with new version of the products. 
+  To meet the requirements of Elasticsearch rolling upgrade procedure, please, add these parameters to the upgrade command: `helm upgrade --set common.es_upgrade_order=true --set common.disable_sharding=true`
 
 ## Examples
 
@@ -265,6 +273,7 @@ To get access to Kibana:
  | common.cluster_name | cluster.name parameter in elasticsearch.yml | searchguard |
  | common.config.* | Additional configuration that will be added to elasticsearch.yml | null |
  | common.debug_job_mode | Feature to disable removal process of completed jobs | false |
+ | common.disable_sharding | Feature to disable Elasticsearch cluster sharding during Helm upgrade procedure | false | 
  | common.do_not_fail_on_forbidden | With this mode enabled Search Guard filters all indices from a query a user does not have access to. Thus not security exception is raised. See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden | false |
  | common.docker_registry.email | Email information for Docker account in docker registry | null |
  | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false |
@@ -272,6 +281,7 @@ To get access to Kibana:
  | common.docker_registry.server | Docker registry address | null |
  | common.docker_registry.username | Login of docker registry account | null |
  | common.elkversion | Version of Elasticsearch and Kibana in ES cluster | 7.9.1 |
+ | common.es_upgrade_order | Feature to enable rolling upgrades of Elasticsearch cluster: upgrading Client and Data nodes, then upgrading Master nodes and then Kibana nodes | false |
  | common.external_ca_certificates_enabled | Feature that enables possibility to upload customer ca signed certificates for each node in the ES cluster | false |
  | common.external_ca_single_certificate_enabled | Feature that enables possibility to upload single customer ca signed certificate for all nodes in the ES cluster | false |
  | common.images.elasticsearch_base_image | Docker image name with Elasticsearch and Search Guard plugin installed | sg-elasticsearch |

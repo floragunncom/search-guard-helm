@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: cleanup-job
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/5 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   concurrencyPolicy: Forbid
