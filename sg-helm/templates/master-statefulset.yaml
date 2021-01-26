@@ -80,6 +80,9 @@ spec:
       {{- end }}
       initContainers:
 {{ include "init-containers" . | indent 6 }}
+    {{ if .Values.common.es_upgrade_order }}
+{{ include "master-wait-container" . | indent 6 }}
+    {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
       - name: docker-auth

@@ -100,6 +100,9 @@ spec:
               cpu: 100m
               memory: 256Mi
 {{ include "generate-certificates-init-container" . | indent 8 }}
+      {{ if .Values.common.es_upgrade_order }}
+{{ include "kibana-wait-container" . | indent 8 }}
+      {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
       - name: docker-auth
