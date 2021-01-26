@@ -137,13 +137,16 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
   * Edit `sg-helm/values.yaml` and run `helm upgrade`. The job with SG Admin image will be restarted and new Search Guard configuraiton will be applied to the cluster.
   Please, be aware that with disabled parameter `debug_job_mode`, the job will be removed in 5 minutes after completion. 
+  
 * To change the configuration of Kibana and Elasticsearch:
   pods will be reconfigured or restarted if necessary
   * Edit `sg-helm/values.yaml` and run `helm upgrade` or run `helm upgrade --values` or `helm upgrade --set`. The pods will be reconfigured or restarted if necessary. 
   If you want to disable sharding during Elasticsearch cluster restart, please, use `helm upgrade --set common.disable_sharding=true`
+  
 * To upgrade the version of Elasticseacrh, Kibana, Search Guard plugins:
   * Edit `sg-helm/values.yaml` and run `helm upgrade` or run `helm upgrade --values` or `helm upgrade --set` with new version of the products. 
-  To meet the requirements of Elasticsearch rolling upgrade procedure, please, add these parameters to the upgrade command: `helm upgrade --set common.es_upgrade_order=true --set common.disable_sharding=true`
+  To meet the requirements of Elasticsearch rolling upgrade procedure, please, add these parameters to the upgrade command: `helm upgrade --set common.es_upgrade_order=true --set common.disable_sharding=true`.
+  We recommend to specify custom timeout for upgrade command `helm upgrade --timeout 1h` to provide enough time for Helm to upgrade all cluster nodes.  
 
 ## Examples
 
