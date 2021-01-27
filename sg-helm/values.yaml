@@ -36,7 +36,6 @@ common:
 
 
   # Search Guard plugin version
-  # Helm charts since beta4 needs minimum 25.0 release to work properly
   sgversion: "46.0.0"
 
   # Search Guard Kibana plugin version
