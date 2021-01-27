@@ -1,4 +1,29 @@
-# Search Guard Helm Chart for Kubernetes
+# Search Guard Helm Charts for Kubernetes
+
+- [Status](#status)
+- [Support](#support)
+- [Requirements](#requirements)
+- [Deploying with Helm](#deploying-with-helm)
+    - [Deploy via repository](#deploy-via-repository-not-available-now)
+    - [Deploy via GitLab](#deploy-via-gitlab)
+    - [Deploy on AWS](#deploy-on-aws-optional)
+- [Usage Tips](#usage-tips)
+    - [Accessing Kibana and Elasticsearch](#accessing-kibana-and-elasticsearch)
+    - [Random passwords and certificates](#random-passwords-and-certificates)
+    - [Use custom images](#use-custom-images)
+    - [Install plugins](#install-plugins)
+    - [Custom configuration for Search Guard, Elasticsearch and Kibana](#custom-configuration-for-search-guard-elasticsearch-and-kibana)
+    - [Custom domains for Elasticsearch and Kibana services](#custom-domains-for-elasticsearch-and-kibana-services)
+    - [Security configuration](#security-configuration)
+- [Modify the configuration](#modify-the-configuration)
+- [Configuration parameters](#configuration-parameters)
+- [Examples](#examples)
+- [Credits](#credits)
+- [License](#license)
+    
+
+
+
 
 ## Status
 
@@ -13,56 +38,15 @@ Please report issues via GitHub issue tracker or get in [contact with us](https:
 ## Requirements
 
 * Kubernetes 1.16 or later (Minikube and AWS EKS are tested)
-* Helm (tested with Helm v.3.2.4)
-* kubectl
+* Helm (tested with Helm v.3.2.4). Please, follow [Helm installation steps](https://helm.sh/docs/intro/install/) for your OS.
+* kubectl. Please, check [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* Optional: Minikube. Please, follow [Minikube installation steps](https://minikube.sigs.k8s.io/docs/start/).
 * Optional: Docker, if you like to build and push customized images 
 
 If you use Minikube make sure that the VM has enough memory and CPUs assigned.
 We recommend at least 8 GB and 4 CPUs. By default, we deploy 5 pods (includes also Kibana).
 
-## Deploy on AWS (optional)
-
-You need to have the aws cli installed and configured
-
-```
-./tools/sg_aws_kops.sh -c mytestcluster
-```
-
-Delete the cluster when you are finished with testing Search Guard
-
-```
-./tools/sg_aws_kops.sh -d mytestcluster
-```
-
-## Setup Minikube (optional)
-
-If you do not have any running Kubernetes cluster and you just want to try out our helm chart then
-go with [Minikube](https://kubernetes.io/docs/setup/minikube/)
-
-If Minikube is not already configured or running:
-
-### Install Minikube
-
-Please refer to https://kubernetes.io/docs/setup/minikube/ and https://github.com/kubernetes/minikube
-
-#### macOS
-
-```
-Install https://www.virtualbox.org/wiki/Downloads
-brew install kubectl kubernetes-helm
-brew cask install minikube
-```
-
-#### Linux
-
-```
-Install https://www.virtualbox.org/wiki/Downloads or https://www.linux-kvm.org/page/Main_Page
-
-curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo cp minikube /usr/local/bin/ && rm minikube
-
-curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo cp kubectl /usr/local/bin/ && rm kubectl
-```
-
+To change Minikube resource configuration: 
 ```
 minikube config set memory 8192
 minikube config set cpus 4
@@ -80,6 +64,7 @@ If not then execute the steps above (Warning: `minikube delete` will delete your
 
 ## Deploying with Helm
 
+By default, you get Elasticsearch cluster with self-signed certificates for transport communication and Elasticsearch and Kibana service access via Ingress Nginx.
 
 ### Deploy via repository (Not available now)
 
@@ -101,8 +86,22 @@ $ git clone git@git.floragunn.com:gh/search-guard-helm.git
 $ helm dependency update search-guard-helm/sg-helm
 $ helm install sg-elk search-guard-helm/sg-helm
 ```
+### Deploy on AWS (optional)
 
-## Accessing Kibana
+You need to have the aws cli installed and configured
+
+```
+./tools/sg_aws_kops.sh -c mytestcluster
+```
+
+Delete the cluster when you are finished with testing Search Guard
+
+```
+./tools/sg_aws_kops.sh -d mytestcluster
+```
+
+##Usage Tips 
+##Accessing Kibana and Elasticsearch
 
 Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
 Run in separate window:
@@ -123,12 +122,31 @@ kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO
 ```
 Access https://kibana.example.com with `kibanaro/<kibana user password>`
 
-## Random passwords and certificates
+### Random passwords and certificates
 Passwords for the admin users, the Kibana user, the Kibana server and the Kibana cookie are generated randomly on initial deployment.
 They are stored in a secret named `passwd-secret`. All TLS certificates including a Root CA are also generated randomly. You can find
 the root ca in a secret named `root-ca-secret`, the admin certificate in `admin-cert-secret` and the node certificates in `nodes-cert-secret`.
 Whenever a node pod restarts we create a new certificate and remove the old one from `nodes-cert-secret`.
 
+### Use custom images
+TBD
+### Install plugins
+TBD
+###Custom configuration for Search Guard, Elasticsearch and Kibana
+TBD
+Link to examples
+###Custom domains for Elasticsearch and Kibana services
+TBD
+Examples here
+
+###Security configuration
+
+TBD
+We provide following options:
+ * setup with custom CA certificates
+ * setup with custom Elasticsearch cluster nodes certificates
+ * setup with single certificates for Elasticsearch cluster nodes
+Link to examples here.
 
 ## Modify the configuration
 
@@ -148,113 +166,7 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
   To meet the requirements of Elasticsearch rolling upgrade procedure, please, add these parameters to the upgrade command: `helm upgrade --set common.es_upgrade_order=true --set common.disable_sharding=true`.
   We recommend to specify custom timeout for upgrade command `helm upgrade --timeout 1h` to provide enough time for Helm to upgrade all cluster nodes.  
 
-## Examples
-
-Search Guard Helm charts provides six usage scenario that deploys 4-nodes Elasticsearch cluster which includes master, ingest, data and kibana nodes. 
-These examples could be used only for testing purposes. All examples were tested with Helm v3.2.4 and Minikube v1.11.0.
-The examples covers following cases:
- * basic setup which includes self-signed certificates for transport and http communication in the cluster
- * setup with custom Elasticsearch and Search Guard configuration
- * setup with custom Elasticsearch and Kibana services 
- * setup with custom CA certificates
- * setup with custom Elasticsearch cluster nodes certificates
- * setup with single certificates for Elasticsearch cluster nodes
-
-
-### Basic setup 
-
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-$ helm install sg-elk sg-helm
-```
-In this case, you get Elasticsearch cluster with self-signed certificates for transport communication and service publishing on Ingress Nginx.
-To get access to Kibana:
-  * Run minikube tunnel in different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your `etc/hosts` file
-  * Access https://kibana.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-###  Setup with custom Elasticsearch and Search Guard configuration
-
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-$ helm install -f sg-helm/examples/setup_custom_sg_config/values.yaml sg-elk sg-helm
-```
-In this case, you get Elasticsearch cluster from basic setup with additional `config.http` configuration in `elasticsearch.yml` and additional user `beatsuser`.
-Get the password of newly created user running `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_BEATSUSER_PWD}" | base64 -d`.
-
- To get access to Kibana:
-  * Run minikube tunnel in different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your `etc/hosts` file
-  * Access https://kibana.example.com with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-### Setup with custom Elasticsearch and Kibana services 
-
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-$ helm install -f sg-helm/examples/setup_custom_service_certs/values.yaml sg-elk sg-helm
-```
-This example shows how to specify your own Elasticsearch and Kibana domain names as `ingressKibanaDomain` and `ingressElasticsearchDomain` and provide custom ca signed certificates for them. 
-Please, note, you can substitute default values of `ingressKibanaDomain` and `ingressElasticsearchDomain` and certificates files for these domains with your own items.
-
- To get access to Kibana:
-  * Run minikube tunnel in different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to `ingressKibanaDomain` in your `etc/hosts` file
-  * Access https://`ingressKibanaDomain` with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-### Setup with custom CA certificate
-
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-$ helm install -f sg-helm/examples/setup_custom_service_certs/values.yaml sg-elk sg-helm
-```
-
-Please, note, you provide your own CA certificate with the `crt.pem` and `key.pem` files in `secrets/ca` folder.
-This CA certificate will be used to generate all Elasticsearch nodes certificates for transport communication and certificates for HTTPS service for Elasticsearch and Kibana.
-
- To get access to Kibana:
-  * Run minikube tunnel in different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your `etc/hosts` file
-  * Access https://kibana.example.com with default user `kibanaro` and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-### Setup with custom Elasticsearch cluster nodes certificates
-
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-helm install -f sg-helm/examples/setup_custom_elasticsearch_certs/values.yaml sg-elk sg-helm
-```
-
-Please, note, that you can provide your custom certificates for each Elasticsearch node by adding them to the folder `secrets/nodes` with the predefined node names.
-Nodes respective certificate names consist of `<installation-name>-sg-helm-<node-type>-<node-count>.key` and `<installation-name>-sg-helm-<node-type>-<node-count>.pem`.
-
- To get access to Kibana:
-  - Run minikube tunnel in different window
-  - Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your `etc/hosts` file
-  - Access https://kibana.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-### Setup with single certificates for Elasticsearch cluster nodes
- 
-Go to your search-guard-helm folder with pre-installed dependencies and do:
-```
-$ helm install -f sg-helm/examples/setup_single_elasticsearch_cert/values.yaml sg-elk sg-helm
-```
-
-This example supposes you can provide ca signed node certificate with sg.pem and sg.key in `secrets/nodes` folder and ca signed sgadmin certificates `crt.pem` and `key.pem` in you secrets/sgadmin folder.
-If you have different node name in your certificate, please, change the `nodes_dn` and `admin_dn` in your setup_single_elasticsearch_cert/values.yaml respectively.
- 
-
-To get access to Kibana:
-  * Run minikube tunnel in different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your etc/hosts file
-  * Access https://kibana.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
-
-
-
-## Configuration
+## Configuration parameters
 
  | Parameter | Description | Default value |
  |------|------|------|
@@ -352,6 +264,17 @@ To get access to Kibana:
  | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true |
  | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 |
  | service.transportPort | Port to be exposed by Elasticsearch service for transport communication in the cluster | 9300 |
+
+## Examples
+
+Search Guard Helm charts provides six usage scenario that deploys 4-nodes Elasticsearch cluster which includes master, ingest, data and kibana nodes. 
+These examples could be used only for testing purposes. All examples were tested with Helm v3.2.4 and Minikube v1.11.0.
+The examples covers following cases:
+ * basic setup which includes self-signed certificates for transport and http communication in the cluster
+ * setup with custom Elasticsearch and Search Guard configuration
+ * setup with custom Elasticsearch and Kibana services 
+
+
 
 ## Credits
 
