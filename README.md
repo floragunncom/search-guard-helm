@@ -17,7 +17,6 @@
     - [Security configuration](#security-configuration)
 - [Modify the configuration](#modify-the-configuration)
 - [Configuration parameters](#configuration-parameters)
-- [Examples](#examples)
 - [Credits](#credits)
 - [License](#license)
     
@@ -27,7 +26,7 @@
 
 ## Status
 
-This is repo is considered beta status and supports Search Guard for Elasticsearch 6 and 7.
+This is repo is considered beta status and supports Search Guard for Elasticsearch 7.
 
 For Elasticsearch/Search Guard 5 please refer to: https://github.com/floragunncom/search-guard-helm/tree/5.x
 
@@ -41,7 +40,7 @@ Please report issues via GitHub issue tracker or get in [contact with us](https:
 * Helm (tested with Helm v.3.2.4). Please, follow [Helm installation steps](https://helm.sh/docs/intro/install/) for your OS.
 * kubectl. Please, check [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 * Optional: Minikube. Please, follow [Minikube installation steps](https://minikube.sigs.k8s.io/docs/start/).
-* Optional: Docker, if you like to build and push customized images 
+* Optional: [Docker](https://docs.docker.com/engine/install/), if you like to build and push customized images
 
 If you use Minikube make sure that the VM has enough memory and CPUs assigned.
 We recommend at least 8 GB and 4 CPUs. By default, we deploy 5 pods (includes also Kibana).
@@ -130,11 +129,14 @@ Whenever a node pod restarts we create a new certificate and remove the old one 
 
 ### Use custom images
 TBD
+
 ### Install plugins
 TBD
+
 ###Custom configuration for Search Guard, Elasticsearch and Kibana
 TBD
 Link to examples
+
 ###Custom domains for Elasticsearch and Kibana services
 TBD
 Examples here
@@ -264,15 +266,6 @@ Link to examples here.
  | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true |
  | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 |
  | service.transportPort | Port to be exposed by Elasticsearch service for transport communication in the cluster | 9300 |
-
-## Examples
-
-Search Guard Helm charts provides six usage scenario that deploys 4-nodes Elasticsearch cluster which includes master, ingest, data and kibana nodes. 
-These examples could be used only for testing purposes. All examples were tested with Helm v3.2.4 and Minikube v1.11.0.
-The examples covers following cases:
- * basic setup which includes self-signed certificates for transport and http communication in the cluster
- * setup with custom Elasticsearch and Search Guard configuration
- * setup with custom Elasticsearch and Kibana services 
 
 
 
