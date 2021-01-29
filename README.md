@@ -28,16 +28,14 @@
 
 This is repo is considered beta status and supports Search Guard for Elasticsearch 7.
 
-For Elasticsearch/Search Guard 5 please refer to: https://github.com/floragunncom/search-guard-helm/tree/5.x
-
 ## Support
 
 Please report issues via GitHub issue tracker or get in [contact with us](https://search-guard.com/contacts/)
 
 ## Requirements
 
-* Kubernetes 1.16 or later (Minikube and AWS EKS are tested)
-* Helm (tested with Helm v.3.2.4). Please, follow [Helm installation steps](https://helm.sh/docs/intro/install/) for your OS.
+* Kubernetes 1.16 or later (Minikube and kops managed AWS Kubernetes cluster  are tested)
+* Helm (v.3.2.4 or later). Please, follow [Helm installation steps](https://helm.sh/docs/intro/install/) for your OS.
 * kubectl. Please, check [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 * Optional: Minikube. Please, follow [Minikube installation steps](https://minikube.sigs.k8s.io/docs/start/).
 * Optional: [Docker](https://docs.docker.com/engine/install/), if you like to build and push customized images
@@ -53,7 +51,7 @@ minikube delete
 minikube start
 ```
 
-If Minikube is already configured/running make sure it has least 8 GB and 4 CPUs assigned:
+If Minikube is already configured/running make sure it has at least 8 GB and 4 CPUs assigned:
 
 ```
 minikube config view
@@ -64,6 +62,8 @@ If not then execute the steps above (Warning: `minikube delete` will delete your
 ## Deploying with Helm
 
 By default, you get Elasticsearch cluster with self-signed certificates for transport communication and Elasticsearch and Kibana service access via Ingress Nginx.
+Default Elasticsearch cluster has 4-nodes Elasticsearch cluster including master, ingest, data and kibana nodes. 
+Please, be aware that such Elasticsearch cluster configuration could be used only for testing purposes.
 
 ### Deploy via repository (Not available now)
 
@@ -78,6 +78,7 @@ settings. See `sg-helm/values.yaml` for the documented set of settings you can o
 
 ### Deploy via GitLab
 
+To deply from Git repository, you should clone the project, update helm dependencies and install it in your cluster.
 Optionally read the comments in `sg-helm/values.yaml` and customize them to suit your needs.
 
 ```
@@ -87,20 +88,22 @@ $ helm install sg-elk search-guard-helm/sg-helm
 ```
 ### Deploy on AWS (optional)
 
-You need to have the aws cli installed and configured
+This option provides possibility to set up Kubernetes cluster on AWS while having the `awscli` installed and configured and install Search Guard Helm charts in the cluster.
+This script is provided for demo purposes. Please, consider the required AWS resources and Helm chart configuration in the [./tools/sg_aws_kops.sh](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/tools/sg_aws_kops.sh)
 
+Setup the Kubernetes AWS cluster with installed Search Guard Helm charts:
 ```
 ./tools/sg_aws_kops.sh -c mytestcluster
 ```
 
-Delete the cluster when you are finished with testing Search Guard
+Delete the cluster when you finished with testing Search Guard
 
 ```
 ./tools/sg_aws_kops.sh -d mytestcluster
 ```
 
 ##Usage Tips 
-##Accessing Kibana and Elasticsearch
+##Accessing Kibana and Elasticsearch in Minikube
 
 Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
 Run in separate window:
@@ -111,24 +114,32 @@ Get Kibana LoadBalancer IP:
 ```
 kubectl get svc|grep LoadBalancer|awk '{print $4}'
 ```
-Create record in local etc/hosts 
+Create records in local etc/hosts 
 ```
 <LoadBalancer IP>   kibana.example.com
+<LoadBalancer IP>   elasticsearch.example.com
 ```
-Get Kibana user 'kibanaro' password:
+Get Admin user 'admin' password:
 ```
-kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d
+kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d
 ```
-Access https://kibana.example.com with `kibanaro/<kibana user password>`
+Access Kibana `https://kibana.example.com` with `admin/<admin user password>`
+Access Elasticsearch  `https://elasticsearch.example.com/_searchguard/health`
 
-### Random passwords and certificates
-Passwords for the admin users, the Kibana user, the Kibana server and the Kibana cookie are generated randomly on initial deployment.
-They are stored in a secret named `passwd-secret`. All TLS certificates including a Root CA are also generated randomly. You can find
-the root ca in a secret named `root-ca-secret`, the admin certificate in `admin-cert-secret` and the node certificates in `nodes-cert-secret`.
-Whenever a node pod restarts we create a new certificate and remove the old one from `nodes-cert-secret`.
+### Random passwords
+
+Passwords for the admin user (`admin`), the Kibana user (`kibanaro`), the Kibana server (`kibanaserver`) and custom users specified in `values.yaml` are generated randomly on initial deployment.
+They are stored in a secret named `<installation-name>-sg-helm-passwd-secret`. 
+
+You can find the root ca in a secret named `<installation-name>-sg-helm-root-ca-secret`, the SG Admin certificate in `<installation-name>-sg-helm-admin-cert-secret` and the node certificates in `<installation-name>-sg-helm-nodes-cert-secret`.
+Whenever a node pod restarts we create a new certificate and remove the old one from `<installation-name>-sg-helm-nodes-cert-secret`.
+
+To get user related password:
+
+`kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_<USERNAME>_PWD}" | base64 -d`
 
 ### Use custom images
-TBD
+We provide our Dockerfiles and build script we use to create Docker images in [docker folder](https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/docker).
 
 ### Install plugins
 TBD
