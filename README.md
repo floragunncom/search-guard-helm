@@ -116,15 +116,15 @@ kubectl get svc|grep LoadBalancer|awk '{print $4}'
 ```
 Create records in local etc/hosts 
 ```
-<LoadBalancer IP>   kibana.example.com
-<LoadBalancer IP>   elasticsearch.example.com
+<LoadBalancer IP>   kibana.sg-helm.example.com
+<LoadBalancer IP>   es.sg-helm.example.com
 ```
 Get Admin user 'admin' password:
 ```
 kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d
 ```
-Access Kibana `https://kibana.example.com` with `admin/<admin user password>`
-Access Elasticsearch  `https://elasticsearch.example.com/_searchguard/health`
+Access Kibana `https://kibana.sg-helm.example.com` with `admin/<admin user password>`
+Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
 
 ### Random passwords
 

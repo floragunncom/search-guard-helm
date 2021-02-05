@@ -101,9 +101,9 @@ common:
     ingressCertificates: "self-signed"
     #ingressCertificates: "external"
     #ingressCertificates: "none"
-    ingressKibanaDomain: "kibana.example.com"
+    ingressKibanaDomain: "kibana.sg-helm.example.com"
     #ingressKibanaDomain: "none"
-    ingressElasticsearchDomain: "elasticsearch.example.com"
+    ingressElasticsearchDomain: "es.sg-helm.example.com"
     #ingressElasticsearchDomain: "none"
 
   #PKI aprroaches are specified with the following keys:

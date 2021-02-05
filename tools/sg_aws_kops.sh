@@ -166,8 +166,8 @@ helm install sg-elk sg-helm \
   --set kibana.serviceType=NodePort \
   --set common.ingressNginx.enabled=true \
   --set common.ingressNginx.ingressCertificates=self-signed \
-  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \
-  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \
+  --set common.ingressNginx.ingressKibanaDomain=kibana.sg-helm.example.com \
+  --set common.ingressNginx.ingressElasticsearchDomain=es.sg-helm.example.com \
   --set common.do_not_fail_on_forbidden=true
 
 
@@ -189,7 +189,7 @@ until kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpa
 sleep 30
 
 INGRESS_HOST=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'|cut -d. -f 1-5)
-echo "You can use IP of $INGRESS_HOST to assign to kibana.example.com, elasticsearch.example.com in DNS"
+echo "You can use IP of $INGRESS_HOST to assign to kibana.sg-helm.example.com, es.sg-helm.example.com in DNS"
 
 echo "Install Dashboard"
 
@@ -231,8 +231,8 @@ helm upgrade sg-elk sg-helm \\
   --set kibana.serviceType=NodePort \\
   --set common.ingressNginx.enabled=true \\
   --set common.ingressNginx.ingressCertificates=self-signed \\
-  --set common.ingressNginx.ingressKibanaDomain=kibana.example.com \\
-  --set common.ingressNginx.ingressElasticsearchDomain=elasticsearch.example.com \\
+  --set common.ingressNginx.ingressKibanaDomain=kibana.sg-helm.example.com \\
+  --set common.ingressNginx.ingressElasticsearchDomain=es.sg-helm.example.com \\
   --set common.do_not_fail_on_forbidden=true \\
   --set common.elkversion="7.9.2" \\
   --set common.sgversion="46.0.0" \\

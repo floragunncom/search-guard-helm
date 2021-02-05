@@ -1,7 +1,7 @@
 # Currently tested with Kubernetes 1.15 on Minikube version: v1.11.0
 # This example installs 3-nodes ES cluster (master,ingest and data nodes) with one Kibana node with custom configuration specified below,
 # including creating the user with specified name `beatsuser` and roles,
-# and exposes elasticsearch.example.com and kibana.example.com on HTTPS.
+# and exposes es.sg-helm.example.com and kibana.sg-helm.example.com on HTTPS.
 # Get the password of newly created user running:
 # `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_BEATSUSER_PWD}" | base64 -d`
 # Note that all transport and service certificates used in the cluster are self-signed and created by SG tlstool.
@@ -10,8 +10,8 @@
 # Run this example from search-guard-helm folder by `helm install -f sg-helm/examples/setup_custom_sg_config/values.yaml sg-elk sg-helm`
 # To get access to Kibana:
 #  - Run minikube tunnel in different window
-#  - Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.example.com in your etc/hosts file
-#  - Access https://kibana.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
+#  - Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.sg-helm.example.com in your etc/hosts file
+#  - Access https://kibana.sg-helm.example.com with default user kibanaro and password extracted by this command `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d`
 
 
 common:
