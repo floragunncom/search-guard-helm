@@ -160,18 +160,18 @@ The plugins from this list will be passed to `elasticsearch-plugin install -b {l
 Do not add the Search Guard plugins to the list as they are already installed by default in the images.
 
 
-###Custom configuration for Search Guard, Elasticsearch and Kibana
+### Custom configuration for Search Guard, Elasticsearch and Kibana
 You can modify default configuration of Elasticsearch, Kibana and Search Guard Suite plugin
 by providing necessary changes in [values.yaml][]
 Please check this [example with custom configuration][]
 for more details.
 
-###Custom domains for Elasticsearch and Kibana services
+### Custom domains for Elasticsearch and Kibana services
 Default service domain names exposed by the cluster are: `es.sg-helm.example.com` and `kibana.sg-helm.example.com`.
 You can change this by providing custom domain names and corresponding certificates.
 Please, follow the [example with custom domains][] for more details.
 
-###Security configuration
+### Security configuration
 
 We provide different PKI approaches for security configuration in Elasticsearch cluster
 including self-signed and CA signed solutions. Please, refer to following examples for more details:
