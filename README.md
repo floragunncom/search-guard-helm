@@ -102,10 +102,9 @@ Delete the cluster when you finished with testing Search Guard
 ./tools/sg_aws_kops.sh -d mytestcluster
 ```
 
-##Usage Tips 
+## Usage Tips
 
-
-###Accessing Kibana and Elasticsearch in Minikube
+### Accessing Kibana and Elasticsearch in Minikube
 
 
 Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
@@ -128,6 +127,7 @@ kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PW
 ```
 Access Kibana `https://kibana.sg-helm.example.com` with `admin/<admin user password>`
 Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
+
 
 ### Random passwords
 
