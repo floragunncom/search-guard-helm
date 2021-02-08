@@ -129,7 +129,7 @@ Access Kibana `https://kibana.sg-helm.example.com` with `admin/<admin user passw
 Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
 
 
-### Random passwords
+### Random passwords and certificates
 
 Passwords for admin user (`admin`), kibana user (`kibanaro`), kibana server (`kibanaserver`) and custom users specified in [values.yaml][] are generated randomly on initial deployment.
 They are stored in a secret named `<installation-name>-sg-helm-passwd-secret`. 
