@@ -103,7 +103,10 @@ Delete the cluster when you finished with testing Search Guard
 ```
 
 ##Usage Tips 
-##Accessing Kibana and Elasticsearch in Minikube
+
+
+###Accessing Kibana and Elasticsearch in Minikube
+
 
 Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
 Run in separate window:
@@ -128,15 +131,16 @@ Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
 
 ### Random passwords
 
-Passwords for the admin user (`admin`), the Kibana user (`kibanaro`), the Kibana server (`kibanaserver`) and custom users specified in [values.yaml][] are generated randomly on initial deployment.
+Passwords for admin user (`admin`), kibana user (`kibanaro`), kibana server (`kibanaserver`) and custom users specified in [values.yaml][] are generated randomly on initial deployment.
 They are stored in a secret named `<installation-name>-sg-helm-passwd-secret`. 
+
+To get user related password:
+`kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_<USERNAME_UPPERCASE>_PWD}" | base64 -d`
+
 
 You can find the root ca in a secret named `<installation-name>-sg-helm-root-ca-secret`, the SG Admin certificate in `<installation-name>-sg-helm-admin-cert-secret` and the node certificates in `<installation-name>-sg-helm-nodes-cert-secret`.
 Whenever a node pod restarts we create a new certificate and remove the old one from `<installation-name>-sg-helm-nodes-cert-secret`.
 
-To get user related password:
-
-`kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_<USERNAME>_PWD}" | base64 -d`
 
 ### Use custom images
 We provide our Dockerfiles and build script in [docker folder][]
