@@ -30,15 +30,15 @@ This is repo is considered beta status and supports Search Guard for Elasticsear
 
 ## Support
 
-Please report issues via GitHub issue tracker or get in [contact with us](https://search-guard.com/contacts/)
+Please report issues via GitHub issue tracker or get in [contact with us][]
 
 ## Requirements
 
 * Kubernetes 1.16 or later (Minikube and kops managed AWS Kubernetes cluster  are tested)
-* Helm (v.3.2.4 or later). Please, follow [Helm installation steps](https://helm.sh/docs/intro/install/) for your OS.
-* kubectl. Please, check [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-* Optional: Minikube. Please, follow [Minikube installation steps](https://minikube.sigs.k8s.io/docs/start/).
-* Optional: [Docker](https://docs.docker.com/engine/install/), if you like to build and push customized images
+* Helm (v.3.2.4 or later). Please, follow [Helm installation steps][] for your OS.
+* kubectl. Please, check [kubectl installation guide][]
+* Optional: Minikube. Please, follow [Minikube installation steps][].
+* Optional: [Docker][], if you like to build and push customized images
 
 If you use Minikube make sure that the VM has enough memory and CPUs assigned.
 We recommend at least 8 GB and 4 CPUs. By default, we deploy 5 pods (includes also Kibana).
@@ -73,7 +73,7 @@ helm search "search guard"
 helm dependency update sg-helm/sg-helm
 helm install sg-elk sg-helm/sg-helm --version sgh-beta4
 ```
-Please refer to the [Helm Documentation](https://github.com/helm/helm/blob/master/docs/helm/helm_install.md) on how to override the chart default
+Please refer to the [Helm Documentation][] on how to override the chart default
 settings. See `sg-helm/values.yaml` for the documented set of settings you can override.
 
 ### Deploy via GitLab
@@ -89,7 +89,7 @@ $ helm install sg-elk search-guard-helm/sg-helm
 ### Deploy on AWS (optional)
 
 This option provides possibility to set up Kubernetes cluster on AWS while having the `awscli` installed and configured and install Search Guard Helm charts in the cluster.
-This script is provided for demo purposes. Please, consider the required AWS resources and Helm chart configuration in the [./tools/sg_aws_kops.sh](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/tools/sg_aws_kops.sh)
+This script is provided for demo purposes. Please, consider the required AWS resources and Helm chart configuration in the [./tools/sg_aws_kops.sh][].
 
 Setup the Kubernetes AWS cluster with installed Search Guard Helm charts:
 ```
@@ -128,7 +128,7 @@ Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
 
 ### Random passwords
 
-Passwords for the admin user (`admin`), the Kibana user (`kibanaro`), the Kibana server (`kibanaserver`) and custom users specified in `values.yaml` are generated randomly on initial deployment.
+Passwords for the admin user (`admin`), the Kibana user (`kibanaro`), the Kibana server (`kibanaserver`) and custom users specified in [values.yaml][] are generated randomly on initial deployment.
 They are stored in a secret named `<installation-name>-sg-helm-passwd-secret`. 
 
 You can find the root ca in a secret named `<installation-name>-sg-helm-root-ca-secret`, the SG Admin certificate in `<installation-name>-sg-helm-admin-cert-secret` and the node certificates in `<installation-name>-sg-helm-nodes-cert-secret`.
@@ -139,27 +139,42 @@ To get user related password:
 `kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_<USERNAME>_PWD}" | base64 -d`
 
 ### Use custom images
-We provide our Dockerfiles and build script we use to create Docker images in [docker folder](https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/docker).
+We provide our Dockerfiles and build script in [docker folder][]
+that we use to create Docker images.
+By default, the script can upload OSS version of Elasticsearch with Search Guard plugin installed, 
+Kibana with Search Guard Kibana plugin installed and Search Guard Admin image to you Docker hub account:
+
+```./build.sh push <your-dockerhub-account>```
+
+Please, make sure you have exported your `$DOCKER_PASSWORD` in your environment beforehand.
+
 
 ### Install plugins
-TBD
+You can install all required plugins for your Elasticsearch nodes
+by providing plugins as a list in `common.plugins` section in [values.yaml][] 
+The plugins from this list will be passed to `elasticsearch-plugin install -b {line here}`.
+Do not add the Search Guard plugins to the list as they are already installed by default in the images.
+
 
 ###Custom configuration for Search Guard, Elasticsearch and Kibana
-TBD
-Link to examples
+You can modify default configuration of Elasticsearch, Kibana and Search Guard Suite plugin
+by providing necessary changes in [values.yaml][]
+Please check this [example with custom configuration][]
+for more details.
 
 ###Custom domains for Elasticsearch and Kibana services
-TBD
-Examples here
+Default service domain names exposed by the cluster are: `es.sg-helm.example.com` and `kibana.sg-helm.example.com`.
+You can change this by providing custom domain names and corresponding certificates.
+Please, follow the [example with custom domains][] for more details.
 
 ###Security configuration
 
-TBD
-We provide following options:
- * setup with custom CA certificates
- * setup with custom Elasticsearch cluster nodes certificates
- * setup with single certificates for Elasticsearch cluster nodes
-Link to examples here.
+We provide different PKI approaches for security configuration in Elasticsearch cluster
+including self-signed and CA signed solutions. Please, refer to following examples for more details:
+ * [setup with custom CA certificate][]
+ * [setup with custom Elasticsearch cluster nodes certificates][]
+ * [setup with single certificates for Elasticsearch cluster nodes][]
+
 
 ## Modify the configuration
 
@@ -304,3 +319,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
+[contact with us]: https://search-guard.com/contacts/
+[Docker]: https://docs.docker.com/engine/install/
+[docker folder]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/docker
+[example with custom configuration]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_sg_config
+[example with custom domains]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_service_certs
+[Helm Documentation]: https://github.com/helm/helm/blob/master/docs/helm/helm_install.md
+[Helm installation steps]: https://helm.sh/docs/intro/install/
+[kubectl installation guide]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[Minikube installation steps]: https://minikube.sigs.k8s.io/docs/start/
+[setup with custom CA certificate]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_ca
+[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_elasticsearch_certs
+[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_single_elasticsearch_cert
+[values.yaml]: https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/values.yaml
+[./tools/sg_aws_kops.sh]: https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/tools/sg_aws_kops.sh

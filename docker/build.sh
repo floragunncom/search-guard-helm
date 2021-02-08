@@ -61,6 +61,32 @@ do
     #CACHE="--no-cache"
 
     LASTCMDSEC="0"
+    #Building OSS Docker images
+    if [ -n "$ELK_FLAVOUR" ]; then
+    if [ "$IMAGE" == "es" ] || [ "$IMAGE" == "" ]; then
+    cd "$DIR/elasticsearch"
+    echo "Build image $DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+    docker build -t "$DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
+    check_and_push "$DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
+    echo "$(( SECONDS - LASTCMDSEC )) sec"
+    echo ""
+    LASTCMDSEC="$SECONDS"
+    fi
+
+    if [ "$IMAGE" == "kibana" ] || [ "$IMAGE" == "" ]; then
+    cd "$DIR/kibana"
+    echo "Build image $DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+    docker build -t "$DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
+    check_and_push "$DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
+    echo "$(( SECONDS - LASTCMDSEC )) sec"
+    echo ""
+    LASTCMDSEC="$SECONDS"
+    fi
+    fi
+
+    #ELK_FLAVOUR=""
+    #Building non-OSS images
+    if [ -z "$ELK_FLAVOUR" ]; then
 
     if [ "$IMAGE" == "es" ] || [ "$IMAGE" == "" ]; then
     cd "$DIR/elasticsearch"
@@ -81,24 +107,8 @@ do
     echo ""
     LASTCMDSEC="$SECONDS"
     fi
+    fi
 
-    ELK_FLAVOUR=""
-
-    cd "$DIR/elasticsearch"
-    echo "Build image $DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    docker build -t "$DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
-    check_and_push "$DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
-
-    cd "$DIR/kibana"
-    echo "Build image $DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    docker build -t "$DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"  .
-    check_and_push "$DOCKER_ID_USER/sg-kibana:$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION"
-    echo "$(( SECONDS - LASTCMDSEC )) sec"
-    echo ""
-    LASTCMDSEC="$SECONDS"
     if [ "$IMAGE" == "sgadmin" ] || [ "$IMAGE" == "" ]; then
     cd "$DIR/sgadmin"
     echo "Build image $DOCKER_ID_USER/sg-sgadmin:$ELK_VERSION-$SG_VERSION"
