@@ -135,8 +135,8 @@ spec:
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
                 SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
-                {{ range .Values.common.sg_users }}
-                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
                 {{ end }}
               EOL
 
@@ -298,8 +298,8 @@ spec:
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
                 SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
-                {{ range .Values.common.sg_users }}
-                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
                 {{ end }}
               EOL
 
@@ -421,8 +421,8 @@ spec:
                 SG_KIBANA_SERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
                 SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
                 SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
-                {{ range .Values.common.sg_users }}
-                SG_{{ . | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
                 {{ end }}
               EOL
 
