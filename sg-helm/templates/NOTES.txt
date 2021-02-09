@@ -1,138 +1,101 @@
-The Search Guard protected elasticsearch cluster has been installed.
+The Search Guard protected Elasticsearch cluster has been installed.
 
-Elasticsearch can be accessed:
+  Internal access inside the Kubernetes cluster:
 
-  * Within your cluster, at the following DNS name at port 9200:
+    * Elasticsearch service at DNS name at port 9200:
 
-    https://{{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200
+      https://{{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200
 
-  * From outside the cluster, run these commands in the same shell:
-    {{ if .Values.common.ingressNginx.enabled }}
+    * Kibana service at DNS name at port 5601:
 
-    #Ingress Nginx
-
-    #Getting Elasticsearch external IP for Cloud providers:
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+      https://{{ template "fullname" . }}.{{ .Release.Namespace }}.svc:5601
 
 
-     WARNING: You have likely exposed your Elasticsearch direct to the internet.
-              Make sure Search Guard is properly configured.
+  External access to the Kubernetes cluster:
+{{ if .Values.common.ingressNginx.enabled }}
 
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+    * If you use Minikube cluster, please, run in separate window:
 
+      minikube tunnel
 
-    #Getting Elasticsearch external IP for minikube:
+    * Getting the address of the exposed service:
 
-    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
+      export INGRESS_ADDRESS=$(kubectl get ing --namespace default {{ template "fullname" . }}-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
 
-    minikube tunnel
+    * Add IP of $INGRESS_ADDRESS to your DNS as {{ .Values.common.ingressNginx.ingressElasticsearchDomain}} and {{ .Values.common.ingressNginx.ingressKibanaDomain}}
 
-    #Get external IP for Kibana service
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    * Access the services:
 
-    echo "Add IP of $INGRESS_ADDRESS to records to DNS as es.sg-helm.example.com"
+        - Elasticsearch at https://{{ .Values.common.ingressNginx.ingressElasticsearchDomain}}
+        - Kibana at https://{{ .Values.common.ingressNginx.ingressKibanaDomain}}
 
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+{{ else if contains "NodePort" .Values.common.serviceType }}
+    * Get IP and port for Elasticsearch service
+        export ES_NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
 
-    #Access https://es.sg-helm.example.com
-    
+        export ES_NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }}-clients)
 
-    {{ else if contains "NodePort" .Values.common.serviceType }}
+    * Access Elasticsearch service at:
 
-    #NodePort
-    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }}-clients)
-    export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-    echo https://$NODE_IP:$NODE_PORT
-    {{ else if contains "LoadBalancer" .Values.common.serviceType }}
+        https://ES_NODE_IP:ES_NODE_PORT
 
-     WARNING: You have likely exposed your Elasticsearch cluster direct to the internet.
-              Make sure Search Guard is properly configured.
+    * Get IP and port for Kibana service
 
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+        export KI_NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
 
-    #LoadBalancer
-    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    echo https://$SERVICE_IP:9200
-    {{ else if contains "ClusterIP"  .Values.common.serviceType }}
+        export KI_NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }})
 
-    #ClusterIP
-    export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=client" -o jsonpath="{.items[0].metadata.name}")
-    echo "Visit https://127.0.0.1:9200 to use Elasticsearch"
-    kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 9200:9200
+    * Access Kibana service at:
 
-    {{ end }}
+        https://KI_NODE_IP:KI_NODE_PORT
+{{ else if contains "LoadBalancer" .Values.common.serviceType }}
+    NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+          You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
 
-Kibana can be accessed:
+    * Get address of LoadBalancer service
 
-  * Within your cluster, at the following DNS name at port 5601:
+        export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
 
-    https://{{ template "fullname" . }}.{{ .Release.Namespace }}.svc:5601
+    * Access the services:
 
-  * From outside the cluster, run these commands in the same shell:
+        - Elasticsearch at https://$SERVICE_IP:9200
+        - Kibana at https://$SERVICE_IP:5601
 
-    {{ if .Values.common.ingressNginx.enabled }}
+{{ else if contains "ClusterIP"  .Values.common.serviceType }}
 
-    #Ingress Nginx
+    * Get address of the Client pod and expose 9200 outside the cluster:
 
-    #Getting Kibana external IP for Cloud providers:
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=client" -o jsonpath="{.items[0].metadata.name}")
 
+        kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 9200:9200
 
-     WARNING: You have likely exposed your Kibana direct to the internet.
-              Make sure Search Guard is properly configured.
+    * Get address of the Kibana pod and expose 5601 outside the cluster:
 
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
+        export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=kibana" -o jsonpath="{.items[0].metadata.name}")
 
+        kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 5601:5601
 
-    #Getting Kibana external IP for minikube:
+    * Access the services:
 
-    #Run in separate window tunnel command to expose the external IP directly to any program running on the host operating system.
+        - Elasticsearch at https://127.0.0.1:9200
+        - Kibana at https://127.0.0.1:5601
+{{ end }}
+    Following users were configured in the Elasticsearch cluster:
 
-    minikube tunnel
+        Username: admin
+        Password: $(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
 
-    #Get external IP for Kibana service
-    export INGRESS_ADDRESS=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        Username: kibanaro
+        Password: $(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
 
-    echo "Add IP of $INGRESS_ADDRESS to records to DNS as kibana.sg-helm.example.com"
+        Username: kibanaserver
+        Password: $(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
+{{ range $key, $value := .Values.common.users }}
+        Username: {{ $key }}
+        Password: $(kubectl get secrets {{ $.Release.Name }}-{{ $.Chart.Name }}-passwd-secret -o jsonpath="{.data.SG_{{ $key | upper }}_PWD}" | base64 -d)
+{{ end }}
 
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
-
-    #Get Kibana user and Kibana password
-
-    export KIBANARO_PASSWORD=$(kubectl get secrets sg-elk-sg-helm-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
-    echo $KIBANARO_PASSWORD
-
-    #Access https://kibana.sg-helm.example.com with kibanaro/$KIBANARO_PASSWORD
+    NOTE: Please, give Helm charts few minutes to complete startup process for all pods.
 
 
-    {{ else if contains "NodePort" .Values.kibana.serviceType }}
-
-    #NodePort
-    export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "fullname" . }})
-    export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-    echo https://$NODE_IP:$NODE_PORT
-    {{- else if contains "LoadBalancer" .Values.kibana.serviceType }}
-
-     WARNING: You have likely exposed your Kibana direct to the internet.
-              Make sure Search Guard is properly configured.
-
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get svc -w {{ template "fullname" . }}'
-
-    #LoadBalancer
-    export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-    echo https://$SERVICE_IP:5601
-    {{- else if contains "ClusterIP"  .Values.kibana.serviceType }}
-
-    #ClusterIP
-    export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "fullname" . }},role=kibana" -o jsonpath="{.items[0].metadata.name}")
-    echo "Visit https://127.0.0.1:5601 to use Kibana"
-    kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 5601:5601
-
-    {{ end }}
 
