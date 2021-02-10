@@ -116,14 +116,6 @@ if [ "$delete" == 1 ]; then
     exit 0
 fi
 
-
-#aws configure list
-#kops version
-#kubectl version --client=true
-#helm version -c
-
-
-
 echo "Create S3 bucket $BUCKET in $REGION to hold the kops state"
 aws s3api create-bucket --bucket "$BUCKET" --region "$REGION" --create-bucket-configuration LocationConstraint="$REGION" > /dev/null  2>&1
 aws s3api put-bucket-versioning --bucket "$BUCKET" --region "$REGION"  --versioning-configuration Status=Enabled > /dev/null  2>&1
@@ -139,10 +131,9 @@ kops create cluster $CLUSTERNAME \
   --node-volume-size 20 \
   --node-count=2 \
   --master-count=1 \
-  --yes
-  
-  #> /dev/null  2>&1
-#check_ret "Cluster create"
+  --yes > /dev/null  2>&1
+
+check_ret "Cluster create"
 
 echo "Wait until cluster $CLUSTERNAME is valid ... (may take a few minutes)"
 until kops validate cluster --name="$CLUSTERNAME" --state="$KOPS_STATE_STORE" > /dev/null 2>&1; do sleep 15 ; done
@@ -155,53 +146,33 @@ echo "Install ElasticSearch/Kibana secured by Search Guard"
 #helm install sg-elk sg-helm
 
 helm install sg-elk sg-helm \
-  --version sgh-beta4 \
   --set data.storageClass=gp2  \
   --set master.storageClass=gp2 \
-  --set data.replicas=1  \
-  --set master.replicas=1 \
-  --set client.replicas=1 \
-  --set kibana.replicas=1 \
   --set common.serviceType=NodePort \
   --set kibana.serviceType=NodePort \
-  --set common.ingressNginx.enabled=true \
-  --set common.ingressNginx.ingressCertificates=self-signed \
-  --set common.ingressNginx.ingressKibanaDomain=kibana.sg-helm.example.com \
-  --set common.ingressNginx.ingressElasticsearchDomain=es.sg-helm.example.com \
   --set common.do_not_fail_on_forbidden=true
 
 
 check_ret "Helm install"
 
-  # \
-  #--set common.elkversion=6.6.2 \
-  #--set common.sgversion=24.3 \
-  #--set common.sgkibanaversion=18.3
+#Waiting for Ingress to start
+#until kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' &> /dev/null; do sleep 15 ; done
+#
+#sleep 30
+#
+#INGRESS_HOST=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'|cut -d. -f 1-5)
+#echo "You can use IP of $INGRESS_HOST to assign to kibana.sg-helm.example.com, es.sg-helm.example.com in DNS"
 
-echo "Wait for Ingress to start ..."
-
-until kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' &> /dev/null; do sleep 15 ; done
-#ES_URL=$(kubectl get svc --namespace default sg-elk-sg-helm-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-#KIBANA_URL=$(kubectl get svc --namespace default sg-elk-sg-helm -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-#echo "Elasticsearch: https://$ES_URL:9200"
-#echo "Kibana: https://$KIBANA_URL:5601"
-
-sleep 30
-
-INGRESS_HOST=$(kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'|cut -d. -f 1-5)
-echo "You can use IP of $INGRESS_HOST to assign to kibana.sg-helm.example.com, es.sg-helm.example.com in DNS"
-
-echo "Install Dashboard"
 
 #Previously used dashboard yaml is kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml #> /dev/null  2>&1
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml > /dev/null  2>&1
 
 
 BASIC_PASS_CMD="kubectl config view -o=jsonpath='{.users[?(@.name=="\"$CLUSTERNAME-basic-auth\"")].user.password}'"
 BASIC_PASS=$($BASIC_PASS_CMD | tr -d "'")
 DASHBOARD_TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep search-guard-admin-user | awk '{print $1}') | grep "token: " | awk '{print $2}')
 APISERVER=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
-#DASHBOARD="$APISERVER/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview"
+
 
 kubectl cluster-info
 echo "To acess dashboard run: kubectl proxy"
@@ -211,37 +182,22 @@ echo "Kubernetes Dashboard URL: http://localhost:8001/api/v1/namespaces/kubernet
 #echo "  Password: $BASIC_PASS"
 echo "  Token: $DASHBOARD_TOKEN"
 
-
-echo ""
-echo "Done"
-
 cat << EOF
+Helm charts have been already installed to Kubernetes cluster
+
 To upgrade run a command similar to:
 
-
 helm upgrade sg-elk sg-helm \\
-  --version sgh-beta4 \\
   --set data.storageClass=gp2  \\
   --set master.storageClass=gp2 \\
-  --set data.replicas=1  \\
-  --set master.replicas=1 \\
-  --set client.replicas=1 \\
-  --set kibana.replicas=1 \\
   --set common.serviceType=NodePort \\
   --set kibana.serviceType=NodePort \\
-  --set common.ingressNginx.enabled=true \\
-  --set common.ingressNginx.ingressCertificates=self-signed \\
-  --set common.ingressNginx.ingressKibanaDomain=kibana.sg-helm.example.com \\
-  --set common.ingressNginx.ingressElasticsearchDomain=es.sg-helm.example.com \\
   --set common.do_not_fail_on_forbidden=true \\
-  --set common.elkversion="7.9.2" \\
-  --set common.sgversion="46.0.0" \\
-  --set common.sgkibanaversion="46.0.0"
+  --set common.elkversion="7.9.3" \\
+  --set common.sgversion="47.1.0" \\
+  --set common.sgkibanaversion="47.1.0"
 
 
 (NB: For upgrade you need two times more resources in the cluster to keep old and starting new instances at the same time)
 EOF
 
-#\\
-#  --set common.sg_enterprise_modules_enabled=false \\
-#  --set common.do_not_fail_on_forbidden=true
