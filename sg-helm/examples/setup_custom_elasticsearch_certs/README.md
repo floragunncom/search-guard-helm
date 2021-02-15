@@ -1,6 +1,6 @@
 # Setup with custom Elasticsearch cluster nodes certificates
 
-This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_custom_elasticsearch_certs/values.yaml) 
+This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_custom_elasticsearch_certs/values.yaml) 
 sets up protected 4-nodes Elasticsearch cluster by providing custom certificates for each node in the Elasticsearch cluster and for the Ingress services.
 
 Please, note, that you can provide your custom certificates for each Elasticsearch node by adding them to the folder `secrets/nodes` with the predefined node names.

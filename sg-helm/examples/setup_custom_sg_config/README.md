@@ -1,12 +1,12 @@
 #  Setup with custom Elasticsearch and Search Guard configuration
 
-This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_custom_sg_config/values.yaml) 
+This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_custom_sg_config/values.yaml) 
 sets up protected 4-nodes Elasticsearch cluster with custom configuration for Elasticsearch and Search Guard Suite plugin.
 
 The configuration difference from basic setup is that additional `config.http` section in `elasticsearch.yml` and additional user `beatsuser` in Search Guard configuration files is provisioned.
 
 You can add additional custom configuration for Elasticsearch to `custom.config` section 
-and for Search Guard configuration to `common.users`, `common.roles`, `common.rolesmapping` sections in [the configuration file](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_custom_sg_config/values.yaml).
+and for Search Guard configuration to `common.users`, `common.roles`, `common.rolesmapping` sections in [the configuration file](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_custom_sg_config/values.yaml).
 
 The security in the Elasticsearch cluster is provided by self-signed certificates for transport layer communication and for the Ingress services.
 

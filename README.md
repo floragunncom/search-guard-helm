@@ -325,15 +325,15 @@ limitations under the License.
 
 [contact with us]: https://search-guard.com/contacts/
 [Docker]: https://docs.docker.com/engine/install/
-[docker folder]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/docker
-[example with custom configuration]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_sg_config
-[example with custom domains]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_service_certs
+[docker folder]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/docker
+[example with custom configuration]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/sg-helm/examples/setup_custom_sg_config
+[example with custom domains]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/sg-helm/examples/setup_custom_service_certs
 [Helm Documentation]: https://github.com/helm/helm/blob/master/docs/helm/helm_install.md
 [Helm installation steps]: https://helm.sh/docs/intro/install/
 [kubectl installation guide]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [Minikube installation steps]: https://minikube.sigs.k8s.io/docs/start/
-[setup with custom CA certificate]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_ca
-[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_custom_elasticsearch_certs
-[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/gh/search-guard-helm/-/tree/prod_ready_ca/sg-helm/examples/setup_single_elasticsearch_cert
-[values.yaml]: https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/values.yaml
-[./tools/sg_aws_kops.sh]: https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/tools/sg_aws_kops.sh
+[setup with custom CA certificate]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/sg-helm/examples/setup_custom_ca
+[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/sg-helm/examples/setup_custom_elasticsearch_certs
+[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/gh/search-guard-helm/-/tree/master/sg-helm/examples/setup_single_elasticsearch_cert
+[values.yaml]: https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/values.yaml
+[./tools/sg_aws_kops.sh]: https://git.floragunn.com/gh/search-guard-helm/-/blob/master/tools/sg_aws_kops.sh

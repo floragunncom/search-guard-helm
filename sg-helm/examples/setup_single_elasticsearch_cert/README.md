@@ -1,10 +1,10 @@
 # Setup with single certificates for Elasticsearch cluster nodes
 
-This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_single_elasticsearch_cert/values.yaml) 
+This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_single_elasticsearch_cert/values.yaml) 
 sets up protected 4-nodes Elasticsearch cluster by providing single custom certificates for transport layer security and using self-signed certificates for exposed Ingress services.
 
 Please, provide your custom certificates `sg.pem` and `sg.key` by adding them to the folder `secrets/nodes` with the predefined node names.
-If you have different node name than `sg` in your certificate, please, change the `nodes_dn` and `admin_dn` in your [configuration file](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_single_elasticsearch_cert/values.yaml) respectively.
+If you have different node name than `sg` in your certificate, please, change the `nodes_dn` and `admin_dn` in your [configuration file](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_single_elasticsearch_cert/values.yaml) respectively.
 
 The custom certificates for sgadmin are provided in `crt.pem` and `key.pem` files in `secrets/sgadmin` folder.
 

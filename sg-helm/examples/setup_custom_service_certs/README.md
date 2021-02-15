@@ -1,6 +1,6 @@
 # Setup with custom domain names for Elasticsearch and Kibana services 
 
-This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/prod_ready_ca/sg-helm/examples/setup_custom_service_certs/values.yaml) 
+This usage example [configuration](https://git.floragunn.com/gh/search-guard-helm/-/blob/master/sg-helm/examples/setup_custom_service_certs/values.yaml) 
 sets up protected 4-nodes Elasticsearch cluster by providing custom certificates for Ingress services and generating self-signed certificates for cluster security configuration. 
 
 Please, note, you are expected to provide the files `tls.crt` and `tls.key` in `secrets/ingress_certificates/elasticsearch` and `secrets/ingress_certificates/kibana` respectively.
