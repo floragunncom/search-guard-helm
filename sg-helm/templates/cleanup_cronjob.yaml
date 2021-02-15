@@ -12,7 +12,7 @@ spec:
     spec:
       template:
         spec:
-          serviceAccountName: {{ template "fullname" . }}
+          serviceAccountName: {{ template "searchguard.fullname" . }}
           containers:
             - name: cleanup-job
               image: bitnami/kubectl:1.19

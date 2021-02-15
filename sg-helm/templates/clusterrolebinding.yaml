@@ -3,11 +3,11 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   labels:
-    app: {{ template "fullname" .}}
+    app: {{ template "searchguard.fullname" .}}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ template "fullname" . }}
+  name: {{ template "searchguard.fullname" . }}
   namespace: {{ .Release.Namespace }}
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -17,17 +17,17 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "fullname" . }}
+  name: {{ template "searchguard.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ template "fullname" . }}
+  name: {{ template "searchguard.fullname" . }}
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app: {{ template "fullname" .}}
+    app: {{ template "searchguard.fullname" .}}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
@@ -51,7 +51,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   labels:
-    app: {{ template "fullname" .}}
+    app: {{ template "searchguard.fullname" .}}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
@@ -64,7 +64,7 @@ metadata:
     "helm.sh/hook-weight": "-5"
 subjects:
   - kind: ServiceAccount
-    name: {{ template "fullname" .}}
+    name: {{ template "searchguard.fullname" .}}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole

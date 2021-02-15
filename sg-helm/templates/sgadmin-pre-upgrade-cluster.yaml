@@ -2,13 +2,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "fullname" . }}-sgadmin-preupgrade"
+  name: "{{ template "searchguard.fullname" . }}-sgadmin-preupgrade"
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}-sgadmin
+    component: {{ template "searchguard.fullname" . }}-sgadmin
     role: sgadmin
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -19,20 +19,20 @@ metadata:
 spec:
   template:
     metadata:
-      name: "{{ template "fullname" . }}-sgadmin-preupgrade"
+      name: "{{ template "searchguard.fullname" . }}-sgadmin-preupgrade"
       labels:
         release: "{{ .Release.Name }}"
-        app: {{ template "fullname" . }}
-        component: {{ template "fullname" . }}
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
         role: sgadmin
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
       - name: sgadmin-preupgrade
         env:
           - name: DISCOVERY_SERVICE
-            value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
@@ -45,9 +45,9 @@ spec:
                 sleep 10 ;
               done
               echo "Getting password for admin user"
-              export ADMIN_PWD=$(kubectl get secrets {{ template "fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
-              echo "Disabling shard allocation in ES cluster to https://{{ template "fullname" . }}-clients.default.svc:9200 "
-              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "fullname" . }}-clients.default.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+              export ADMIN_PWD=$(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+              echo "Disabling shard allocation in ES cluster to https://{{ template "searchguard.fullname" . }}-clients.default.svc:9200 "
+              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.default.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
               {
               "persistent": {
                 "cluster.routing.allocation.enable": "none",
@@ -75,7 +75,7 @@ spec:
       volumes:
         - name: secret-volume
           secret:
-            secretName: {{ template "fullname" . }}-admin-cert-secret
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - name: kubectl
           emptyDir: {}
 {{ end }}

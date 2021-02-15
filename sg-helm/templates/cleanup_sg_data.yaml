@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "fullname" . }}-cleanup-sg-data"
+  name: "{{ template "searchguard.fullname" . }}-cleanup-sg-data"
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -17,15 +17,15 @@ metadata:
 spec:
   template:
     metadata:
-      name: "{{ template "fullname" . }}-cleanup-sg-data"
+      name: "{{ template "searchguard.fullname" . }}-cleanup-sg-data"
       labels:
         release: "{{ .Release.Name }}"
-        app: {{ template "fullname" . }}
-        component: {{ template "fullname" . }}
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
         role: sgadmin
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
         - name: cleanup-sg-data
           image: bitnami/kubectl:1.19
@@ -35,8 +35,8 @@ spec:
             - -c
             - |
 {{ if .Values.common.remove_pvc_on_delete }}
-                kubectl delete $$(kubectl get pvc -l component={{ template "fullname" . }} -o name)
+                kubectl delete $$(kubectl get pvc -l component={{ template "searchguard.fullname" . }} -o name)
 {{ end }}
                 kubectl delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
 
-                kubectl delete $$(kubectl get secrets -l app={{ template "fullname" . }} -o name)
+                kubectl delete $$(kubectl get secrets -l app={{ template "searchguard.fullname" . }} -o name)

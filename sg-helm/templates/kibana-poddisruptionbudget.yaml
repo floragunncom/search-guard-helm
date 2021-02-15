@@ -2,19 +2,19 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "fullname" . }}-kibana
+  name: {{ template "searchguard.fullname" . }}-kibana
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}
+    component: {{ template "searchguard.fullname" . }}
     role: kibana
 spec:
   minAvailable: 50%
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ template "searchguard.fullname" . }}
       role: kibana
 
 {{ end }}

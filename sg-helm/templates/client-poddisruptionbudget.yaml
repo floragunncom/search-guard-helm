@@ -2,18 +2,18 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "fullname" . }}-client
+  name: {{ template "searchguard.fullname" . }}-client
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}
+    component: {{ template "searchguard.fullname" . }}
     role: client
 spec:
   minAvailable: 50%
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app: {{ template "searchguard.fullname" . }}
       role: client
 {{ end }}

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-kibana-config
+  name: {{ template "searchguard.fullname" . }}-kibana-config
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -24,7 +24,7 @@ data:
     elasticsearch.hosts: ["https://${DISCOVERY_SERVICE}:9200"]
 
     elasticsearch.username: "kibanaserver"
-    elasticsearch.password: "${SG_KIBANA_SERVER_PWD}"
+    elasticsearch.password: "${SG_KIBANASERVER_PWD}"
 
     # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
     server.ssl.enabled: true

@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-searchguard-config-7
+  name: {{ template "searchguard.fullname" . }}-searchguard-config-7
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
@@ -99,7 +99,7 @@ data:
       reserved: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: ${envbc.SG_KIBANA_SERVER_PWD}
+      hash: ${envbc.SG_KIBANASERVER_PWD}
 
     kibanaro: 
       reserved: true

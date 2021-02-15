@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "fullname" . }}-clients
+  name: {{ template "searchguard.fullname" . }}-clients
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}
+    component: {{ template "searchguard.fullname" . }}
     role: client
 spec:
   type: {{ .Values.common.serviceType }}
   selector:
-    component: {{ template "fullname" . }}
+    component: {{ template "searchguard.fullname" . }}
     role: client
   ports:
   - name: http

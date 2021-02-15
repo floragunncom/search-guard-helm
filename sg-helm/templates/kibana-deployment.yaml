@@ -2,13 +2,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}-kibana
+  name: {{ template "searchguard.fullname" . }}-kibana
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}-kibana
+    component: {{ template "searchguard.fullname" . }}-kibana
     role: kibana
 spec:
   replicas: {{ .Values.kibana.replicas }}
@@ -16,14 +16,14 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      component: {{ template "fullname" . }}
+      component: {{ template "searchguard.fullname" . }}
       role: kibana
   template:
     metadata:
       labels:
         release: "{{ .Release.Name }}"
-        app: {{ template "fullname" . }}
-        component: {{ template "fullname" . }}
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
         role: kibana
         {{- if .Values.kibana.labels }}
 {{ toYaml .Values.kibana.labels | indent 8 }}
@@ -36,8 +36,8 @@ spec:
 {{ toYaml .Values.kibana.annotations | indent 8 }}
       {{- end }}
     spec:
-      subdomain: {{ template "fullname" . }}
-      serviceAccountName: {{ template "fullname" . }}
+      subdomain: {{ template "searchguard.fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
       securityContext:
         fsGroup: 1000
       {{- if eq .Values.kibana.antiAffinity "hard" }}
@@ -47,7 +47,7 @@ spec:
             - topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: kibana
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -55,7 +55,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: kibana
       {{- else if eq .Values.kibana.antiAffinity "soft" }}
       affinity:
@@ -66,14 +66,14 @@ spec:
               topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: kibana
           - weight: 2
             podAffinityTerm:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: kibana
       {{- end }}
       initContainers:
@@ -85,12 +85,12 @@ spec:
             - -c
             - |
                 #!/usr/bin/env bash -e
-                until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
-                  echo 'Wait for {{ template "fullname" . }}-passwd-secret';
+                until kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
+                  echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
                   sleep 10 ;
                 done
 
-                echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
+                echo "OK, {{ template "searchguard.fullname" . }}-passwd-secret exists now"
 
           resources:
             limits:
@@ -99,9 +99,9 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
-{{ include "generate-certificates-init-container" . | indent 8 }}
+{{ include "searchguard.generate-certificates-init-container" . | indent 8 }}
       {{ if .Values.common.es_upgrade_order }}
-{{ include "kibana-wait-container" . | indent 8 }}
+{{ include "searchguard.kibana-wait-container" . | indent 8 }}
       {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
@@ -122,12 +122,12 @@ spec:
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
           postStart:
-{{ include "remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.remove-demo-certs" . | indent 12 }}
           preStop:
-{{ include "lifecycle-cleanup-certs" . | indent 12 }}
+{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         envFrom:
         - secretRef:
-            name: {{ template "fullname" . }}-passwd-secret
+            name: {{ template "searchguard.fullname" . }}-passwd-secret
         env:
         - name: NAMESPACE
           valueFrom:
@@ -138,7 +138,7 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
-          value: {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
+          value: {{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
@@ -179,10 +179,10 @@ spec:
       volumes:
         - name: certificates-secrets-volume
           secret:
-            secretName: {{ template "fullname" . }}-nodes-cert-secret
+            secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
             defaultMode: 0600
         - configMap:
-            name: {{ template "fullname" . }}-kibana-config
+            name: {{ template "searchguard.fullname" . }}-kibana-config
           name: config
         - name: kubectl
           emptyDir: {}

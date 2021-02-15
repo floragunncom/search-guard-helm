@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: {{ template "fullname" . }}-ingress-nginx
+  name: {{ template "searchguard.fullname" . }}-ingress-nginx
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -14,7 +14,7 @@ spec:
       # This secret must exist beforehand
       # The cert must also contain the subj-name foo.bar.com
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-      secretName: {{ template "fullname" . }}-kibana-service-cert-secret
+      secretName: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
 {{ end }}
 {{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
     - hosts:
@@ -22,7 +22,7 @@ spec:
     # This secret must exist beforehand
     # The cert must also contain the subj-name bar.baz.com
     # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
-      secretName: {{ template "fullname" . }}-es-service-cert-secret
+      secretName: {{ template "searchguard.fullname" . }}-es-service-cert-secret
 {{ end }}
   rules:
 {{ if not (eq .Values.common.ingressNginx.ingressKibanaDomain "none") }}
@@ -30,7 +30,7 @@ spec:
         http:
           paths:
             - backend:
-                serviceName: {{ template "fullname" . }}
+                serviceName: {{ template "searchguard.fullname" . }}
                 servicePort: 5601
               path: /
 {{ end }}
@@ -39,7 +39,7 @@ spec:
         http:
           paths:
             - backend:
-                serviceName: {{ template "fullname" . }}-clients
+                serviceName: {{ template "searchguard.fullname" . }}-clients
                 servicePort: 9200
               path: /
 {{ end }}

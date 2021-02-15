@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "name" -}}
+{{- define "searchguard.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -10,23 +10,23 @@ Expand the name of the chart.
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
-{{- define "fullname" -}}
+{{- define "searchguard.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name }}
 {{- end -}}
 
-{{- define "lifecycle-cleanup-certs" -}}
+{{- define "searchguard.lifecycle-cleanup-certs" -}}
 exec:
   command:
     - sh
     - -c
     - |
         #!/usr/bin/env bash +e
-        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
-        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+        kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+        kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
 {{- end -}}
 
-{{- define "remove-demo-certs" -}}
+{{- define "searchguard.remove-demo-certs" -}}
 exec:
   command:
     - sh
@@ -43,9 +43,9 @@ init container template
 
 */}}
 
-{{- define "generate-certificates-init-container" -}}
+{{- define "searchguard.generate-certificates-init-container" -}}
 {{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
-- name: generate-certificates
+- name: searchguard-generate-certificates
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -71,24 +71,24 @@ init container template
         #!/usr/bin/env bash -e
 
         cp /usr/bin/kubectl /kubectl/kubectl
-        until kubectl get secrets {{ template "fullname" . }}-admin-cert-secret; do
+        until kubectl get secrets {{ template "searchguard.fullname" . }}-admin-cert-secret; do
             echo 'Wait for Admin certificate secrets to be generated or uploaded';
             sleep 10 ;
         done
 
-        echo "OK, {{ template "fullname" . }}-admin-cert-secret exists now"
+        echo "OK, {{ template "searchguard.fullname" . }}-admin-cert-secret exists now"
 
-        until kubectl get secrets {{ template "fullname" . }}-passwd-secret; do
-          echo 'Wait for {{ template "fullname" . }}-passwd-secret'; 
+        until kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
+          echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
           sleep 10 ; 
         done
 
-        echo "OK, {{ template "fullname" . }}-passwd-secret exists now"
+        echo "OK, {{ template "searchguard.fullname" . }}-passwd-secret exists now"
 
 
 
-        KIBANA_ELB="$(kubectl get svc {{ template "fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
-        ES_ELB="$(kubectl get svc {{ template "fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+        KIBANA_ELB="$(kubectl get svc {{ template "searchguard.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+        ES_ELB="$(kubectl get svc {{ template "searchguard.fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
 
         if [ -z "$KIBANA_ELB" ]; then
               KIBANA_ELB=""
@@ -102,7 +102,7 @@ init container template
               ES_ELB="- $ES_ELB"
         fi
 
-        cat >"{{ template "fullname" . }}-$NODE_NAME-node-cert.yml" <<EOL
+        cat >"{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" <<EOL
         ca:
           root:
               file: root-ca.pem
@@ -122,21 +122,21 @@ init container template
             dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
             dns:
               - $NODE_NAME
-              - {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
-              - {{ template "fullname" . }}-clients.{{ .Release.Namespace }}.svc
+              - {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+              - {{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc
               $KIBANA_ELB
               $ES_ELB
             ip: $POD_IP
         EOL
 
-        cat {{ template "fullname" . }}-$NODE_NAME-node-cert.yml
+        cat {{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml
 
-        kubectl get secrets {{ template "fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
-        kubectl get secrets {{ template "fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+        kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+        kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
 
-        /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
+        /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
 
-        kubectl patch secret {{ template "fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /tmp/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /tmp/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
+        kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /tmp/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /tmp/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
         #cat /tmp/*snippet.yml
 
   resources:
@@ -149,8 +149,8 @@ init container template
 {{- end }}
 {{- end -}}
 
-{{- define "master-wait-container" -}}
-- name: master-wait-container
+{{- define "searchguard.master-wait-container" -}}
+- name: searchguard-master-wait-container
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -214,8 +214,8 @@ init container template
 {{- end -}}
 
 
-{{- define "kibana-wait-container" -}}
-- name: kibana-wait-container
+{{- define "searchguard.kibana-wait-container" -}}
+- name: searchguard-kibana-wait-container
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -261,7 +261,7 @@ init container template
 {{- end -}}
 
 
-{{- define "init-containers" -}}
+{{- define "searchguard.init-containers" -}}
 - name: init-sysctl
   image: busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -276,7 +276,7 @@ init container template
   securityContext:
     privileged: true
 
-{{ include "generate-certificates-init-container" . }}
+{{ include "searchguard.generate-certificates-init-container" . }}
 
 
 {{- if .Values.common.plugins }}

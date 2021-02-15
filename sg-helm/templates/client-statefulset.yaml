@@ -2,31 +2,31 @@
 apiVersion:  apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "fullname" . }}-client
+  name: {{ template "searchguard.fullname" . }}-client
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}-client
+    component: {{ template "searchguard.fullname" . }}-client
     role: client
     estype: node
 spec:
-  serviceName: {{ template "fullname" . }}-client
+  serviceName: {{ template "searchguard.fullname" . }}-client
   replicas: {{ .Values.client.replicas }}
   updateStrategy:
     type: RollingUpdate
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      component: {{ template "fullname" . }}
+      component: {{ template "searchguard.fullname" . }}
       role: client
   template:
     metadata:
       labels:
         release: "{{ .Release.Name }}"
-        app: {{ template "fullname" . }}
-        component: {{ template "fullname" . }}
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
         role: client
         {{- if .Values.client.labels }}
 {{ toYaml .Values.client.labels | indent 8 }}
@@ -39,8 +39,8 @@ spec:
 {{ toYaml .Values.client.annotations | indent 8 }}
       {{- end }}
     spec:
-      subdomain: {{ template "fullname" . }}
-      serviceAccountName: {{ template "fullname" . }}
+      subdomain: {{ template "searchguard.fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
       securityContext:
         fsGroup: 1000
       {{- if eq .Values.client.antiAffinity "hard" }}
@@ -52,13 +52,13 @@ spec:
               topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: client
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: client
       {{- else if eq .Values.client.antiAffinity "soft" }}
       affinity:
@@ -69,18 +69,18 @@ spec:
               topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: client
           - weight: 2
             podAffinityTerm:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "fullname" . }}
+                  component: {{ template "searchguard.fullname" . }}
                   role: client
       {{- end }}
       initContainers:
-{{ include "init-containers" . | indent 6 }}
+{{ include "searchguard.init-containers" . | indent 6 }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
       - name: docker-auth
@@ -99,13 +99,13 @@ spec:
       {{ end }}
         lifecycle:
           postStart:
-{{ include "remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.remove-demo-certs" . | indent 12 }}
           preStop:
-{{ include "lifecycle-cleanup-certs" . | indent 12 }}
+{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         envFrom:
         - secretRef:
-            name: {{ template "fullname" . }}-passwd-secret
+            name: {{ template "searchguard.fullname" . }}-passwd-secret
         env:
         - name: NAMESPACE
           valueFrom:
@@ -116,7 +116,7 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
-          value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+          value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
         - name: NODE_DATA
@@ -173,13 +173,13 @@ spec:
       volumes:
         - name: secret-volume
           secret:
-            secretName: {{ template "fullname" . }}-nodes-cert-secret
+            secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
             defaultMode: 0600
         - configMap:
-            name: {{ template "fullname" . }}-config
+            name: {{ template "searchguard.fullname" . }}-config
           name: config
         - configMap:
-            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+            name: {{ template "searchguard.fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
           name: searchguard-config
         - name: kubectl
           emptyDir: {}

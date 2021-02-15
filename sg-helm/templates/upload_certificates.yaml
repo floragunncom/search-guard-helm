@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-admin-cert-secret
+  name: {{ template "searchguard.fullname" . }}-admin-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -19,7 +19,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-nodes-cert-secret
+  name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -35,7 +35,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-kibana-service-cert-secret
+  name: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -51,7 +51,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-es-service-cert-secret
+  name: {{ template "searchguard.fullname" . }}-es-service-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -67,7 +67,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-root-ca-secret
+  name: {{ template "searchguard.fullname" . }}-root-ca-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -83,7 +83,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-admin-cert-secret
+  name: {{ template "searchguard.fullname" . }}-admin-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the
@@ -99,7 +99,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "fullname" . }}-nodes-cert-secret
+  name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
     # This is what defines this resource as a hook. Without this line, the

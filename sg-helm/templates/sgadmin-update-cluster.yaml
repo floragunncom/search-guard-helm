@@ -1,13 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "fullname" . }}-sgadmin-post"
+  name: "{{ template "searchguard.fullname" . }}-sgadmin-post"
   labels:
-    app: {{ template "fullname" . }}
+    app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "fullname" . }}-sgadmin
+    component: {{ template "searchguard.fullname" . }}-sgadmin
     role: sgadmin
 spec:
   template:
@@ -15,8 +15,8 @@ spec:
       name: "{{ .Release.Name }}"
       labels:
         release: "{{ .Release.Name }}"
-        app: {{ template "fullname" . }}
-        component: {{ template "fullname" . }}
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
         role: sgadmin
         {{ if .Values.common.restart_pods_on_config_change }}
       annotations:
@@ -24,12 +24,12 @@ spec:
         {{ end }}
     spec:
       restartPolicy: Never
-      serviceAccountName: {{ template "fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
       - name: sgadmin-complete
         env:
           - name: DISCOVERY_SERVICE
-            value: {{ template "fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
@@ -65,9 +65,9 @@ spec:
       volumes:
         - name: secret-volume
           secret:
-            secretName: {{ template "fullname" . }}-admin-cert-secret
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - configMap:
-            name: {{ template "fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+            name: {{ template "searchguard.fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
