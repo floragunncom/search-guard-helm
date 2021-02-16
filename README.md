@@ -104,22 +104,24 @@ Delete the cluster when you finished with testing Search Guard
 
 ## Usage Tips
 
-### Accessing Kibana and Elasticsearch in Minikube
+### Accessing Kibana and Elasticsearch
 
 
-Check `minikube dashboard` and wait until all pods are running and green (can take up to 15 minutes)
-Run in separate window:
+Check that all pods are running and green.
+
+If you use Minikube, run in separate window:
 ```
 minikube tunnel
 ```
-Get Kibana LoadBalancer IP:
+
+Get Ingress address:
 ```
-kubectl get svc|grep LoadBalancer|awk '{print $4}'
+kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'
 ```
 Create records in local etc/hosts 
 ```
-<LoadBalancer IP>   kibana.sg-helm.example.com
-<LoadBalancer IP>   es.sg-helm.example.com
+<Ingress address IP>   kibana.sg-helm.example.com
+<Ingress address IP>   es.sg-helm.example.com
 ```
 Get Admin user 'admin' password:
 ```
