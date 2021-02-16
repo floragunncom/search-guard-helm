@@ -154,6 +154,8 @@ Kibana with Search Guard Kibana plugin installed and Search Guard Admin image to
 
 Please, make sure you have exported your `$DOCKER_PASSWORD` in your environment beforehand.
 
+When you are ready with custom Docker images, please refer to `common.images` and `common.docker_registry` in [values.yaml][]
+to point to your custom docker images location.
 
 ### Install plugins
 You can install all required plugins for your Elasticsearch nodes

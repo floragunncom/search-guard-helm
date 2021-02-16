@@ -25,13 +25,10 @@ common:
         enabled: false
         allow-origin: "*"
     index.codec: best_compression
-  # Adding users list here to generate passwords for each one
-  sg_users:
-    - beatsuser
 
   # Configure additional users (maps to sg_internal_users.yml)
   users:
-    beatsuser:
+    demouser:
       hash: ${envbc.SG_BEATSUSER_PWD}
       backend_roles:
         - beatsreader

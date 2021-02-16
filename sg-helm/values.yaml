@@ -134,8 +134,8 @@ common:
 
 #  # Configure additional users (maps to sg_internal_users.yml)
 #  users:
-#    user1:
-#      hash: ${envbc.SG_USER1_PWD}
+#    demouser:
+#      hash: ${envbc.SG_DEMOUSER_PWD}
 #      backend_roles:
 #        - beatsreader
 #
