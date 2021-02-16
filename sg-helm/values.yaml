@@ -132,30 +132,30 @@ common:
 #    index.codec: best_compression
 
 
-  # Configure additional users (maps to sg_internal_users.yml)
-  users:
-    user1:
-      hash: ${envbc.SG_USER1_PWD}
-      backend_roles:
-        - beatsreader
-
-
-  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
-  rolesmapping:
-    sg_read_beats:
-      backend_roles:
-        - beatsreader
-
-  # Configure additional role (maps to sg_roles.yml)
-  roles:
-    sg_read_beats:
-      cluster_permissions:
-        - SGS_CLUSTER_COMPOSITE_OPS_RO
-      index_permissions:
-        - index_patterns:
-            - "*beat*"
-          allowed_actions:
-            - SGS_READ
+#  # Configure additional users (maps to sg_internal_users.yml)
+#  users:
+#    user1:
+#      hash: ${envbc.SG_USER1_PWD}
+#      backend_roles:
+#        - beatsreader
+#
+#
+#  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
+#  rolesmapping:
+#    sg_read_beats:
+#      backend_roles:
+#        - beatsreader
+#
+#  # Configure additional role (maps to sg_roles.yml)
+#  roles:
+#    sg_read_beats:
+#      cluster_permissions:
+#        - SGS_CLUSTER_COMPOSITE_OPS_RO
+#      index_permissions:
+#        - index_patterns:
+#            - "*beat*"
+#          allowed_actions:
+#            - SGS_READ
 
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}
