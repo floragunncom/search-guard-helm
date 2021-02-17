@@ -202,6 +202,9 @@ including self-signed and CA signed solutions. Please, refer to following exampl
   To meet the requirements of Elasticsearch rolling upgrade procedure, please, add these parameters to the upgrade command: `helm upgrade --set common.es_upgrade_order=true --set common.disable_sharding=true`.
   We recommend to specify custom timeout for upgrade command `helm upgrade --timeout 1h` to provide enough time for Helm to upgrade all cluster nodes.  
 
+NB! Do not use ``common.es_upgrade_order=true`` when your master.replicas=1 because in this case master node and non-master node dependency conditions block each over
+and upgrade fails.
+
 ## Configuration parameters
 
  | Parameter | Description | Default value |

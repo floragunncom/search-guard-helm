@@ -8,7 +8,7 @@ common:
   # Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
   #Set to true of you want to remove persistent storage claims with helm delete command
-  remove_pvc_on_delete: false
+  remove_pvc_on_delete: true
   #Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
   #If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
   # - for SG Admin image: <images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>

@@ -46,8 +46,8 @@ spec:
               done
               echo "Getting password for admin user"
               export ADMIN_PWD=$(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
-              echo "Disabling shard allocation in ES cluster to https://{{ template "searchguard.fullname" . }}-clients.default.svc:9200 "
-              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.default.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+              echo "Disabling shard allocation in ES cluster to https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200 "
+              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
               {
               "persistent": {
                 "cluster.routing.allocation.enable": "none",
