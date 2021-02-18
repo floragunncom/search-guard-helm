@@ -77,7 +77,8 @@ common:
   # Thus not security exception is raised.
   # See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
   do_not_fail_on_forbidden: false
-
+  #After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
+  license: none
   #By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
   #By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgadmin-preinstall and sgadmin-postinstall jobs
   debug_job_mode: false

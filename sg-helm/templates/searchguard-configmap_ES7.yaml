@@ -15,6 +15,9 @@ data:
     sg_config:
       dynamic:
         do_not_fail_on_forbidden: {{ .Values.common.do_not_fail_on_forbidden }}
+{{ if not (eq .Values.common.license "none") }}
+        license: {{ .Values.common.license }}
+{{ end }}
         kibana:
           multitenancy_enabled: true
           server_username: kibanaserver
@@ -99,7 +102,7 @@ data:
       reserved: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: ${envbc.SG_KIBANASERVER_PWD}
+      hash: ${envbc.SG_KIBANA_SERVER_PWD}
 
     kibanaro: 
       reserved: true
