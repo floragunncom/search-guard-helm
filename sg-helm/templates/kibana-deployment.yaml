@@ -91,7 +91,6 @@ spec:
                 done
 
                 echo "OK, {{ template "searchguard.fullname" . }}-passwd-secret exists now"
-
           resources:
             limits:
               cpu: "500m"

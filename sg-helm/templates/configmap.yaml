@@ -9,7 +9,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
 data:
   elasticsearch.yml: |-
-
 {{ if .Values.common.xpack_basic }}
     # When xpack is installed we need to disable xpack security
     xpack.security.enabled: false
@@ -17,7 +16,6 @@ data:
     xpack.watcher.enabled: false
     xpack.monitoring.collection.enabled: true
 {{ end }}
-
     #network.host: "0.0.0.0"
     network.host: ${NODE_NAME}
     #TODO support memory_lock
@@ -32,24 +30,18 @@ data:
     path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
-
     {{- if eq (.Values.common.elkversion | substr 0 1) "7" }}
-
     {{- $master_name := printf "- %s-%s-%s" .Release.Name .Chart.Name "master" }}
-
     cluster.initial_master_nodes:
       {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
       {{ $master_name }}-{{ $ordinal }}
       {{- end }}
-
     discovery.seed_hosts: ${DISCOVERY_SERVICE:}
-
     {{ else }}
     discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
     #(master/2)+1
     discovery.zen.minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
     {{ end }}
-
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
     searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
@@ -67,7 +59,6 @@ data:
     searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
     searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
 {{ end }}
-
 {{ if .Values.common.external_ca_single_certificate_enabled }}
     searchguard.ssl.http.pemkey_filepath: certificates-secrets/sg.key
     searchguard.ssl.http.pemcert_filepath: certificates-secrets/sg.pem
@@ -82,9 +73,7 @@ data:
     searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
     searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
 {{ end }}
-
     searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
-
 {{ if .Values.common.config }}
 {{ toYaml .Values.common.config | indent 4 }}
 {{ end }}
