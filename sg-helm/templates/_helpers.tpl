@@ -335,6 +335,7 @@ init container template
   - mountPath: /storage
     name: storage
 {{- end -}}
+
 {{- define "searchguard.authorization.apiVersion" -}}
 {{- if semverCompare "<1.17-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}

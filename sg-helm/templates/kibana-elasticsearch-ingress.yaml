@@ -1,5 +1,5 @@
 {{ if .Values.common.ingressNginx.enabled }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: {{ template "searchguard.networking.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ template "searchguard.fullname" . }}-ingress-nginx
@@ -29,18 +29,41 @@ spec:
       - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
         http:
           paths:
+  {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
             - backend:
                 serviceName: {{ template "searchguard.fullname" . }}
                 servicePort: 5601
               path: /
+  {{ else }}
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: {{ template "searchguard.fullname" . }}
+                  port:
+                    number: 5601
+  {{ end }}
+
 {{ end }}
 {{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
       - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
         http:
           paths:
-            - backend:
+
+  {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
+             - backend:
                 serviceName: {{ template "searchguard.fullname" . }}-clients
                 servicePort: 9200
-              path: /
+             path: /
+
+  {{ else }}
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: {{ template "searchguard.fullname" . }}-clients
+                  port:
+                    number: 9200
+  {{ end }}
 {{ end }}
 {{ end }}

@@ -98,7 +98,7 @@ data:
       reserved: true
       # Do not change the hash here!
       # It will be automatically replaced by auto generated password
-      hash: ${envbc.SG_KIBANA_SERVER_PWD}
+      hash: ${envbc.SG_KIBANASERVER_PWD}
 
     kibanaro: 
       reserved: true
