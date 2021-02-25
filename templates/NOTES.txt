@@ -1,0 +1,101 @@
+The Search Guard protected Elasticsearch cluster has been installed.
+
+  Internal access inside the Kubernetes cluster:
+
+    * Elasticsearch service at DNS name at port 9200:
+
+      https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200
+
+    * Kibana service at DNS name at port 5601:
+
+      https://{{ template "searchguard.fullname" . }}.{{ .Release.Namespace }}.svc:5601
+
+
+  External access to the Kubernetes cluster:
+{{ if .Values.common.ingressNginx.enabled }}
+
+    * If you use Minikube cluster, please, run in separate window:
+
+      minikube tunnel
+
+    * Getting the address of the exposed service:
+
+      export INGRESS_ADDRESS=$(kubectl get ing --namespace default {{ template "searchguard.fullname" . }}-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
+
+    * Add IP of $INGRESS_ADDRESS to your DNS as {{ .Values.common.ingressNginx.ingressElasticsearchDomain}} and {{ .Values.common.ingressNginx.ingressKibanaDomain}}
+
+    * Access the services:
+
+        - Elasticsearch at https://{{ .Values.common.ingressNginx.ingressElasticsearchDomain}}
+        - Kibana at https://{{ .Values.common.ingressNginx.ingressKibanaDomain}}
+
+{{ else if contains "NodePort" .Values.common.serviceType }}
+    * Get IP and port for Elasticsearch service
+        export ES_NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+
+        export ES_NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "searchguard.fullname" . }}-clients)
+
+    * Access Elasticsearch service at:
+
+        https://ES_NODE_IP:ES_NODE_PORT
+
+    * Get IP and port for Kibana service
+
+        export KI_NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+
+        export KI_NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "searchguard.fullname" . }})
+
+    * Access Kibana service at:
+
+        https://KI_NODE_IP:KI_NODE_PORT
+{{ else if contains "LoadBalancer" .Values.common.serviceType }}
+    NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+          You can watch the status of by running 'kubectl get svc -w {{ template "searchguard.fullname" . }}'
+
+    * Get address of LoadBalancer service
+
+        export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "searchguard.fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
+
+    * Access the services:
+
+        - Elasticsearch at https://$SERVICE_IP:9200
+        - Kibana at https://$SERVICE_IP:5601
+
+{{ else if contains "ClusterIP"  .Values.common.serviceType }}
+
+    * Get address of the Client pod and expose 9200 outside the cluster:
+
+        export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "searchguard.fullname" . }},role=client" -o jsonpath="{.items[0].metadata.name}")
+
+        kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 9200:9200
+
+    * Get address of the Kibana pod and expose 5601 outside the cluster:
+
+        export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "component={{ template "searchguard.fullname" . }},role=kibana" -o jsonpath="{.items[0].metadata.name}")
+
+        kubectl port-forward --namespace {{ .Release.Namespace }} $POD_NAME 5601:5601
+
+    * Access the services:
+
+        - Elasticsearch at https://127.0.0.1:9200
+        - Kibana at https://127.0.0.1:5601
+{{ end }}
+    Following users were configured in the Elasticsearch cluster:
+
+        Username: admin
+        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+
+        Username: kibanaro
+        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
+
+        Username: kibanaserver
+        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
+{{ range $key, $value := .Values.common.users }}
+        Username: {{ $key }}
+        Password: $(kubectl get secrets {{ $.Release.Name }}-{{ $.Chart.Name }}-passwd-secret -o jsonpath="{.data.SG_{{ $key | upper }}_PWD}" | base64 -d)
+{{ end }}
+
+    NOTE: Please, give Helm charts few minutes to complete startup process for all pods.
+
+
+

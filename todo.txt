@@ -1,5 +1,0 @@
-- Check rbac pod permissions, currently every pod has all privileges
-- Support custom license string
-- Add pre/post hooks for rolling upgrade to comply with https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
-- Check if we can deploy in non default namespace
-- flatten yaml or overrides per file?

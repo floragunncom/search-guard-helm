@@ -1,0 +1,25 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cleanup-job
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  suspend: {{ .Values.common.debug_job_mode }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ template "searchguard.fullname" . }}
+          containers:
+            - name: cleanup-job
+              image: bitnami/kubectl:1.19
+              command:
+                - /bin/sh
+                - -c
+                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
+                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
+          restartPolicy: Never
+      backoffLimit: 1

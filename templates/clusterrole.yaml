@@ -1,0 +1,25 @@
+{{- if .Values.rbac.create -}}
+apiVersion: {{ template "searchguard.authorization.apiVersion" . }}
+kind: ClusterRole
+metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "searchguard.fullname" . }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-6"
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - get
+  - delete
+{{- end -}}

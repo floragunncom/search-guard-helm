@@ -1,0 +1,112 @@
+---
+{{ if .Values.common.external_ca_certificates_enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-admin-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/sgadmin/*.pem" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if .Values.common.external_ca_certificates_enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/nodes/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if and (eq .Values.common.ingressNginx.enabled true) (eq .Values.common.ingressNginx.ingressCertificates "external") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/ingress_certificates/kibana/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if and (eq .Values.common.ingressNginx.enabled true) (eq .Values.common.ingressNginx.ingressCertificates "external") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-es-service-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/ingress_certificates/elasticsearch/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if .Values.common.ca_certificates_enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-root-ca-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/ca/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if .Values.common.external_ca_single_certificate_enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-admin-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/sgadmin/*.pem" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}
+---
+{{ if .Values.common.external_ca_single_certificate_enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/nodes/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
+{{ end }}

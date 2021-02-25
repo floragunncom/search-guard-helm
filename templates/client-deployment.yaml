@@ -1,0 +1,187 @@
+{{ if (not .Values.common.external_ca_certificates_enabled) }}
+apiVersion:  apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "searchguard.fullname" . }}-client
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}-client
+    role: client
+    estype: node
+spec:
+  replicas: {{ .Values.client.replicas }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      component: {{ template "searchguard.fullname" . }}
+      role: client
+  template:
+    metadata:
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: client
+        {{- if .Values.client.labels }}
+{{ toYaml .Values.client.labels | indent 8 }}
+        {{- end }}
+      annotations:
+        {{ if .Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{ end }}
+      {{- if .Values.client.annotations }}
+{{ toYaml .Values.client.annotations | indent 8 }}
+      {{- end }}
+    spec:
+      subdomain: {{ template "searchguard.fullname" . }}
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      securityContext:
+        fsGroup: 1000
+      {{- if eq .Values.client.antiAffinity "hard" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "searchguard.fullname" . }}
+                  role: client
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "searchguard.fullname" . }}
+                  role: client
+      {{- else if eq .Values.client.antiAffinity "soft" }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "searchguard.fullname" . }}
+                  role: client
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "searchguard.fullname" . }}
+                  role: client
+      {{- end }}
+      initContainers:
+{{ include "searchguard.init-containers" . | indent 6 }}
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: docker-auth
+      {{ end }}
+      containers:
+      - name: elasticsearch
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+      {{ if .Values.common.xpack_basic }}
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+      {{ else }}
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+      {{ end }}
+        lifecycle:
+          postStart:
+{{ include "searchguard.remove-demo-certs" . | indent 12 }}
+          preStop:
+{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        envFrom:
+        - secretRef:
+            name: {{ template "searchguard.fullname" . }}-passwd-secret
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
+        - name: NODE_DATA
+          value: "false"
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "true"
+        - name: PROCESSORS
+          value: "{{ .Values.client.processors }}"
+        {{- range $key, $value :=  .Values.common.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- range $key, $value :=  .Values.client.env }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+{{ toYaml .Values.client.resources | indent 10 }}
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_searchguard/health
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
+        resources:
+{{ toYaml .Values.client.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /storage/
+          name: storage
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-{{ .Values.common.elkversion | substr 0 1  }}/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
+            defaultMode: 0600
+        - configMap:
+            name: {{ template "searchguard.fullname" . }}-config
+          name: config
+        - emptyDir:
+            medium: ""
+          name: storage
+        - configMap:
+            name: {{ template "searchguard.fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
+{{ end }}
