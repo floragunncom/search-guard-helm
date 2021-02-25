@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-cleanup-sg-data"
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: sgadmin
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ template "searchguard.fullname" . }}-cleanup-sg-data"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: sgadmin
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      containers:
+        - name: cleanup-sg-data
+          image: bitnami/kubectl:1.19
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+{{ if .Values.common.remove_pvc_on_delete }}
+                kubectl delete $$(kubectl get pvc -l component={{ template "searchguard.fullname" . }} -o name)
+{{ end }}
+                kubectl delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
+
+                kubectl delete $$(kubectl get secrets -l app={{ template "searchguard.fullname" . }} -o name)

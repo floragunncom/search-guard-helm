@@ -1,0 +1,19 @@
+{{ if .Values.common.pod_disruption_budget_enable }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "searchguard.fullname" . }}-data
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}
+    role: data
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: {{ template "searchguard.fullname" . }}
+      role: data
+{{ end }}

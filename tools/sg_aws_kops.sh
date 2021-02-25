@@ -139,13 +139,13 @@ echo "Wait until cluster $CLUSTERNAME is valid ... (may take a few minutes)"
 until kops validate cluster --name="$CLUSTERNAME" --state="$KOPS_STATE_STORE" > /dev/null 2>&1; do sleep 15 ; done
 echo "Cluster is ready!"
 
-#helm repo add sg-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
+#helm repo add search-guard-helm https://floragunncom.github.io/search-guard-helm > /dev/null  2>&1
 
 echo "Install ElasticSearch/Kibana secured by Search Guard"
 
-#helm install sg-elk sg-helm
 
-helm install sg-elk sg-helm \
+
+helm install sg-elk ./ \
   --set data.storageClass=gp2  \
   --set master.storageClass=gp2 \
   --set common.serviceType=NodePort \
@@ -156,7 +156,7 @@ helm install sg-elk sg-helm \
 check_ret "Helm install"
 
 #Waiting for Ingress to start
-#until kubectl get ing --namespace default sg-elk-sg-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' &> /dev/null; do sleep 15 ; done
+#until kubectl get ing --namespace default sg-elk-search-guard-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' &> /dev/null; do sleep 15 ; done
 #
 #sleep 30
 #
@@ -187,7 +187,7 @@ Helm charts have been already installed to Kubernetes cluster
 
 To upgrade run a command similar to:
 
-helm upgrade sg-elk sg-helm \\
+helm upgrade sg-elk ./ \\
   --set data.storageClass=gp2  \\
   --set master.storageClass=gp2 \\
   --set common.serviceType=NodePort \\

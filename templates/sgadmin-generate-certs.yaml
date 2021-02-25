@@ -1,0 +1,437 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-sgadmin-preinstall"
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}-sgadmin
+    role: sgadmin
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: sgadmin
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      containers:
+      - name: sgadmin-init
+        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+              #!/usr/bin/env bash -e
+
+              kubectl get secrets | grep {{ template "searchguard.fullname" . }}-passwd-secret
+              
+              if [ "$?" == "1" ]; then
+
+              if [ "{{ .Values.common.docker_registry.enabled }}"  == "true" ]; then
+              kubectl create secret docker-registry docker-auth  --docker-server={{ .Values.common.docker_registry.server }} --docker-username={{ .Values.common.docker_registry.username }} --docker-password={{ .Values.common.docker_registry.password }} --docker-email={{ .Values.common.docker_registry.email }}
+              fi
+
+              if [ "{{ .Values.common.sgadmin_certificates_enabled }}" == "true" ]; then
+
+              cat >"{{ template "searchguard.fullname" . }}-root-ca.yml" <<EOL
+              ca:
+                root:
+                    dn: CN={{ template "searchguard.fullname" . }}-root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com
+                    keysize: 2048
+                    validityDays: 365
+                    pkPassword: none
+                    file: root-ca.pem
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -ca -v -c "{{ template "searchguard.fullname" . }}-root-ca.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-root-ca-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgrootcacert: "true"
+                name: {{ template "searchguard.fullname" . }}-root-ca-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+                key.pem: $(cat /tmp/root-ca.key | base64 -w0)
+              EOL
+
+              cat "{{ template "searchguard.fullname" . }}-root-ca-sec.yaml"
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-root-ca-sec.yaml"
+
+              cat >"{{ template "searchguard.fullname" . }}-admin-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+              clients:
+                - name: sgadmin
+                  admin: true
+                  dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-admin-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/sgadmin.pem | base64 -w0)
+                key.pem: $(cat /tmp/sgadmin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              echo "Creating Admin Secrets in k8s"
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "searchguard.fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "searchguard.fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
+              EOL
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-passwd-secret.yaml"
+
+              if [ "{{ .Values.common.ingressNginx.enabled }}" == "true" ] && [ "{{ .Values.common.ingressNginx.ingressCertificates }}" == "self-signed" ]; then
+
+              cat >"{{ template "searchguard.fullname" . }}-kibana-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: kibana
+                dn: CN={{ .Values.common.ingressNginx.ingressKibanaDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-kibana-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/kibana.pem | base64 -w0)
+                tls.key: $(cat /tmp/kibana.key | base64 -w0)
+              EOL
+
+              echo "Creating Kibana service Secrets in k8s"
+              cat {{ template "searchguard.fullname" . }}-kibana-sec.yaml
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-kibana-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-kibana-service-cert-secret"
+
+
+              cat >"{{ template "searchguard.fullname" . }}-es-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: elasticsearch
+                dn: CN={{ .Values.common.ingressNginx.ingressElasticsearchDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-es-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-es-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/elasticsearch.pem | base64 -w0)
+                tls.key: $(cat /tmp/elasticsearch.key | base64 -w0)
+              EOL
+
+              echo "Creating Elasticsearch service Secrets in k8s"
+              cat {{ template "searchguard.fullname" . }}-es-sec.yaml
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-es-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-es-service-cert-secret"
+              fi
+
+              fi
+              if [ "{{ .Values.common.ca_certificates_enabled }}" == "true" ]; then
+
+              kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+
+              cat /tmp/root-ca.pem
+              cat /tmp/root-ca.key
+
+              cat >"{{ template "searchguard.fullname" . }}-admin-cert.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              clients:
+              - name: sgadmin
+                admin: true
+                dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-admin-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/sgadmin.pem | base64 -w0)
+                key.pem: $(cat /tmp/sgadmin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              echo "Creating Admin Secrets in k8s"
+              cat {{ template "searchguard.fullname" . }}-admin-cert-sec.yaml
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "searchguard.fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "searchguard.fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
+              EOL
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-passwd-secret.yaml"
+
+
+              if [ "{{ .Values.common.ingressNginx.enabled }}" == "true" ] && [ "{{ .Values.common.ingressNginx.ingressCertificates }}" == "self-signed" ]; then
+
+              cat >"{{ template "searchguard.fullname" . }}-kibana-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: kibana
+                dn: CN={{ .Values.common.ingressNginx.ingressKibanaDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-kibana-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/kibana.pem | base64 -w0)
+                tls.key: $(cat /tmp/kibana.key | base64 -w0)
+              EOL
+
+              echo "Creating Kibana service Secrets in k8s"
+              cat {{ template "searchguard.fullname" . }}-kibana-sec.yaml
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-kibana-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-kibana-service-cert-secret"
+
+
+              cat >"{{ template "searchguard.fullname" . }}-es-svc.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+              defaults:
+                validityDays: 365
+                pkPassword: none
+                httpsEnabled: true
+              nodes:
+              - name: elasticsearch
+                dn: CN={{ .Values.common.ingressNginx.ingressElasticsearchDomain }},OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dns:
+                    - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+              EOL
+
+              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
+
+              cat >"{{ template "searchguard.fullname" . }}-es-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                name: {{ template "searchguard.fullname" . }}-es-service-cert-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                tls.crt: $(cat /tmp/elasticsearch.pem | base64 -w0)
+                tls.key: $(cat /tmp/elasticsearch.key | base64 -w0)
+              EOL
+
+              echo "Creating Elasticsearch service Secrets in k8s"
+              cat {{ template "searchguard.fullname" . }}-es-sec.yaml
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-es-sec.yaml"
+              echo "Will generate {{ template "searchguard.fullname" . }}-es-service-cert-secret"
+              fi
+
+
+              fi
+              if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ] || [ "{{ .Values.common.external_ca_single_certificate_enabled }}" == "true" ]; then
+              echo "Will generate {{ template "searchguard.fullname" . }}-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"{{ template "searchguard.fullname" . }}-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: {{ template "searchguard.fullname" . }}
+                  component: sginit
+                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+                  heritage: "{{ .Release.Service }}"
+                  release: "{{ .Release.Name }}"
+                  sgpwdsecret: "true"
+                name: {{ template "searchguard.fullname" . }}-passwd-secret
+                namespace: {{ .Release.Namespace }}
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                {{ range $key, $value := .Values.common.users }}
+                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
+                {{ end }}
+              EOL
+
+              kubectl apply -f "{{ template "searchguard.fullname" . }}-passwd-secret.yaml"
+              fi
+
+              else
+              echo "Passwd secrets already exists"
+              :
+              fi
+
+
