@@ -10,7 +10,7 @@ spec:
   tls:
 {{ if not (eq .Values.common.ingressNginx.ingressKibanaDomain "none") }}
     - hosts:
-        - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+      - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
       # This secret must exist beforehand
       # The cert must also contain the subj-name foo.bar.com
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
@@ -18,7 +18,7 @@ spec:
 {{ end }}
 {{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
     - hosts:
-        - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+      - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
     # This secret must exist beforehand
     # The cert must also contain the subj-name bar.baz.com
     # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates
@@ -26,44 +26,41 @@ spec:
 {{ end }}
   rules:
 {{ if not (eq .Values.common.ingressNginx.ingressKibanaDomain "none") }}
-      - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
-        http:
-          paths:
-  {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
-            - backend:
-                serviceName: {{ template "searchguard.fullname" . }}
-                servicePort: 5601
-              path: /
-  {{ else }}
-            - path: /
-              pathType: Prefix
-              backend:
-                service:
-                  name: {{ template "searchguard.fullname" . }}
-                  port:
-                    number: 5601
-  {{ end }}
-
+    - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
+      http:
+        paths:
+{{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
+          - backend:
+              serviceName: {{ template "searchguard.fullname" . }}
+              servicePort: 5601
+            path: /
+{{ else }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "searchguard.fullname" . }}
+                port:
+                  number: 5601
+{{ end }}
 {{ end }}
 {{ if not (eq .Values.common.ingressNginx.ingressElasticsearchDomain "none") }}
-      - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
-        http:
-          paths:
-
+    - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
+      http:
+        paths:
   {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
-             - backend:
-                serviceName: {{ template "searchguard.fullname" . }}-clients
-                servicePort: 9200
-             path: /
-
+          - backend:
+              serviceName: {{ template "searchguard.fullname" . }}-clients
+              servicePort: 9200
+            path: /
   {{ else }}
-            - path: /
-              pathType: Prefix
-              backend:
-                service:
-                  name: {{ template "searchguard.fullname" . }}-clients
-                  port:
-                    number: 9200
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "searchguard.fullname" . }}-clients
+                port:
+                  number: 9200
   {{ end }}
 {{ end }}
 {{ end }}
