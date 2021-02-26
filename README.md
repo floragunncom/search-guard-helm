@@ -65,16 +65,28 @@ By default, you get Elasticsearch cluster with self-signed certificates for tran
 Default Elasticsearch cluster has 4-nodes Elasticsearch cluster including master, ingest, data and kibana nodes. 
 Please, be aware that such Elasticsearch cluster configuration could be used only for testing purposes.
 
-### Deploy via repository (Not available now)
+### Deploy via repository
 
 ```
-helm repo add search-guard-helm https://floragunncom.github.io/search-guard-helm
+helm repo add search-guard https://helm.search-guard.com
+helm repo update
 helm search "search guard"
-helm dependency update search-guard-helm
-helm install sg-elk search-guard-helm --version sgh-beta4
+helm install sg-elk search-guard/search-guard-helm
 ```
+
 Please refer to the [Helm Documentation][] on how to override the chart default
 settings. See `values.yaml` for the documented set of settings you can override.
+
+Please note that if you are using any other Kubernetes distribution except Minikube,
+check if [Storage type][] "standard" is available in the distribution. 
+If not, please, specify available [Storage type][] for `data.storageClass` and `master.storageClass` in [values.yaml][]
+or by providing them in helm installation command.
+
+Example usage for AWS EBS:
+```
+helm install --set data.storageClass=gp2 --set master.storageClass=gp2  sg-elk search-guard/search-guard-helm
+```
+
 
 ### Deploy via GitLab
 
@@ -86,6 +98,21 @@ $ git clone git@git.floragunn.com:search-guard/search-guard-helm.git
 $ helm dependency update search-guard-helm
 $ helm install sg-elk search-guard-helm
 ```
+
+Please refer to the [Helm Documentation][] on how to override the chart default
+settings. See `values.yaml` for the documented set of settings you can override.
+
+Please note that if you are using any other Kubernetes distribution except Minikube,
+check if [Storage type][] "standard" is available in the distribution. 
+If not, please, specify available [Storage type][] for `data.storageClass` and `master.storageClass` in [values.yaml][]
+or by providing them in helm installation command.
+
+Example usage for AWS EBS:
+```
+helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk search-guard-helm
+```
+
+
 ### Deploy on AWS (optional)
 
 This option provides possibility to set up Kubernetes cluster on AWS while having the `awscli` installed and configured and install Search Guard Helm charts in the cluster.
@@ -335,12 +362,13 @@ limitations under the License.
 [docker folder]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/docker
 [example with custom configuration]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_sg_config
 [example with custom domains]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_service_certs
-[Helm Documentation]: https://github.com/helm/helm/blob/master/docs/helm/helm_install.md
+[Helm Documentation]: https://helm.sh/docs/intro/using_helm/
 [Helm installation steps]: https://helm.sh/docs/intro/install/
 [kubectl installation guide]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [Minikube installation steps]: https://minikube.sigs.k8s.io/docs/start/
 [setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_ca
 [setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_elasticsearch_certs
 [setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_single_elasticsearch_cert
+[Storage type]: https://kubernetes.io/docs/concepts/storage/storage-classes/
 [values.yaml]: https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/values.yaml
 [./tools/sg_aws_kops.sh]: https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/tools/sg_aws_kops.sh
