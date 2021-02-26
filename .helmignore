@@ -20,5 +20,3 @@
 .project
 .idea/
 *.tmproj
-tools/
-docker/
