@@ -85,7 +85,7 @@ spec:
             - -c
             - |
                 #!/usr/bin/env bash -e
-                until kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
+                until kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret  -o jsonpath="{.data.KIBANA_COOKIE_PWD}"; do
                   echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
                   sleep 10 ;
                 done
@@ -98,6 +98,36 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
+        - name: kibana-cookie-config
+          image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              #!/usr/bin/env bash -e
+              cp /tmp/kibana.yml /tmp/config/
+              echo $KIBANA_COOKIE_PWD
+              #Temporary workaround to pass KIBANA_COOKIE_PWD to kibana.yml
+              sed -i -e "s#\${KIBANA_COOKIE_PWD}#$KIBANA_COOKIE_PWD#g" /tmp/config/kibana.yml
+              cat /tmp/config/kibana.yml
+              chown -R 1000:1000 /tmp/config
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          envFrom:
+            - secretRef:
+                name: {{ template "searchguard.fullname" . }}-passwd-secret
+          volumeMounts:
+              - mountPath: /tmp/kibana.yml
+                name: config
+                subPath: kibana.yml
+              - mountPath: /tmp/config
+                name: kibanaconfig
 {{ include "searchguard.generate-certificates-init-container" . | indent 8 }}
       {{ if .Values.common.es_upgrade_order }}
 {{ include "searchguard.kibana-wait-container" . | indent 8 }}
@@ -169,20 +199,22 @@ spec:
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /usr/share/kibana/config/kibana.yml
-          name: config
-          subPath: kibana.yml
-        - name: certificates-secrets-volume
-          readOnly: true
-          mountPath: "/usr/share/kibana/config/certificates-secrets"
+          - mountPath: /usr/share/kibana/config/
+            name: kibanaconfig
+          - name: certificates-secrets-volume
+            readOnly: true
+            mountPath: "/usr/share/kibana/config/certificates-secrets"
       volumes:
         - name: certificates-secrets-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
-            defaultMode: 0600
+            defaultMode: 0644
         - configMap:
             name: {{ template "searchguard.fullname" . }}-kibana-config
+            defaultMode: 0666
           name: config
         - name: kubectl
+          emptyDir: {}
+        - name: kibanaconfig
           emptyDir: {}
 {{ end }}

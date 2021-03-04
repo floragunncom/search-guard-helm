@@ -184,7 +184,7 @@ spec:
         - name: certificates-secrets-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
-            defaultMode: 0600
+            defaultMode: 0644
         - configMap:
             name: {{ template "searchguard.fullname" . }}-kibana-config
           name: config

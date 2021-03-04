@@ -29,7 +29,7 @@ spec:
     - host: {{ .Values.common.ingressNginx.ingressKibanaDomain }}
       http:
         paths:
-{{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
+{{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
           - backend:
               serviceName: {{ template "searchguard.fullname" . }}
               servicePort: 5601
@@ -48,7 +48,7 @@ spec:
     - host: {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
       http:
         paths:
-  {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion }}
+  {{ if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version }}
           - backend:
               serviceName: {{ template "searchguard.fullname" . }}-clients
               servicePort: 9200
