@@ -3,6 +3,12 @@
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-admin-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -19,6 +25,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -35,6 +47,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-kibana-service-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -51,6 +69,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-es-service-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -67,6 +91,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-root-ca-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -83,6 +113,12 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    component: sginit
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-admin-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
@@ -99,6 +135,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
   name: {{ template "searchguard.fullname" . }}-nodes-cert-secret
   namespace: "{{ .Release.Namespace }}"
   annotations:
