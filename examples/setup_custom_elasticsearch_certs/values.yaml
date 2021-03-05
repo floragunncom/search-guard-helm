@@ -23,3 +23,13 @@ common:
   external_ca_single_certificate_enabled: false
   #Set directory where certificates are stored
   certificates_directory: "examples/setup_custom_elasticsearch_certs/secrets"
+
+  ingressNginx:
+    enabled: true
+    #For ingressCertificates use "self-signed" if you want auto-generated with TLS tool self-signed certificates
+    #For ingressCertificates use "external" if you have copied trusted certificates with the names tls.key and tls.pem to folders ../keys/ingress_certificates/elasticsearch/ and  ../keys/ingress_certificates/kibana/
+    #ingressCertificates: "self-signed"
+    ingressCertificates: "external"
+    #ingressCertificates: "none"
+    ingressKibanaDomain: "kibana.sg-helm.example.com"
+    ingressElasticsearchDomain: "es.sg-helm.example.com"
