@@ -55,12 +55,6 @@ build_helm_charts:
        echo "#########################################################"
 
        echo "Building package and index file"
-       if [ -z "$CHART_VERSION" ];
-       then
-          echo "WARNING: CHART_VERSION is not set";
-       else
-          sed -i -e "s#version:.*#version: $CHART_VERSION#g" Chart.yaml
-       fi
 
        helm package ./ -u
        rm -rf charts requirements.lock
