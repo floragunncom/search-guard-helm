@@ -68,8 +68,5 @@ build_helm_charts:
        echo "Search Guard Helm charts version $CHART_VERSION published to https://helm.search-guard.com"
        echo "#########################################################"
   only:
-    refs:
-      - triggers
-      - schedules
     variables:
       - $CI_JOB == "build_charts"
