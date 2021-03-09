@@ -54,13 +54,14 @@ build_helm_charts:
        echo "#########################################################"
        echo "Creating Search Guard Helm charts version $CHART_VERSION"
        echo "#########################################################"
-       cd $DIR/search-guard-helm
-       
+
+       echo "Building package and index file"
        sed -i -e "s#version:.*#version: $CHART_VERSION#g" Chart.yaml
        helm package ./ -u
        rm -rf charts requirements.lock
        aws s3 cp s3://helm.search-guard.com/index.yaml  ./
        helm repo index ./ --url https://helm.search-guard.com --merge index.yaml
+
        echo "Uploading Search Guard Helm charts to S3"
        aws s3 cp ./search-guard-helm-$CHART_VERSION.tgz s3://helm.search-guard.com/
        aws s3 cp ./index.yaml s3://helm.search-guard.com/
