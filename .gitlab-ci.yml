@@ -51,13 +51,14 @@ build_helm_charts:
        #!/bin/bash
        DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-       [[ -z "$CHART_VERSION" ]] && { echo "Error: CHART_VERSION is not set" ; exit 1; }
+
        echo "#########################################################"
        echo "Creating Search Guard Helm charts version $CHART_VERSION"
        echo "#########################################################"
 
        echo "Building package and index file"
-       sed -i -e "s#version:.*#version: $CHART_VERSION#g" Chart.yaml
+       [[ -z "$CHART_VERSION" ]] && { echo "WARNING: CHART_VERSION is not set" }
+       [[ ! -z "$CHART_VERSION" ]] && { sed -i -e "s#version:.*#version: $CHART_VERSION#g" Chart.yaml }
        helm package ./ -u
        rm -rf charts requirements.lock
        aws s3 cp s3://helm.search-guard.com/index.yaml  ./
