@@ -44,6 +44,9 @@ build_helm_charts:
     - chmod 700 ~/.ssh
     - ssh-keyscan git.floragunn.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    - chmod 700 get_helm.sh
+    - ./get_helm.sh
   stage: build
   script:
     - |
