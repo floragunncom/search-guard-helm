@@ -68,7 +68,7 @@ build_helm_charts:
        helm repo index ./ --url https://helm.search-guard.com --merge index.yaml
 
        echo "Uploading Search Guard Helm charts to S3"
-       aws s3 cp ./search-guard-helm-$CHART_VERSION.tgz s3://helm.search-guard.com/
+       aws s3 cp ./search-guard-helm-*.tgz s3://helm.search-guard.com/
        aws s3 cp ./index.yaml s3://helm.search-guard.com/
        echo "#########################################################"
        echo "Search Guard Helm charts version $CHART_VERSION published to https://helm.search-guard.com"
