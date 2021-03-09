@@ -1,20 +1,49 @@
-image: maven:3.6-jdk-8
+image: floragunncom/ci-docker-compose-openjdk11:19.03.1
 
-
+services:
+  - docker:19.03-dind
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
 before_script:
-  - "echo CI_JOB: $CI_JOB"
-  - rm -rf /var/lib/apt/lists/* && apt-get update -yqq && apt-get install -yqq openssh-client apt-utils jq perl libapr1 openssl curl sudo > /dev/null 2>&1
-  - pip install awscli --upgrade || true
-  - pip3 install awscli --upgrade  || true
+  - sudo sysctl -w vm.max_map_count=262144
+  - docker-compose --version
+  - apk update
+  - apk add jq curl zip  openssh-client
   - eval $(ssh-agent -s)
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
   - mkdir -p ~/.ssh
   - chmod 700 ~/.ssh
-  - ssh-keyscan git.floragunn.com >> ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
+
+
+stages:
+  - build
+
+build_oss_images:
+  stage: build
+  script:
+    - echo "Executing $CI_JOB"
+    - export ELK_VERSION=$ELK_VERSION
+    - export SG_VERSION=$SG_VERSION
+    - export SG_KIBANA_VERSION=$SG_KIBANA_VERSION
+    - ./docker/build.sh push
+  only:
+    variables:
+      - $CI_JOB == "build_oss"
 
 
 build_helm_charts:
+  image: maven:3.6-jdk-8
+  before_script:
+    - "echo CI_JOB: $CI_JOB"
+    - rm -rf /var/lib/apt/lists/* && apt-get update -yqq && apt-get install -yqq openssh-client apt-utils jq perl libapr1 openssl curl sudo > /dev/null 2>&1
+    - pip install awscli --upgrade || true
+    - pip3 install awscli --upgrade  || true
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan git.floragunn.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
   stage: build
   script:
     - |
