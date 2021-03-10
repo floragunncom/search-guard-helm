@@ -95,7 +95,7 @@ The Search Guard protected Elasticsearch cluster has been installed.
         Password: $(kubectl get secrets {{ $.Release.Name }}-{{ $.Chart.Name }}-passwd-secret -o jsonpath="{.data.SG_{{ $key | upper }}_PWD}" | base64 -d)
 {{ end }}
 
-    NOTE: Please, give Helm charts few minutes to complete startup process for all pods.
+    NOTE: Please, give Helm charts few minutes to complete startup process for all pods. This is expected that Kibana pod startup time is higher than other pods.
 
 
 

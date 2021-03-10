@@ -16,7 +16,7 @@ Includes code from the following Apache 2 licensed projects:
    limitations under the License.
 */}}
 
-{{/* vim: set filetype=mustache: */}}
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -355,7 +355,7 @@ init container template
 {{- end -}}
 
 {{- define "searchguard.authorization.apiVersion" -}}
-{{- if semverCompare "<1.17-0" .Capabilities.KubeVersion.Version -}}
+{{- if semverCompare "<1.17.0-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "rbac.authorization.k8s.io/v1beta1" -}}
 {{- else -}}
 {{- print "rbac.authorization.k8s.io/v1" -}}
@@ -363,7 +363,7 @@ init container template
 {{- end -}}
 
 {{- define "searchguard.networking.apiVersion" -}}
-{{- if semverCompare "<1.19-0" .Capabilities.KubeVersion.Version -}}
+{{- if semverCompare "<1.19.0-0" .Capabilities.KubeVersion.GitVersion -}}
 {{- print "networking.k8s.io/v1beta1" -}}
 {{- else -}}
 {{- print "networking.k8s.io/v1" -}}
