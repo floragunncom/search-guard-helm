@@ -30,7 +30,7 @@ This is repo is considered beta status and supports Search Guard for Elasticsear
 
 ## Support
 
-Please report issues via GitHub issue tracker or get in [contact with us][]
+Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-helm/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
 
 ## Requirements
 
