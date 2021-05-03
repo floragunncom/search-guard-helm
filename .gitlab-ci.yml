@@ -18,6 +18,76 @@ before_script:
 stages:
   - build
 
+build_and_test_ci:
+  image:
+    name: alpine:3.12
+  before_script:
+    - cat /etc/issue.net || true
+    - apk update
+    - apk add --no-cache jq curl zip  openssh-client bash openssl sudo ca-certificates
+    - apk add --no-cache python3 python3-dev py3-setuptools py-pip
+    - update-ca-certificates
+    - pip install awscli --upgrade || true
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan git.floragunn.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+    - mkdir -p $HOME/.kube
+    - echo -n $KUBE_CONFIG | base64 -d > $HOME/.kube/config
+    - kubectl config view
+    - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    - chmod 700 get_helm.sh
+    - ./get_helm.sh
+
+
+  stage: build
+  script:
+    - |
+       echo "Getting access to Test AWS cluster"
+
+       #kops export kubecfg --admin --state s3://$TEST_AWS_CLUSTERNAME.kopsstate --name=$TEST_AWS_CLUSTERNAME
+       kubectl config set-cluster $TEST_AWS_CLUSTERNAME --server=$TEST_AWS_SERVER_API
+       kubectl config set-cluster $TEST_AWS_CLUSTERNAME --certificate-authority=$mastercacrt
+       kubectl config set-credentials admin --client-key=$clusteradminkey --client-certificate=$clusteradmincrt
+       kubectl config set-context $TEST_AWS_CLUSTERNAME  --user=admin --cluster $TEST_AWS_CLUSTERNAME
+       kubectl config set-cluster $TEST_AWS_CLUSTERNAME  --insecure-skip-tls-verify=true
+       kubectl config use-context $TEST_AWS_CLUSTERNAME
+       chmod go-r ~/.kube/config
+
+       echo "Installing Helm charts"
+       export INSTALLATION=testit
+       export NAMESPACE=testci
+       echo "Helm dependency update"
+       helm  dependency update ./
+       helm -n $NAMESPACE install $INSTALLATION ./ \
+        --set data.storageClass=gp2 \
+        --set master.storageClass=gp2 \
+        --set common.serviceType=NodePort \
+        --set kibana.serviceType=NodePort \
+        --set common.do_not_fail_on_forbidden=true \
+        --set common.ingressNginx.ingressKibanaDomain=$NAMESPACE.kibana.sg-helm.example.com \
+        --set common.ingressNginx.ingressElasticsearchDomain=$NAMESPACE.es.sg-helm.example.com
+
+       while kubectl -n $NAMESPACE get pods --selector=role=kibana -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                echo "Waiting for Kibana pod to start";
+                sleep 10;
+       done
+
+       echo "Testing Helm charts"
+       helm -n $NAMESPACE test $INSTALLATION
+       RET=$?
+       TEST_POD=$(kubectl get po -n $NAMESPACE|grep "search-guard-helm-test"|awk '{print $1}')
+       kubectl -n $NAMESPACE logs $TEST_POD
+
+       echo "Uninstalling Helm charts"
+       helm -n $NAMESPACE uninstall $INSTALLATION
+       exit $RET
+
+
 build_oss_images:
   stage: build
   script:
@@ -58,12 +128,12 @@ build_helm_charts:
 
        helm package ./ -u
        rm -rf charts requirements.lock
-       aws s3 cp s3://helm.search-guard.com/index.yaml  ./
+       aws s3 cp s3://$HELM_REPO_S3_BUCKETNAME/index.yaml  ./
        helm repo index ./ --url https://helm.search-guard.com --merge index.yaml
 
        echo "Uploading Search Guard Helm charts to S3"
-       aws s3 cp ./search-guard-helm-*.tgz s3://helm.search-guard.com/
-       aws s3 cp ./index.yaml s3://helm.search-guard.com/
+       aws s3 cp ./search-guard-helm-*.tgz s3://$HELM_REPO_S3_BUCKETNAME/
+       aws s3 cp ./index.yaml s3://$HELM_REPO_S3_BUCKETNAME/
        echo "#########################################################"
        echo "Search Guard Helm charts version $CHART_VERSION published to https://helm.search-guard.com"
        echo "#########################################################"
