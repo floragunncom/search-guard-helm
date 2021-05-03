@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-test"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: {{ template "searchguard.fullname" . }}-test
+  annotations:
+    "helm.sh/hook": test
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ template "searchguard.fullname" . }}-test"
+      labels:
+        app: {{ template "searchguard.fullname" . }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        component: {{ template "searchguard.fullname" . }}-test
+    spec:
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      restartPolicy: Never
+      containers:
+        - name: {{ template "searchguard.fullname" . }}-test
+          image: bitnami/kubectl:1.19
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+                ADMIN_PWD=$(kubectl -n {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+                echo $ADMIN_PWD
+                echo "Checking cluster state"
+                RES="$(curl -Ss --insecure -X GET -u admin:$ADMIN_PWD 'https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/health?wait_for_status=yellow&timeout=50s&pretty'| grep status)"; echo "Elasticsearch cluster status is $RES"
+                RES="$(curl -Ss --insecure -XGET -u admin:$ADMIN_PWD 'https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_searchguard/authinfo' -H'Content-Type: application/json' | grep roles)"; if [ -n "$RES" ] ; then echo "Successful get for authinfo of pre-defined document" ; else echo "No document authinfo found in ES" && exit -1 ; fi
+                RES="$(curl -Ss --insecure -XPUT  -u admin:$ADMIN_PWD 'https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/sgdemotest?pretty'  -H'Content-Type: application/json' | grep true)"; if [ -n "$RES" ] ; then echo "Successfully created index sgdemotest in ES" ; else echo "Cant create index sgdemotest in ES" && exit -1 ; fi
+                RES="$(curl -Ss --insecure -XDELETE  -u admin:$ADMIN_PWD 'https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/sgdemotest?pretty'  -H'Content-Type: application/json'| grep true)"; if [ -n "$RES" ] ; then echo "Successfully deleted index sgdemotest in ES" ; else echo "Cant delete index sgdemotest in ES" && exit -1 ; fi
+                echo "Checking Kibana API"
+                RES="$(curl -Ss --insecure -u admin:$ADMIN_PWD -XGET 'https://{{ template "searchguard.fullname" . }}.{{ .Release.Namespace }}.svc:5601/api/v1/systeminfo'|grep cluster_name)";  if [ -n "$RES" ] ; then echo "Successfully got system info from Kibana: $RES" ; else echo "Cant get system info from Kibana" && exit -1 ; fi
