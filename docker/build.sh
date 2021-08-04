@@ -19,10 +19,10 @@ PUSH="$1"
 DOCKER_USER="$2"
 #docker system prune
 
-versions=(
-    "ELK_VERSION=$ELK_VERSION SG_VERSION=$SG_VERSION SG_KIBANA_VERSION=$SG_KIBANA_VERSION"
-    #"ELK_VERSION=7.8.1 SG_VERSION=43.0.0 SG_KIBANA_VERSION=43.0.0"
-)
+#versions=(
+#    "ELK_VERSION=$ELK_VERSION SG_VERSION=$SG_VERSION SG_KIBANA_VERSION=$SG_KIBANA_VERSION"
+#    #"ELK_VERSION=7.8.1 SG_VERSION=43.0.0 SG_KIBANA_VERSION=43.0.0"
+#)
 
 ######################################################################################
 
@@ -63,12 +63,12 @@ check_and_push() {
     fi
 }
 
-for versionstring in "${versions[@]}"
-do
-    : 
-    eval "$versionstring"
+#for versionstring in "${versions[@]}"
+#do
+#    :
+#    eval "$versionstring"
+#
 
-    ELK_FLAVOUR="-oss"
 
     ELK_VERSION_NUMBER="${ELK_VERSION//./}"
 
@@ -77,8 +77,9 @@ do
 
     LASTCMDSEC="0"
     #Building OSS Docker images
-    if [ -n "$ELK_FLAVOUR" ]; then
+    if [ $CI_JOB == "build_oss" ]; then
     if [ "$IMAGE" == "es" ] || [ "$IMAGE" == "" ]; then
+    ELK_FLAVOUR="-oss"
     cd "$DIR/elasticsearch"
     echo "Build image $DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION"
     docker build -t "$DOCKER_ID_USER/sg-elasticsearch:$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" . > /dev/null
@@ -101,7 +102,7 @@ do
 
     #ELK_FLAVOUR=""
     #Building non-OSS images
-    if [ -z "$ELK_FLAVOUR" ]; then
+    if [ $CI_JOB == "build_nonoss" ]; then
 
     if [ "$IMAGE" == "es" ] || [ "$IMAGE" == "" ]; then
     cd "$DIR/elasticsearch"
@@ -124,7 +125,7 @@ do
     fi
     fi
 
-    if [ "$IMAGE" == "sgadmin" ] || [ "$IMAGE" == "" ]; then
+    if [ $CI_JOB == "build_sgadmin" ]; then
     cd "$DIR/sgadmin"
     echo "Build image $DOCKER_ID_USER/sg-sgadmin:$ELK_VERSION-$SG_VERSION"
     docker build -t "$DOCKER_ID_USER/sg-sgadmin:$ELK_VERSION-$SG_VERSION" --pull $CACHE --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_VERSION="$SG_VERSION" . #> /dev/null
@@ -134,6 +135,6 @@ do
     LASTCMDSEC="$SECONDS"
     fi
 
-done
+#done
 
 echo "Built "${#versions[@]}" versions"

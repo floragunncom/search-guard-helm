@@ -96,7 +96,11 @@ spec:
       {{- end }}
       initContainers:
         - name: kibana-init
+          {{- if semverCompare "<7.11" .Values.common.elkversion }}
           image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          {{- else }}
+          image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+          {{- end }}
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
             - sh
@@ -165,8 +169,6 @@ spec:
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
-        resources:
-{{ toYaml .Values.kibana.resources | indent 10 }}
         ports:
         - containerPort: 5601
           name: http

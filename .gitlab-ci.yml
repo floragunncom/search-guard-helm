@@ -42,8 +42,6 @@ build_and_test_ci:
     - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
     - chmod 700 get_helm.sh
     - ./get_helm.sh
-
-
   stage: build
   script:
     - |
@@ -86,7 +84,12 @@ build_and_test_ci:
        echo "Uninstalling Helm charts"
        helm -n $NAMESPACE uninstall $INSTALLATION
        exit $RET
-
+  except:
+    variables:
+      - $CI_JOB == "build_charts"
+      - $CI_JOB == "build_oss"
+      - $CI_JOB == "build_nonoss"
+      - $CI_JOB == "build_sgadmin"
 
 build_oss_images:
   stage: build
@@ -95,11 +98,37 @@ build_oss_images:
     - export ELK_VERSION=$ELK_VERSION
     - export SG_VERSION=$SG_VERSION
     - export SG_KIBANA_VERSION=$SG_KIBANA_VERSION
+    - export CI_JOB=$CI_JOB
     - ./docker/build.sh push
   only:
     variables:
       - $CI_JOB == "build_oss"
 
+build_nonoss_images:
+  stage: build
+  script:
+    - echo "Executing $CI_JOB"
+    - export ELK_VERSION=$ELK_VERSION
+    - export SG_VERSION=$SG_VERSION
+    - export SG_KIBANA_VERSION=$SG_KIBANA_VERSION
+    - export CI_JOB=$CI_JOB
+    - ./docker/build.sh push
+  only:
+    variables:
+      - $CI_JOB == "build_nonoss"
+
+build_sgadmin_image:
+  stage: build
+  script:
+    - echo "Executing $CI_JOB"
+    - export ELK_VERSION=$ELK_VERSION
+    - export SG_VERSION=$SG_VERSION
+    - export SG_KIBANA_VERSION=$SG_KIBANA_VERSION
+    - export CI_JOB=$CI_JOB
+    - ./docker/build.sh push
+  only:
+    variables:
+      - $CI_JOB == "build_sgadmin"
 
 build_helm_charts:
   image: maven:3.6-jdk-8

@@ -152,8 +152,6 @@ spec:
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
-        resources:
-{{ toYaml .Values.client.resources | indent 10 }}
         ports:
         - containerPort: 9200
           name: http
