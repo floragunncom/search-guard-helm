@@ -150,8 +150,6 @@ spec:
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
-        resources:
-{{ toYaml .Values.data.resources | indent 10 }}
         ports:
         - containerPort: 9300
           name: transport

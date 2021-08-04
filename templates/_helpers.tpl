@@ -64,7 +64,11 @@ init container template
 {{- define "searchguard.generate-certificates-init-container" -}}
 {{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
 - name: searchguard-generate-certificates
+{{- if semverCompare "<7.11" .Values.common.elkversion }}
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+{{- else }}
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+{{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
@@ -169,7 +173,11 @@ init container template
 
 {{- define "searchguard.master-wait-container" -}}
 - name: searchguard-master-wait-container
+{{- if semverCompare "<7.11" .Values.common.elkversion }}
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+{{- else }}
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+{{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
@@ -234,7 +242,11 @@ init container template
 
 {{- define "searchguard.kibana-wait-container" -}}
 - name: searchguard-kibana-wait-container
+{{- if semverCompare "<7.11" .Values.common.elkversion }}
   image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+{{- else }}
+  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+{{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
