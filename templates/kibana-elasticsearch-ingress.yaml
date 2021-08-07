@@ -19,6 +19,7 @@ apiVersion: {{ template "searchguard.networking.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ template "searchguard.fullname" . }}-ingress-nginx
+  namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"

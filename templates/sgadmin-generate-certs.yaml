@@ -18,6 +18,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ template "searchguard.fullname" . }}-sgadmin-preinstall"
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -51,12 +52,12 @@ spec:
           - |
               #!/usr/bin/env bash -e
 
-              kubectl get secrets | grep {{ template "searchguard.fullname" . }}-passwd-secret
+              kubectl --namespace {{ .Release.Namespace }} get secrets | grep {{ template "searchguard.fullname" . }}-passwd-secret
               
               if [ "$?" == "1" ]; then
 
               if [ "{{ .Values.common.docker_registry.enabled }}"  == "true" ]; then
-              kubectl create secret docker-registry docker-auth  --docker-server={{ .Values.common.docker_registry.server }} --docker-username={{ .Values.common.docker_registry.username }} --docker-password={{ .Values.common.docker_registry.password }} --docker-email={{ .Values.common.docker_registry.email }}
+              kubectl --namespace {{ .Release.Namespace }} create secret docker-registry docker-auth  --docker-server={{ .Values.common.docker_registry.server }} --docker-username={{ .Values.common.docker_registry.username }} --docker-password={{ .Values.common.docker_registry.password }} --docker-email={{ .Values.common.docker_registry.email }}
               fi
 
               if [ "{{ .Values.common.sgadmin_certificates_enabled }}" == "true" ]; then
@@ -94,7 +95,7 @@ spec:
 
               cat "{{ template "searchguard.fullname" . }}-root-ca-sec.yaml"
 
-              kubectl apply -f "{{ template "searchguard.fullname" . }}-root-ca-sec.yaml"
+              kubectl --namespace {{ .Release.Namespace }} apply -f "{{ template "searchguard.fullname" . }}-root-ca-sec.yaml"
 
               cat >"{{ template "searchguard.fullname" . }}-admin-cert.yml" <<EOL
               ca:
@@ -251,8 +252,8 @@ spec:
               fi
               if [ "{{ .Values.common.ca_certificates_enabled }}" == "true" ]; then
 
-              kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
-              kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+              kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
 
               cat /tmp/root-ca.pem
               cat /tmp/root-ca.key

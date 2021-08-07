@@ -21,6 +21,7 @@ apiVersion:  apps/v1
 kind: Deployment
 metadata:
   name: {{ template "searchguard.fullname" . }}-client
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

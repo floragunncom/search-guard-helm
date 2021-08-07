@@ -19,6 +19,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ template "searchguard.fullname" . }}-kibana
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -107,7 +108,7 @@ spec:
             - -c
             - |
                 #!/usr/bin/env bash -e
-                until kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
+                until kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
                   echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
                   sleep 10 ;
                 done
