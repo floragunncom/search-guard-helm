@@ -34,7 +34,7 @@
 #    "helm.sh/hook-weight": "-4"
 #roleRef:
 #  apiGroup: rbac.authorization.k8s.io
-#  kind: ClusterRole
+#  kind: Role
 #  name: {{ template "searchguard.fullname" . }}
 #subjects:
 #- kind: ServiceAccount
@@ -85,7 +85,7 @@ subjects:
     name: {{ template "searchguard.fullname" .}}
     namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: Role
-  name: admin
+  kind: ClusterRole
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 {{- end -}}
