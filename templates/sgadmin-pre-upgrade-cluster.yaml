@@ -19,6 +19,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ template "searchguard.fullname" . }}-sgadmin-preupgrade"
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -60,12 +61,12 @@ spec:
           - -c
           - |
               #!/usr/bin/env bash -e
-              while kubectl get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
                 echo 'Wait for $DISCOVERY_SERVICE service to be ready';
                 sleep 10 ;
               done
               echo "Getting password for admin user"
-              export ADMIN_PWD=$(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+              export ADMIN_PWD=$(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
               echo "Disabling shard allocation in ES cluster to https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200 "
               curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
               {

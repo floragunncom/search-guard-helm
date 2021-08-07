@@ -83,16 +83,16 @@ The Search Guard protected Elasticsearch cluster has been installed.
     Following users were configured in the Elasticsearch cluster:
 
         Username: admin
-        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
+        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
 
         Username: kibanaro
-        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
+        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
 
         Username: kibanaserver
         Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
 {{ range $key, $value := .Values.common.users }}
         Username: {{ $key }}
-        Password: $(kubectl get secrets {{ $.Release.Name }}-{{ $.Chart.Name }}-passwd-secret -o jsonpath="{.data.SG_{{ $key | upper }}_PWD}" | base64 -d)
+        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ $.Release.Name }}-{{ $.Chart.Name }}-passwd-secret -o jsonpath="{.data.SG_{{ $key | upper }}_PWD}" | base64 -d)
 {{ end }}
 
     NOTE: Please, give Helm charts few minutes to complete startup process for all pods. This is expected that Kibana pod startup time is higher than other pods.

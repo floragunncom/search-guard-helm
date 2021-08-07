@@ -51,8 +51,8 @@ spec:
             - -c
             - |
 {{ if .Values.common.remove_pvc_on_delete }}
-                kubectl delete $$(kubectl get pvc -l component={{ template "searchguard.fullname" . }} -o name)
+                kubectl --namespace {{ .Release.Namespace }} delete $$(kubectl --namespace {{ .Release.Namespace }} get pvc -l component={{ template "searchguard.fullname" . }} -o name)
 {{ end }}
-                kubectl delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
+                kubectl --namespace {{ .Release.Namespace }} delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
 
-                kubectl delete $$(kubectl get secrets -l app={{ template "searchguard.fullname" . }} -o name)
+                kubectl --namespace {{ .Release.Namespace }} delete $$(kubectl --namespace {{ .Release.Namespace }} get secrets -l app={{ template "searchguard.fullname" . }} -o name)

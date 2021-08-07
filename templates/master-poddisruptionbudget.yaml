@@ -21,6 +21,7 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "searchguard.fullname" . }}-master
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"

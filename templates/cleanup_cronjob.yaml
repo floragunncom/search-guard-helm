@@ -35,7 +35,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
-                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
+                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
+                - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
           restartPolicy: Never
       backoffLimit: 1
