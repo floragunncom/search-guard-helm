@@ -25,54 +25,6 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ template "searchguard.fullname" . }}
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "-4"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ template "searchguard.fullname" . }}
-subjects:
-- kind: ServiceAccount
-  name: {{ template "searchguard.fullname" . }}
-  namespace: {{ .Release.Namespace }}
----
-apiVersion: {{ template "searchguard.authorization.apiVersion" . }}
-kind: RoleBinding
-metadata:
-  labels:
-    app: {{ template "searchguard.fullname" .}}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    heritage: {{ .Release.Service }}
-    release: {{ .Release.Name }}
-  name: search-guard-admin-user
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-    "helm.sh/hook": pre-install
-    "helm.sh/hook-weight": "-4"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: search-guard-admin-user
-  namespace: kube-system
----
-apiVersion: {{ template "searchguard.authorization.apiVersion" . }}
-kind: RoleBinding
-metadata:
-  labels:
-    app: {{ template "searchguard.fullname" .}}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    heritage: {{ .Release.Service }}
-    release: {{ .Release.Name }}
   name: sgadmin
   namespace: {{ .Release.Namespace }}
   annotations:

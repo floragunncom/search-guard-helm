@@ -186,7 +186,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/a
 
 BASIC_PASS_CMD="kubectl config view -o=jsonpath='{.users[?(@.name=="\"$CLUSTERNAME-basic-auth\"")].user.password}'"
 BASIC_PASS=$($BASIC_PASS_CMD | tr -d "'")
-DASHBOARD_TOKEN=$(kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep search-guard-admin-user | awk '{print $1}') | grep "token: " | awk '{print $2}')
+DASHBOARD_TOKEN=$(kubectl describe secret $(kubectl get secret | grep sg-elk-search-guard-helm | awk '{print $1}'|grep token) | grep "token: " | awk '{print $2}')
 APISERVER=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
 
 
