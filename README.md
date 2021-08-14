@@ -247,7 +247,7 @@ and upgrade fails.
  | client.resources.requests.cpu | CPU resources requested on cluster start | 100m |
  | client.resources.requests.memory | Memory resources requested on cluster start | 1500Mi |
  | client.storage | Storage size for client nodes | 2Gi |
- | client.storageClass | Storage class for client nodes | standard |
+ | client.storageClass | Storage class for client nodes if you use non-default storage class | default |
  | common.admin_dn | DN of certificate with admin privileges | CN=sgadmin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
  | common.ca_certificates_enabled | Feature that enables possibility to upload customer CA and use it to sign cluster certificates | false |
  | common.certificates_directory | Directory with customer certificates that are used in ES cluster | secrets |
@@ -298,7 +298,7 @@ and upgrade fails.
  | data.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1 |
  | data.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 1500Mi |
  | data.storage | Storage size for data nodes | 4Gi |
- | data.storageClass | Storage type for data nodes | standard |
+ | data.storageClass | Storage type for data nodes if you use non-default storage class | default |
  | kibana.annotations | Metadata to attach to kibana nodes | null |
  | kibana.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | kibana.heapSize | HeapSize limit for kibana nodes | 1g |
@@ -312,7 +312,7 @@ and upgrade fails.
  | kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
  | kibana.serviceType | Type of Kibana service exposing in the ES cluster | ClusterIP |
  | kibana.storage | Storage size for client nodes | 2Gi |
- | kibana.storageClass | Storage class for client nodes | standard |
+ | kibana.storageClass | Storage class for client nodes if you use non-default storage class | default |
  | master.annotations | Metadata to attach to master nodes | null |
  | master.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | master.heapSize | HeapSize limit for master nodes | 1g |
@@ -324,7 +324,7 @@ and upgrade fails.
  | master.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
  | master.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
  | master.storage | Storage size for master nodes | 2Gi |
- | master.storageClass | Storage class for master nodes | standard |
+ | master.storageClass | Storage class for master nodes if you use non-default storage class | default |
  | pullPolicy | Kubernetes image pull policy | IfNotPresent |
  | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true |
  | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 |

@@ -381,3 +381,36 @@ init container template
 {{- print "networking.k8s.io/v1" -}}
 {{- end -}}
 {{- end -}}
+
+
+{{- define ".Values.kibana.storageClass" -}}
+{{- if (.Values.kibana.storageClass) and not (eq .Values.kibana.storageClass "") -}}
+{{- printf ".Values.kibana.storageClass" -}}
+{{- else -}}
+{{- printf "default" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define ".Values.data.storageClass" -}}
+{{- if (.Values.data.storageClass) and not (eq .Values.data.storageClass "") -}}
+{{- printf ".Values.data.storageClass" -}}
+{{- else -}}
+{{- printf "default" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define ".Values.client.storageClass" -}}
+{{- if (.Values.client.storageClass) and not (eq .Values.client.storageClass "") -}}
+{{- printf ".Values.client.storageClass" -}}
+{{- else -}}
+{{- printf "default" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define ".Values.master.storageClass" -}}
+{{- if (.Values.master.storageClass) and not (eq .Values.master.storageClass "") -}}
+{{- printf ".Values.master.storageClass" -}}
+{{- else -}}
+{{- printf "default" -}}
+{{- end -}}
+{{- end -}}
