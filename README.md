@@ -258,6 +258,7 @@ and upgrade fails.
  | common.do_not_fail_on_forbidden | With this mode enabled Search Guard filters all indices from a query a user does not have access to. Thus not security exception is raised. See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden | false |
  | common.docker_registry.email | Email information for Docker account in docker registry | null |
  | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false |
+ | common.docker_registry.imagePullSecret | The existing secret name with all required data to authenticate to docker registry | null |
  | common.docker_registry.password | Password of docker registry account | null |
  | common.docker_registry.server | Docker registry address | null |
  | common.docker_registry.username | Login of docker registry account | null |
