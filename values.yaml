@@ -22,13 +22,14 @@ common:
     kibana_base_image: "sg-kibana"
     sgadmin_base_image: "sg-sgadmin"
 
-  #Fill in to authenticate to private docker registry
+  #Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
   docker_registry:
     enabled: false
-  #    server: https://index.docker.io/v1/
-  #    username: username
-  #    password: password
-  #    email: info@domain.com
+  #  server: https://index.docker.io/v1/
+  #  username: username
+  #  password: password
+  #  email: info@domain.com
+  #  imagePullSecret: <your-custom-secret>
 
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags

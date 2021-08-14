@@ -56,7 +56,7 @@ spec:
               
               if [ "$?" == "1" ]; then
 
-              if [ "{{ .Values.common.docker_registry.enabled }}"  == "true" ]; then
+              if [ "{{ .Values.common.docker_registry.enabled }}"  == "true" ] && [ -z "{{ .Values.common.docker_registry.imagePullSecret }}" ]; then
               kubectl --namespace {{ .Release.Namespace }} create secret docker-registry docker-auth  --docker-server={{ .Values.common.docker_registry.server }} --docker-username={{ .Values.common.docker_registry.username }} --docker-password={{ .Values.common.docker_registry.password }} --docker-email={{ .Values.common.docker_registry.email }}
               fi
 

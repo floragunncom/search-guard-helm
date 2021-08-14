@@ -414,3 +414,11 @@ init container template
 {{- printf "default" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define ".Values.common.docker_registry.imagePullSecret" -}}
+{{- if .Values.common.docker_registry.imagePullSecret -}}
+{{- printf ".Values.common.docker_registry.imagePullSecret" -}}
+{{- else -}}
+{{- printf "docker-auth" -}}
+{{- end -}}
+{{- end -}}

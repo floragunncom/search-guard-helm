@@ -128,7 +128,7 @@ spec:
         {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: docker-auth
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
       - name: kibana
