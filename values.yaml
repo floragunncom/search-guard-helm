@@ -177,7 +177,8 @@ client:
   antiAffinity: "soft"
   # Specify this if external_ca_certificates_enabled: true
   storage: 2Gi
-  storageClass: "standard"
+  #Set storageClass if non-default storage is used.
+  #storageClass:
 
   # For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
@@ -209,7 +210,8 @@ data:
   # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 4Gi
-  storageClass: "standard"
+  #Set storageClass if non-default storage is used.
+  #storageClass: "gp2"
   # For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
@@ -237,7 +239,8 @@ master:
   # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 2Gi
-  storageClass: "standard"
+  #Set storageClass if non-default storage is used.
+  #storageClass: "gp2"
   # For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   # More info on what this setting does is in the config map. Only change this
@@ -262,9 +265,10 @@ kibana:
   # For production we recommend setting this to 'hard'
   antiAffinity: "soft"
 
-  # Specify this if external_ca_certificates_enabled: true
+  # Specify this if external_ca_certificates_enabled: true. Set storageClass if non-default storage is used.
   storage: 2Gi
-  storageClass: "standard"
+  #Set storageClass if non-default storage is used.
+  #storageClass:
 
   # Defines the service type for all Kibana outward-facing (non-discovery) services.
   # WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
