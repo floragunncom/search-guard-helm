@@ -382,6 +382,13 @@ init container template
 {{- end -}}
 {{- end -}}
 
+{{- define "searchguard.cronjob.apiVersion" -}}
+{{- if semverCompare "<1.21.0-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- print "batch/v1beta1" -}}
+{{- else -}}
+{{- print "batch/v1" -}}
+{{- end -}}
+{{- end -}}
 
 {{- define ".Values.kibana.storageClass" -}}
 {{- if (.Values.kibana.storageClass) and not (eq .Values.kibana.storageClass "") -}}
