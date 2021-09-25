@@ -25,7 +25,14 @@ spec:
       restartPolicy: Never
       containers:
         - name: {{ template "searchguard.fullname" . }}-test
-          image: docker.io/bitnami/kubectl:1.19
+          image: bitnami/kubectl:1.19
+          resources:
+                limits:
+                  cpu: "500m"
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
             - /bin/sh
