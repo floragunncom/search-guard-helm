@@ -25,7 +25,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: {{ template "searchguard.fullname" . }}-test
-          image: bitnami/kubectl:1.19
+          image: docker.io/bitnami/kubectl:1.19
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
             - /bin/sh
