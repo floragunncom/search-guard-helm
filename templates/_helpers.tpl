@@ -293,7 +293,7 @@ init container template
 
 {{- define "searchguard.init-containers" -}}
 - name: init-sysctl
-  image: busybox
+  image: docker.io/library/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sysctl", "-w", "vm.max_map_count=262144"]
   resources:
@@ -351,7 +351,7 @@ init container template
     subPath: elasticsearch.yml
 {{- end }}
 - name: permissions
-  image: busybox
+  image: docker.io/library/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sh", "-c", "chown -R 1000: /storage/; true"]
   resources:

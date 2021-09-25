@@ -20,7 +20,7 @@ stages:
 
 build_and_test_ci:
   image:
-    name: alpine:3.12
+    name: docker.io/library/alpine:3.12
   before_script:
     - cat /etc/issue.net || true
     - apk update
@@ -131,7 +131,7 @@ build_sgadmin_image:
       - $CI_JOB == "build_sgadmin"
 
 build_helm_charts:
-  image: maven:3.6-jdk-8
+  image: docker.io/library/maven:3.6-jdk-8
   before_script:
     - "echo CI_JOB: $CI_JOB"
     - rm -rf /var/lib/apt/lists/* && apt-get update -yqq && apt-get install -yqq openssh-client apt-utils jq perl libapr1 openssl curl sudo awscli > /dev/null 2>&1
