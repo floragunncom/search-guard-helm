@@ -37,7 +37,7 @@ subjects:
     name: {{ template "searchguard.fullname" .}}
     namespace: {{ .Release.Namespace }}
 roleRef:
-  kind: ClusterRole
-  name: cluster-admin
+  kind: Role
+  name: {{ template "searchguard.fullname" . }}-admin-role
   apiGroup: rbac.authorization.k8s.io
 {{- end -}}
