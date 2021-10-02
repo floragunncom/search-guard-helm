@@ -25,7 +25,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: {{ template "searchguard.fullname" . }}-test
-          image: bitnami/kubectl:1.19
+          image: {{ .Values.common.images.repository }}/bitnami/kubectl:1.19
           resources:
                 limits:
                   cpu: "500m"

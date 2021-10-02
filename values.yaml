@@ -11,12 +11,13 @@ common:
   remove_pvc_on_delete: true
   #Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
   #If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
-  # - for SG Admin image: <images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
-  # - for Elasticsearch OSS image: <images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
-  # - for Elasticsearch non-OSS image: <images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
-  # - for Kibana OSS image: <images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
-  # - for Kibana non-OSS image: <images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
+  # - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
+  # - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
+  # - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
+  # - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
+  # - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
   images:
+    repository: "docker.io"
     provider: "floragunncom"
     elasticsearch_base_image: "sg-elasticsearch"
     kibana_base_image: "sg-kibana"
