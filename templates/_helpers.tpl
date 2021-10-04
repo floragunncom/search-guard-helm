@@ -65,9 +65,9 @@ init container template
 {{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
 - name: searchguard-generate-certificates
 {{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
 {{- else }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
 {{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -174,9 +174,9 @@ init container template
 {{- define "searchguard.master-wait-container" -}}
 - name: searchguard-master-wait-container
 {{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
 {{- else }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
 {{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -243,9 +243,9 @@ init container template
 {{- define "searchguard.kibana-wait-container" -}}
 - name: searchguard-kibana-wait-container
 {{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
 {{- else }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
 {{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
@@ -293,7 +293,7 @@ init container template
 
 {{- define "searchguard.init-containers" -}}
 - name: init-sysctl
-  image: docker.io/library/busybox
+  image: {{ .Values.common.images.repository }}/library/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sysctl", "-w", "vm.max_map_count=262144"]
   resources:
@@ -312,9 +312,9 @@ init container template
 {{- if .Values.common.plugins }}
 - name: es-plugin-install
 {{ if .Values.common.xpack_basic }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
 {{ else }}
-  image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   securityContext:
@@ -351,7 +351,7 @@ init container template
     subPath: elasticsearch.yml
 {{- end }}
 - name: permissions
-  image: docker.io/library/busybox
+  image: {{ .Values.common.images.repository }}/library/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sh", "-c", "chown -R 1000: /storage/; true"]
   resources:

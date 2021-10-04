@@ -31,7 +31,7 @@ spec:
           serviceAccountName: {{ template "searchguard.fullname" . }}
           containers:
             - name: cleanup-job
-              image: bitnami/kubectl:1.19
+              image: {{ .Values.common.images.repository }}/bitnami/kubectl:1.19
               resources:
                 limits:
                   cpu: "500m"

@@ -98,9 +98,9 @@ spec:
       initContainers:
         - name: kibana-init
           {{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-          image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+          image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
           {{- else }}
-          image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
+          image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
           {{- end }}
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
@@ -138,9 +138,9 @@ spec:
               - IPC_LOCK
               - SYS_RESOURCE
       {{ if .Values.common.xpack_basic }}
-        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
       {{ else }}
-        image: "{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
