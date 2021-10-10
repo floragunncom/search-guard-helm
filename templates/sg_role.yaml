@@ -2,7 +2,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "searchguard.fullname" . }}-admin-role
+  name: {{ template "searchguard.fullname" . }}-sg-role
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
@@ -15,11 +15,6 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-6"
 rules:
-  - apiGroups: ["", "extensions", "apps"]
-    resources: ["*"]
-    verbs: ["*"]
-  - apiGroups: ["batch"]
-    resources:
-      - jobs
-      - cronjobs
+  - apiGroups: ["","batch", "apps","policy","extensions"]
+    resources: ["pods","persistentvolumes","persistentvolumeclaims","configmaps","secrets","deployments","replicasets","jobs","cronjobs","ingresses","statefulsets","services","replicationcontrollers"]
     verbs: ["*"]
