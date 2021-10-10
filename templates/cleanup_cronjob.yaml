@@ -17,7 +17,7 @@
 apiVersion: {{ template "searchguard.cronjob.apiVersion" . }}
 kind: CronJob
 metadata:
-  name: cleanup-job
+  name: "{{ template "searchguard.fullname" . }}-cleanup-job"
 spec:
   schedule: "*/5 * * * *"
   successfulJobsHistoryLimit: 1
@@ -30,7 +30,7 @@ spec:
         spec:
           serviceAccountName: {{ template "searchguard.fullname" . }}
           containers:
-            - name: cleanup-job
+            - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
               image: {{ .Values.common.images.repository }}/bitnami/kubectl:1.19
               resources:
                 limits:
