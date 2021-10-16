@@ -1,4 +1,3 @@
-# Currently tested with Kubernetes 1.10 on Minkube
 common:
 
   #Disable sharding in the ES cluster during helm upgrade procedure and enabling afterwards.
@@ -159,6 +158,25 @@ common:
 #            - "*beat*"
 #          allowed_actions:
 #            - SGS_READ
+
+#  #Configure authentication/authorization
+  sg_config:
+    dynamic:
+      authc:
+#        basic_internal_auth_domain:
+#          http_enabled: true
+#          transport_enabled: false
+#          order: 5
+#          http_authenticator:
+#            type: basic
+#            challenge: true
+#          authentication_backend:
+#            type: intern
+#      authz:
+#        roles_from_myldap:
+#          description: "Authorize via LDAP or Active Directory"
+#          http_enabled: false
+#          transport_enabled: false
 
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}

@@ -40,7 +40,10 @@ data:
           server_username: kibanaserver
           index: '.kibana'
         authc:
-          basic_internal_auth_domain: 
+{{ if .Values.common.sg_config.dynamic.authc }}
+{{ toYaml .Values.common.sg_config.dynamic.authc | indent 10 }}
+{{ else if not .Values.common.sg_config.dynamic.authc }}
+          basic_internal_auth_domain:
             http_enabled: true
             transport_enabled: false
             order: 0
@@ -49,7 +52,11 @@ data:
               challenge: true
             authentication_backend:
               type: intern
-          
+{{ end }}
+{{ if .Values.common.sg_config.dynamic.authz }}
+        authz:
+{{ toYaml .Values.common.sg_config.dynamic.authz | indent 10 }}
+{{ end }}
   sg_roles.yml: |-
     _sg_meta:
       type: "roles"
