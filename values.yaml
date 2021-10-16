@@ -1,4 +1,3 @@
-# Currently tested with Kubernetes 1.10 on Minkube
 common:
 
   #Disable sharding in the ES cluster during helm upgrade procedure and enabling afterwards.
@@ -98,6 +97,8 @@ common:
   # - ca_certificates_enabled - for uploading CA certificate and service certificate with it
   # - external_ca_certificates_enabled - for uploading elasticsearch.pem, elasticsearch.key, kibana.pem, kibana.key from ../keys/nodes folder and use them for services
   ingressNginx:
+    #install nginx-ingress subchart dependency
+    install_dependency: true
     enabled: true
     #For ingressCertificates use "self-signed" if you want auto-generated with TLS tool self-signed certificates
     #For ingressCertificates use "external" if you have copied trusted certificates with the names tls.key and tls.pem to folders ../keys/ingress_certificates/elasticsearch/ and  ../keys/ingress_certificates/kibana/

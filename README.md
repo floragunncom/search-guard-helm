@@ -275,6 +275,7 @@ and upgrade fails.
  | common.ingressNginx.ingressCertificates | Ingress Certificates types: "self-signed" for auto-generated with TLS tool self-signed certificates, "external" for customer ca signed certificates | self-signed |
  | common.ingressNginx.ingressElasticsearchDomain | Elasticsearch service domain that is exposed outside the ES cluster | es.sg-helm.example.com |
  | common.ingressNginx.ingressKibanaDomain | Kibana service domain that is exposed outside the ES cluster | kibana.sg-helm.example.com |
+ | common.ingressNginx.install_dependency | Option to enable/disable ingress-nginx subcharts installation | true |
  | common.nodes_dn | Certificate DN of the nodes in the ES cluster | CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
  | common.plugins | List of additional Elasticsearch plugins to be installed on the nodes of the ES cluster | null |
  | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. | false |
