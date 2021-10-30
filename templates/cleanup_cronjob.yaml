@@ -31,7 +31,11 @@ spec:
           serviceAccountName: {{ template "searchguard.fullname" . }}
           containers:
             - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
+  {{- if eq .sg_specific "false" }}
               image: {{ .Values.common.images.repository }}/bitnami/kubectl:1.19
+  {{- else }}
+              image: docker.io/bitnami/kubectl:1.19
+  {{- end }}
               resources:
                 limits:
                   cpu: "500m"

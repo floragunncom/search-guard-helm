@@ -271,6 +271,7 @@ and upgrade fails.
  | common.images.repository | Docker registry repository for docker images in the ES cluster | docker.io |
  | common.images.provider | Docker registry provider of docker images in the ES cluster | floragunncom |
  | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin |
+ | common.images.sg_specific | The option to specify if custom docker image source to be used  only for SG images or for third party images as well | true |
  | common.ingressNginx.enabled | Enabling NGINX Ingress that exposes Elasticsearch and Kibana services outside the ES cluster | true |
  | common.ingressNginx.ingressCertificates | Ingress Certificates types: "self-signed" for auto-generated with TLS tool self-signed certificates, "external" for customer ca signed certificates | self-signed |
  | common.ingressNginx.ingressElasticsearchDomain | Elasticsearch service domain that is exposed outside the ES cluster | es.sg-helm.example.com |

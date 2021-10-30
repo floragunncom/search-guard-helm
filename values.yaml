@@ -16,6 +16,7 @@ common:
   # - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
   # - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
   images:
+    sg_specific: true
     repository: "docker.io"
     provider: "floragunncom"
     elasticsearch_base_image: "sg-elasticsearch"
