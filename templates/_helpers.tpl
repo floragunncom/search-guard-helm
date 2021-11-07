@@ -355,7 +355,11 @@ init container template
     subPath: elasticsearch.yml
 {{- end }}
 - name: permissions
+{{- if not .sg_specific }}
   image: {{ .Values.common.images.repository }}/library/busybox
+{{- else }}
+  image: docker.io/library/busybox
+{{- end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sh", "-c", "chown -R 1000: /storage/; true"]
   resources:
