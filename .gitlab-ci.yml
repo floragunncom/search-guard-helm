@@ -3,7 +3,13 @@ image: floragunncom/ci-docker-compose-openjdk11:19.03.1
 services:
   - docker:19.03-dind
 variables:
+  BUILDX_VERSION: "0.9.1"
+  DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_CLI_EXPERIMENTAL: "enabled"
+  DEBIAN_FRONTEND: noninteractive
+  KUBECTL: v1.23.3
+  KIND: v0.11.1
 before_script:
   - sudo sysctl -w vm.max_map_count=262144
   - docker-compose --version
@@ -17,6 +23,33 @@ before_script:
 
 stages:
   - build
+
+
+build_and_push_docker_images:
+  allow_failure: false
+  stage: build
+  image: docker:latest
+  services:
+  - docker:dind
+  tags:
+    - test-large
+    #needs to run on amd64 because multiarch/qemu-user-static is not
+    #available for arm64
+  when: manual
+  script:
+    - apk update
+    - apk add bash
+    - echo "$DOCKER_PASSWORD" | docker login --username floragunncom --password-stdin docker.io
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - BUILDX_FULL_URL="https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-amd64"
+    - mkdir -p $HOME/.docker/cli-plugins/
+    - wget -O $HOME/.docker/cli-plugins/docker-buildx ${BUILDX_FULL_URL} 
+    - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
+    - ./docker/build_multiarch.sh
+
+
+
+
 
 build_and_test_ci:
   image:

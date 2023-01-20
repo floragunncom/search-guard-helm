@@ -1,7 +1,5 @@
 ARG JAVA_VERSION
-ARG JAVA_BASE_IMAGE="eclipse-temurin:${JAVA_VERSION}-focal"
-
-FROM ${JAVA_BASE_IMAGE}
+FROM eclipse-temurin:${JAVA_VERSION}-focal
 
 ARG TLS_TOOL_VERSION=1.8
 
@@ -19,16 +17,13 @@ RUN apt-get -y -qq install netcat curl wget ca-certificates unzip openssl bash j
     apt-get clean && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-ARG ELK_VERSION
-ARG SG_VERSION
-ENV SG_FULLVERSION=${ELK_VERSION}-${SG_VERSION}
-RUN echo $ELK_VERSION | cut -c1-1 > /major
+ARG SGCTL_VERSION
 
 WORKDIR /usr/share/sg
 
-RUN wget -nv https://maven.search-guard.com/search-guard-suite-release/com/floragunn/search-guard-suite-plugin/${SG_FULLVERSION}/search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip
-RUN unzip search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip -d sgadmin/
-RUN rm -rf search-guard-suite-plugin-${SG_FULLVERSION}-sgadmin-standalone.zip
+RUN mkdir sgctl
+RUN wget -nv https://maven.search-guard.com/search-guard-flx-release/com/floragunn/sgctl/${SGCTL_VERSION}/sgctl-${SGCTL_VERSION}.sh -O sgctl/sgctl.sh
+RUN chmod +x sgctl/sgctl.sh
 
 RUN wget -nv https://maven.search-guard.com/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
 
