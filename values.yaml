@@ -19,9 +19,9 @@ common:
     sg_specific: true
     repository: "docker.io"
     provider: "floragunncom"
-    elasticsearch_base_image: "sg-elasticsearch"
-    kibana_base_image: "sg-kibana"
-    sgadmin_base_image: "sg-sgadmin"
+    elasticsearch_base_image: "sg-elasticsearch-h4"
+    kibana_base_image: "sg-kibana-h4"
+    sgctl_base_image: "sg-sgctl-h4"
 
   #Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
   docker_registry:
@@ -34,15 +34,16 @@ common:
 
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "7.14.2"
-
+  elkversion: "7.17.8"
 
   # Search Guard plugin version
-  sgversion: "52.3.0"
+  sgversion: "1.1.0-flx"
 
   # Search Guard Kibana plugin version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "51.0.0"
+  sgkibanaversion: "1.1.0-flx"
+
+  sgctl_version: 1.1.0
 
   # If true then install also all free and basic x-pack features
   # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -72,13 +73,13 @@ common:
   # Restart podsautomatically when their configuration was changed
   restart_pods_on_config_change: true
   #Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-  pod_disruption_budget_enable: false
+  pod_disruption_budget_enable: true
 
   # Search Guard can be run do not fail on forbidden mode.
   # With this mode enabled Search Guard filters all indices from a query a user does not have access to. 
   # Thus not security exception is raised.
   # See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
-  do_not_fail_on_forbidden: false
+  do_not_fail_on_forbidden: true
   #After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
   license: none
   #By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
@@ -98,9 +99,7 @@ common:
   # - ca_certificates_enabled - for uploading CA certificate and service certificate with it
   # - external_ca_certificates_enabled - for uploading elasticsearch.pem, elasticsearch.key, kibana.pem, kibana.key from ../keys/nodes folder and use them for services
   ingressNginx:
-    #install nginx-ingress subchart dependency
-    install_dependency: true
-    enabled: true
+    enabled: false
     #For ingressCertificates use "self-signed" if you want auto-generated with TLS tool self-signed certificates
     #For ingressCertificates use "external" if you have copied trusted certificates with the names tls.key and tls.pem to folders ../keys/ingress_certificates/elasticsearch/ and  ../keys/ingress_certificates/kibana/
     ingressCertificates: "self-signed"
@@ -193,7 +192,7 @@ common:
 # have dedicated ingest nodes, that will only perform this specific task.
 client:
   # For production we recommend at least 2 replicas
-  replicas: 1
+  replicas: 2
   # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   # 'soft' will do this "best effort"
   # For production we recommend setting this to 'hard'
@@ -227,7 +226,7 @@ client:
 # master and data roles.
 data:
   # For production we recommend at least 2 replicas
-  replicas: 1
+  replicas: 2
   # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   # 'soft' will do this "best effort"
   # For production we recommend setting this to 'hard'
@@ -256,7 +255,7 @@ data:
 # important for cluster health to have a stable master node.
 master:
   # For production we recommend at least 3 replicas. Number must be odd.
-  replicas: 1
+  replicas: 3
   # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   # 'soft' will do this "best effort"
   # For production we recommend setting this to 'hard'
