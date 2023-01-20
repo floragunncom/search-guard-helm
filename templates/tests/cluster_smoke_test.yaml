@@ -39,7 +39,7 @@ spec:
                   memory: 256Mi
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
-            - /bin/sh
+            - bash
             - -c
             - |
                 ADMIN_PWD=$(kubectl -n {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)

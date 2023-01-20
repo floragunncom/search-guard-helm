@@ -42,6 +42,8 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
+      initContainers:
+{{ include "searchguard.kubectl-init-container" . | indent 6 }}
       containers:
       - name: sgadmin-complete
         env:
@@ -50,16 +52,18 @@ spec:
         image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
-          - sh
+          - bash
           - -c
           - |
-              #!/usr/bin/env bash -e
+              
+              set -e
               while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
-                echo 'Wait for $DISCOVERY_SERVICE service to be ready';
+                echo "Wait for $DISCOVERY_SERVICE service to be ready";
                 sleep 10 ;
               done
-              echo "Executing sgadmin to update the configs ..."
-              /root/sgadmin/tools/sgadmin.sh -h $DISCOVERY_SERVICE -cd /root/sgconfig -cn {{ .Values.common.cluster_name }} -key /root/sgcerts/key.pem -cert /root/sgcerts/crt.pem -cacert /root/sgcerts/root-ca.pem
+              echo "Executing sgctl to update the configs ..."
+              /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /sgconfig
+
               RET=$?
               echo "Result $RET"
               exit $RET
@@ -71,14 +75,15 @@ spec:
             cpu: 100m
             memory: 256Mi
         volumeMounts:
-          - mountPath: /root/sgconfig/
+          - mountPath: /sgconfig/
             name: searchguard-config
           - name: secret-volume
             readOnly: true
-            mountPath: /root/sgcerts/
+            mountPath: /sgcerts/
           - name: kubectl
             subPath: kubectl
             mountPath: /usr/local/bin/kubectl
+            readOnly: true
       volumes:
         - name: secret-volume
           secret:

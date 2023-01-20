@@ -36,10 +36,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "searchguard.lifecycle-cleanup-certs" -}}
 exec:
   command:
-    - sh
+    - bash
     - -c
     - |
-        #!/usr/bin/env bash +e
+        
         kubectl --namespace {{ .Release.Namespace }} patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
         kubectl --namespace {{ .Release.Namespace }} patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
 {{- end -}}
@@ -47,10 +47,10 @@ exec:
 {{- define "searchguard.remove-demo-certs" -}}
 exec:
   command:
-    - sh
+    - bash
     - -c
     - |
-        #!/usr/bin/env bash +e
+        
         shopt -s dotglob
         rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
@@ -62,13 +62,15 @@ init container template
 */}}
 
 {{- define "searchguard.generate-certificates-init-container" -}}
-{{- if and (not .Values.common.external_ca_single_certificate_enabled) (not .Values.common.external_ca_certificates_enabled) }}
+{{ include "searchguard.kubectl-init-container" . | indent 0 }}
 - name: searchguard-generate-certificates
   image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
-      mountPath: /kubectl
+      subPath: kubectl
+      mountPath: /usr/local/bin/kubectl
+      readOnly: true
   env:
     - name: NAMESPACE
       valueFrom:
@@ -83,12 +85,12 @@ init container template
         fieldRef:
           fieldPath: status.podIP
   command:
-    - sh
+    - bash
     - -c
     - |
-        #!/usr/bin/env bash -e
+        set -e
 
-        cp /usr/bin/kubectl /kubectl/kubectl
+        #cp /usr/bin/kubectl /kubectl/kubectl
         until kubectl get secrets {{ template "searchguard.fullname" . }}-admin-cert-secret; do
             echo 'Wait for Admin certificate secrets to be generated or uploaded';
             sleep 10 ;
@@ -152,7 +154,7 @@ init container template
         kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
         kubectl get secrets {{ template "searchguard.fullname" . }}-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
 
-        /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
+        /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
 
         kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /tmp/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /tmp/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
         #cat /tmp/*snippet.yml
@@ -164,25 +166,20 @@ init container template
     requests:
       cpu: 100m
       memory: 256Mi
-{{- end }}
 {{- end -}}
 
 {{- define "searchguard.master-wait-container" -}}
 - name: searchguard-master-wait-container
-{{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-{{- else }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
-{{- end }}
+  image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
       mountPath: /kubectl
   command:
-    - sh
+    - bash
     - -c
     - |
-        #!/usr/bin/env bash -e
+        set -e
         echo "Checking Client and Data nodes startup"
 
         echo "Checking that Client ES nodes with old version are going to be replaced"
@@ -238,20 +235,16 @@ init container template
 
 {{- define "searchguard.kibana-wait-container" -}}
 - name: searchguard-kibana-wait-container
-{{- if or (semverCompare "<7.11" .Values.common.elkversion)  (semverCompare ">7.14.0" .Values.common.elkversion) }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-{{- else }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgadmin_base_image }}:7.10.2-49.0.0"
-{{- end }}
+  image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   volumeMounts:
     - name: kubectl
       mountPath: /kubectl
   command:
-    - sh
+    - bash
     - -c
     - |
-        #!/usr/bin/env bash -e
+        set -e
         echo "Checking Master nodes startup"
 
         echo "Checking that Master ES nodes with old version are going to be replaced"
@@ -432,4 +425,18 @@ init container template
 {{- else -}}
 {{- printf "docker-auth" -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "searchguard.kubectl-image" -}}
+image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kubectl_base_image }}:{{ trimPrefix "v" .Capabilities.KubeVersion.Version  }}
+{{- end -}}
+
+{{- define "searchguard.kubectl-init-container" -}}
+- name: init-kubectl
+{{ include "searchguard.kubectl-image" . | indent 2 }}
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
+  volumeMounts:
+  - name: kubectl
+    mountPath: /data
+  command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
 {{- end -}}

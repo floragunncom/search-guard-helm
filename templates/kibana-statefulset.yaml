@@ -14,7 +14,6 @@
    limitations under the License.
 */}}
 
-{{ if .Values.common.external_ca_certificates_enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -96,14 +95,26 @@ spec:
                   role: kibana
       {{- end }}
       initContainers:
+        - name: init-kubectl-0 #doubled, we need a better solution
+        {{ include "searchguard.kubectl-image" . | indent 2 }}
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          volumeMounts:
+          - name: kubectl
+            mountPath: /data
+          command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
         - name: kibana-init
           image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
           imagePullPolicy: {{ .Values.common.pullPolicy }}
+          volumeMounts:
+            - name: kubectl
+              subPath: kubectl
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
           command:
-            - sh
+            - bash
             - -c
             - |
-                #!/usr/bin/env bash -e
+                set -e
                 until kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
                   echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
                   sleep 10 ;
@@ -195,6 +206,10 @@ spec:
         - name: certificates-secrets-volume
           readOnly: true
           mountPath: "/usr/share/kibana/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
+          readOnly: true
       volumes:
         - name: certificates-secrets-volume
           secret:
@@ -214,4 +229,3 @@ spec:
         resources:
           requests:
             storage: {{ .Values.kibana.storage }}
-{{ end }}

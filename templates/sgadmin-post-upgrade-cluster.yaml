@@ -52,12 +52,12 @@ spec:
         image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
-          - sh
+          - bash
           - -c
           - |
-              #!/usr/bin/env bash -e
+              set -e
               while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
-                echo 'Wait for $DISCOVERY_SERVICE service to be ready';
+                echo "Wait for $DISCOVERY_SERVICE service to be ready";
                 sleep 10 ;
               done
               echo "Getting password for admin user"
@@ -84,7 +84,7 @@ spec:
         volumeMounts:
           - name: secret-volume
             readOnly: true
-            mountPath: /root/sgcerts/
+            mountPath: /sgcerts/
           - name: kubectl
             subPath: kubectl
             mountPath: /usr/local/bin/kubectl

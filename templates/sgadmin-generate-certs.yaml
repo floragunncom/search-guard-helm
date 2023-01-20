@@ -38,18 +38,36 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
+      initContainers:
+{{ include "searchguard.kubectl-init-container" . | indent 8 }}
+      volumes:
+        - name: kubectl
+          emptyDir: {}
       containers:
       - name: sgadmin-init
         image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
+        volumeMounts:
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
         command:
-          - sh
+          - bash
           - -c
           - |
-              #!/usr/bin/env bash -e
+              
+              echo "Checking ..."
+
+              
+              #set -e
+
+              
 
               kubectl --namespace {{ .Release.Namespace }} get secrets | grep {{ template "searchguard.fullname" . }}-passwd-secret
               
+              
+
               if [ "$?" == "1" ]; then
 
               if [ "{{ .Values.common.docker_registry.enabled }}"  == "true" ] && [ -z "{{ .Values.common.docker_registry.imagePullSecret }}" ]; then
@@ -68,7 +86,7 @@ spec:
                     file: root-ca.pem
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -ca -v -c "{{ template "searchguard.fullname" . }}-root-ca.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -ca -v -c "{{ template "searchguard.fullname" . }}-root-ca.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-root-ca-sec.yaml" <<EOL
               apiVersion: v1
@@ -103,7 +121,7 @@ spec:
                   dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml" <<EOL
               apiVersion: v1
@@ -176,7 +194,7 @@ spec:
                     - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-kibana-sec.yaml" <<EOL
               apiVersion: v1
@@ -218,7 +236,7 @@ spec:
                     - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-es-sec.yaml" <<EOL
               apiVersion: v1
@@ -264,7 +282,7 @@ spec:
                 dn: CN=sgadmin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-admin-cert-sec.yaml" <<EOL
               apiVersion: v1
@@ -340,7 +358,7 @@ spec:
                     - {{ .Values.common.ingressNginx.ingressKibanaDomain }}
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-kibana-svc.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-kibana-sec.yaml" <<EOL
               apiVersion: v1
@@ -382,7 +400,7 @@ spec:
                     - {{ .Values.common.ingressNginx.ingressElasticsearchDomain }}
               EOL
 
-              /root/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-es-svc.yml" -t /tmp/
 
               cat >"{{ template "searchguard.fullname" . }}-es-sec.yaml" <<EOL
               apiVersion: v1
@@ -411,41 +429,6 @@ spec:
 
 
               fi
-              if [ "{{ .Values.common.external_ca_certificates_enabled }}" == true ] || [ "{{ .Values.common.external_ca_single_certificate_enabled }}" == "true" ]; then
-              echo "Will generate {{ template "searchguard.fullname" . }}-passwd-secret"
-
-              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
-
-              cat >"{{ template "searchguard.fullname" . }}-passwd-secret.yaml" <<EOL
-              apiVersion: v1
-              kind: Secret
-              metadata:
-                labels:
-                  app: {{ template "searchguard.fullname" . }}
-                  component: sginit
-                  chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-                  heritage: "{{ .Release.Service }}"
-                  release: "{{ .Release.Name }}"
-                  sgpwdsecret: "true"
-                name: {{ template "searchguard.fullname" . }}-passwd-secret
-                namespace: {{ .Release.Namespace }}
-              type: Opaque
-              data:
-                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
-                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
-                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
-                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
-                {{ range $key, $value := .Values.common.users }}
-                SG_{{ $key | upper }}_PWD: $(echo -n `openssl rand 512 | md5sum | awk '{print $1}'` | base64 -w0)
-                {{ end }}
-              EOL
-
-              kubectl apply -f "{{ template "searchguard.fullname" . }}-passwd-secret.yaml"
-              fi
-
               else
               echo "Passwd secrets already exists"
               :
