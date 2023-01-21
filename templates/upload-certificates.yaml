@@ -14,24 +14,24 @@
    limitations under the License.
 */}}
 
-{{ if .Values.common.pod_disruption_budget_enable }}
-apiVersion: policy/v1
-kind: PodDisruptionBudget
+{{ if .Values.common.ca_certificates_enabled }}
+apiVersion: v1
+kind: Secret
 metadata:
-  name: {{ template "searchguard.fullname" . }}-kibana
-  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
+    component: sginit
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}
-    #role: kibana
-spec:
-  minAvailable: 50%
-  selector:
-    matchLabels:
-      app: {{ template "searchguard.fullname" . }}
-      role: kibana
-      estype: kibana
+    release: "{{ .Release.Name }}"
+  name: {{ template "searchguard.fullname" . }}-root-ca-secret
+  namespace: "{{ .Release.Namespace }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-4"
+data:
+{{- $path := printf "%s/ca/*" .Values.common.certificates_directory }}
+{{ tpl ((.Files.Glob $path).AsSecrets) . | indent 4 }}
 {{ end }}

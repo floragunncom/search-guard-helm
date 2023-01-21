@@ -20,7 +20,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "searchguard.fullname" . }}-master
+  name: {{ template "searchguard.fullname" . }}-cluster
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
@@ -28,12 +28,11 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}
-    # master
+    #role: master
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
       app: {{ template "searchguard.fullname" . }}
       estype: node
-      role: master
 {{ end }}

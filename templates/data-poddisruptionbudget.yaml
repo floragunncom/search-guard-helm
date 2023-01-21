@@ -28,11 +28,12 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}
-    role: data
+    #role: data
 spec:
-  minAvailable: 50%
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: {{ template "searchguard.fullname" . }}
       role: data
+      estype: node
 {{ end }}

@@ -43,6 +43,7 @@ spec:
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
         role: kibana
+        estype: kibana
         {{- if .Values.kibana.labels }}
 {{ toYaml .Values.kibana.labels | indent 8 }}
         {{- end }}

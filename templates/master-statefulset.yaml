@@ -28,7 +28,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}-master
     role: master
-    estype: node
 spec:
   serviceName: {{ template "searchguard.fullname" . }}-master
   replicas: {{ .Values.master.replicas }}
@@ -46,6 +45,7 @@ spec:
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
         role: master
+        estype: node
         {{- if .Values.master.labels }}
 {{ toYaml .Values.master.labels | indent 8 }}
         {{- end }}

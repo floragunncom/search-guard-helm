@@ -1,0 +1,9 @@
+common:
+  config:
+    searchguard:
+      audit:
+        type: debug
+    index.codec: best_compression   
+kibana:
+  config:
+    searchguard.cookie.isSameSite: None

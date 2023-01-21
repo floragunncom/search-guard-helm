@@ -1,0 +1,4 @@
+common:
+  remove_pvc_on_delete: true
+  elkversion: "7.17.7"
+  sgctl_version: "1.0.0"

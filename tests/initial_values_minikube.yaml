@@ -1,0 +1,14 @@
+#common:
+  #admin_dn: #check
+  #  - "CN=admin,OU=exa1,O=exa2,DC=xxx,DC=org"
+  #  - "CN=abc,OU=exa1,O=exa2,DC=xxx,DC=org"
+  #nodes_dn:
+  #  - "CN=*-sgnode,OU=exa1,O=exa2,DC=xxx,DC=org"
+  #  - "CN=dummy,OU=exa1,O=exa2,DC=xxx,DC=org"
+client:
+  storageClass: local-path
+data:
+  storageClass: local-path
+master:
+  storageClass: local-path
+  #heapSize: null

@@ -99,6 +99,7 @@ common:
   #Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
 
+  certificates_directory: secrets
 
   # Any extra or specific configuration that is needed can be added here.
   # Will be added to all elasticsearch.yml files on all nodes

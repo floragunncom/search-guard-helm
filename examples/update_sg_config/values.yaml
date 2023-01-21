@@ -1,0 +1,75 @@
+common:
+
+  # Configure additional users (maps to sg_internal_users.yml)
+  # https://docs.search-guard.com/latest/first-steps-user-configuration
+  users:
+    demouser:
+      hash: $2a$12$wtusE0WRlhmRhqQQccjaw.NuM7aWyhc29gM8LobXAU/XqOhYFa4x. 
+      backend_roles:
+        - beatsreader
+
+
+  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
+  # https://docs.search-guard.com/latest/first-steps-mapping-users-roles
+  rolesmapping:
+    sg_read_beats:
+      backend_roles:
+        - beatsreader
+
+  # Configure additional role (maps to sg_roles.yml)
+  # https://docs.search-guard.com/latest/first-steps-roles-configuration
+  roles:
+    sg_read_beats:
+      cluster_permissions:
+        - SGS_CLUSTER_COMPOSITE_OPS_RO
+      index_permissions:
+        - index_patterns:
+            - "*beat*"
+          allowed_actions:
+            - SGS_READ
+
+  # https://docs.search-guard.com/latest/authentication-authorization
+  sg_config:
+    dynamic:
+      authc:
+          basic_internal_auth_domain:
+            http_enabled: true
+            transport_enabled: false
+            order: 0
+            http_authenticator:
+              type: basic
+              challenge: true
+            authentication_backend:
+              type: intern
+          clientcert_auth_domain:
+            http_enabled: true
+            transport_enabled: false
+            order: 1
+            http_authenticator:
+              type: clientcert
+              config:
+                username_attribute: cn
+              challenge: false
+            authentication_backend:
+              type: noop
+
+      authz:
+        roles_from_myldap:
+          http_enabled: false
+          transport_enabled: false
+          authorization_backend:
+            type: ldap
+            config:
+              hosts:
+                - localhost:8389
+              bind_dn: null
+              password: null
+              rolebase: 'ou=groups,dc=example,dc=com'
+              rolesearch: '(member={0})'
+              userroleattribute: null
+              userrolename: disabled
+              rolename: cn
+              resolve_nested_roles: true
+              userbase: 'ou=people,dc=example,dc=com'
+              usersearch: '(uid={0})'
+

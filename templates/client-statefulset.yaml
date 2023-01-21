@@ -27,7 +27,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}-client
     role: client
-    estype: node
 spec:
   serviceName: {{ template "searchguard.fullname" . }}-client
   replicas: {{ .Values.client.replicas }}
@@ -45,6 +44,7 @@ spec:
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
         role: client
+        estype: node
         {{- if .Values.client.labels }}
 {{ toYaml .Values.client.labels | indent 8 }}
         {{- end }}

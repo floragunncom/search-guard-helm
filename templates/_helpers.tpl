@@ -126,6 +126,9 @@ init container template
         ca:
           root:
               file: root-ca.pem
+              {{ if .Values.common.ca_password }}
+              pkPassword: {{ .Values.common.ca_password }}
+              {{ end }}
         
         defaults:
           validityDays: 365
