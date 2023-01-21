@@ -1,4 +1,4 @@
-The Search Guard protected Elasticsearch cluster has been installed.
+The Search Guard FLX protected Elasticsearch cluster has been installed.
 
   Internal access inside the Kubernetes cluster:
 
@@ -12,24 +12,8 @@ The Search Guard protected Elasticsearch cluster has been installed.
 
 
   External access to the Kubernetes cluster:
-{{ if .Values.common.ingressNginx.enabled }}
 
-    * If you use Minikube cluster, please, run in separate window:
-
-      minikube tunnel
-
-    * Getting the address of the exposed service:
-
-      export INGRESS_ADDRESS=$(kubectl get ing --namespace default {{ template "searchguard.fullname" . }}-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
-
-    * Add IP of $INGRESS_ADDRESS to your DNS as {{ .Values.common.ingressNginx.ingressElasticsearchDomain}} and {{ .Values.common.ingressNginx.ingressKibanaDomain}}
-
-    * Access the services:
-
-        - Elasticsearch at https://{{ .Values.common.ingressNginx.ingressElasticsearchDomain}}
-        - Kibana at https://{{ .Values.common.ingressNginx.ingressKibanaDomain}}
-
-{{ else if contains "NodePort" .Values.common.serviceType }}
+{{ if contains "NodePort" .Values.common.serviceType }}
     * Get IP and port for Elasticsearch service
         export ES_NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
 

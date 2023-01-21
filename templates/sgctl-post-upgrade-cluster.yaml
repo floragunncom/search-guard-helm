@@ -18,35 +18,34 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "searchguard.fullname" . }}-sgadmin-preupgrade"
+  name: "{{ template "searchguard.fullname" . }}-sgctl-postupgrade"
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}-sgadmin
-    role: sgadmin
+    component: {{ template "searchguard.fullname" . }}-sgctl
+    role: sgctl
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
-    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   template:
     metadata:
-      name: "{{ template "searchguard.fullname" . }}-sgadmin-preupgrade"
+      name: {{ template "searchguard.fullname" . }}-sgctl-postupgrade"
       labels:
         release: "{{ .Release.Name }}"
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
-        role: sgadmin
+        role: sgctl
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
-      - name: sgadmin-preupgrade
+      - name: sgctl-postupgrade
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
@@ -67,8 +66,8 @@ spec:
               curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
               {
               "persistent": {
-                "cluster.routing.allocation.enable": "none",
-                "cluster.routing.rebalance.enable" : "none"
+                "cluster.routing.allocation.enable": "all",
+                "cluster.routing.rebalance.enable" : "all"
               }
               }
               '

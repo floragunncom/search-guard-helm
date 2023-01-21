@@ -17,15 +17,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "searchguard.fullname" . }}-sgadmin-post"
+  name: "{{ template "searchguard.fullname" . }}-sgctl-post"
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}-sgadmin
-    role: sgadmin
+    component: {{ template "searchguard.fullname" . }}-sgctl
+    role: sgctl
 spec:
   template:
     metadata:
@@ -34,10 +34,10 @@ spec:
         release: "{{ .Release.Name }}"
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
-        role: sgadmin
+        role: sgctl
         {{ if .Values.common.restart_pods_on_config_change }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/searchguard-configmap_ES7.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/sg-dynamic-configuration.yaml") . | sha256sum }}
         {{ end }}
     spec:
       restartPolicy: Never
@@ -45,7 +45,7 @@ spec:
       initContainers:
 {{ include "searchguard.kubectl-init-container" . | indent 6 }}
       containers:
-      - name: sgadmin-complete
+      - name: sgctl-complete
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
@@ -89,7 +89,7 @@ spec:
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - configMap:
-            name: {{ template "searchguard.fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+            name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
           name: searchguard-config
         - name: kubectl
           emptyDir: {}

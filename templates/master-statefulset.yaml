@@ -51,7 +51,7 @@ spec:
         {{- end }}
       annotations:
         {{ if .Values.common.restart_pods_on_config_change }}
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/sg-static-configuration.yaml") . | sha256sum }}
         {{ end }}
       {{- if .Values.master.annotations }}
 {{ toYaml .Values.master.annotations | indent 8 }}
@@ -197,7 +197,7 @@ spec:
             name: {{ template "searchguard.fullname" . }}-config
           name: config
         - configMap:
-            name: {{ template "searchguard.fullname" . }}-searchguard-config-{{ .Values.common.elkversion | substr 0 1 }}
+            name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
           name: searchguard-config
         - name: kubectl
           emptyDir: {}

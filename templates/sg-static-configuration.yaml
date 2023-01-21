@@ -35,8 +35,8 @@ data:
     xpack.watcher.enabled: false
     xpack.monitoring.collection.enabled: true
 {{ end }}
-    #network.host: "0.0.0.0"
-    network.host: ${NODE_NAME}
+    network.host: "0.0.0.0"
+    #network.host: ${NODE_NAME}
     #TODO support memory_lock
     bootstrap.memory_lock: false
     cluster.name: {{ .Values.common.cluster_name }}
@@ -70,7 +70,6 @@ data:
 {{ toYaml .Values.common.nodes_dn | indent 6 }}  
     searchguard.allow_unsafe_democertificates: false
     searchguard.allow_default_init_sgindex: false
-    #searchguard.enable_snapshot_restore_privilege: true
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
     searchguard.ssl.http.enabled: true

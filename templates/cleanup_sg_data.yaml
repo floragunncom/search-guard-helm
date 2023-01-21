@@ -23,7 +23,7 @@
 #     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 #     release: "{{ .Release.Name }}"
 #     heritage: "{{ .Release.Service }}"
-#     role: sgadmin
+#     role: sgctl
 #   annotations:
 #     # This is what defines this resource as a hook. Without this line, the
 #     # job is considered part of the release.
@@ -38,7 +38,7 @@
 #         release: "{{ .Release.Name }}"
 #         app: {{ template "searchguard.fullname" . }}
 #         component: {{ template "searchguard.fullname" . }}
-#         role: sgadmin
+#         role: sgctl
 #     spec:
 #       restartPolicy: Never
 #       serviceAccountName: {{ template "searchguard.fullname" . }}
@@ -60,6 +60,4 @@
 # {{ if .Values.common.remove_pvc_on_delete }}
 #                 kubectl --namespace {{ .Release.Namespace }} delete $$(kubectl --namespace {{ .Release.Namespace }} get pvc -l component={{ template "searchguard.fullname" . }} -o name)
 # {{ end }}
-#                 kubectl --namespace {{ .Release.Namespace }} delete secrets "{{ .Release.Name }}"-ingress-nginx-admission
-
 #                 kubectl --namespace {{ .Release.Namespace }} delete $$(kubectl --namespace {{ .Release.Namespace }} get secrets -l app={{ template "searchguard.fullname" . }} -o name)
