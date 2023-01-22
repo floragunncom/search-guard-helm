@@ -99,9 +99,6 @@ spec:
       {{- end }}
       initContainers:
 {{ include "searchguard.init-containers" . | indent 6 }}
-    {{ if .Values.common.es_upgrade_order }}
-{{ include "searchguard.master-wait-container" . | indent 6 }}
-    {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
       - name: docker-auth
@@ -120,8 +117,8 @@ spec:
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
-          postStart:
-{{ include "searchguard.remove-demo-certs" . | indent 12 }}
+          preStop:
+{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         envFrom:
         - secretRef:
             name: {{ template "searchguard.fullname" . }}-passwd-secret

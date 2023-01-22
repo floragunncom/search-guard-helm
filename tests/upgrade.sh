@@ -44,10 +44,20 @@ SG_ADMIN_PWD=$(kubectl get secrets sg-elk-search-guard-flx-passwd-secret -n ${NS
 #KPOD_NAME=$(kubectl get pods -n ${NSP} -l "component=sg-elk-search-guard-flx,role=kibana" -o jsonpath="{.items[0].metadata.name}")
 
 kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx-clients 9200:9200 &
-kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx 5601:5601 &
+kctlpid="$!"
+#kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx 5601:5601 &
 sleep 5
 until curl --fail -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&pretty&wait_for_nodes=$3"; do
-     echo "Wait for port forward ... ($?)"
+     
+     if ! ps -p $kctlpid > /dev/null
+     then
+        kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx-clients 9200:9200 &
+        kctlpid="$!"
+         echo "Wait for port forward after restarted port forwarding ..."
+     else
+         echo "Wait for port forward ... ($?)"
+     fi
+
      curl -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?pretty"
      sleep 5
 done

@@ -25,54 +25,91 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 data:
-  sg_config.yml: |-
-    _sg_meta:
-      type: "config"
-      config_version: 2
-    sg_config:
-      dynamic:
-        do_not_fail_on_forbidden: {{ .Values.common.do_not_fail_on_forbidden }}
+######## license_key.yml ########
 {{ if not (eq .Values.common.license "none") }}
-        license: {{ .Values.common.license }}
+  license_key.yml: |-
+    key: {{ .Values.common.license }}
 {{ end }}
-        kibana:
-          multitenancy_enabled: true
-          server_username: kibanaserver
-          index: '.kibana'
-        authc:
-{{ if .Values.common.sg_config.dynamic.authc }}
-{{ toYaml .Values.common.sg_config.dynamic.authc | indent 10 }}
-{{ else if not .Values.common.sg_config.dynamic.authc }}
-          basic_internal_auth_domain:
-            http_enabled: true
-            transport_enabled: false
-            order: 0
-            http_authenticator:
-              type: basic
-              challenge: true
-            authentication_backend:
-              type: intern
-{{ end }}
-{{ if .Values.common.sg_config.dynamic.authz }}
-        authz:
-{{ toYaml .Values.common.sg_config.dynamic.authz | indent 10 }}
-{{ end }}
-  sg_roles.yml: |-
-    _sg_meta:
-      type: "roles"
-      config_version: 2
 
+######## sg_auth_token_service.yml ########
+  # sg_auth_token_service.yml : |-
+  #   enabled: false
+  #   jwt_signing_key_hs512: "..."
+  #   jwt_encryption_key_a256kw: "..."   # Omit this to have unencrypted keys
+  #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
+  #   max_tokens_per_user: 100 
+
+######## sg_authc.yml ########
+  sg_authc.yml: |-
+    ---
+{{ if .Values.common.authc }}
+{{ toYaml .Values.common.authc | indent 4 }}
+{{ else if not .Values.common.authc }}
+    debug: false
+    auth_domains:
+    - type: basic/internal_users_db
+{{ end }}
+
+######## sg_authz.yml ########
+  sg_authz.yml: |-
+    ---
+{{ if .Values.common.authz }}
+{{ toYaml .Values.common.authz | indent 4 }}
+{{ else if not .Values.common.authz }}
+    debug: false
+    ignore_unauthorized_indices.enabled: true
+{{ end }}
+
+######## sg_blocks.yml ########
+  sg_blocks.yml: |-
+    ---
+    {}
+
+######## sg_frontend_authc.yml ########
+  sg_frontend_authc.yml: |-
+    ---
+    default:
+      debug: false
+      auth_domains:
+      - type: basic
+      - type: saml
+        enabled: false
+        label: "SAML Login"
+        saml.idp.metadata_url: "https://your.idp.example.com/saml-metadata.xml"
+        saml.idp.entity_id: urn:saml-metadata-entity-id
+        saml.sp.entity_id: service-provider-id
+        user_mapping.roles.from: saml_response.roles
+      - type: oidc
+        enabled: false
+        label: "OIDC Login"
+        oidc.client_id: "your-oidc-client-id"
+        oidc.client_secret: "your-oidc-client-secret"
+        oidc.idp.openid_configuration_url: "https://your.idp.example.com/auth/realms/master/.well-known/openid-configuration"
+        user_mapping.roles.from: oidc_id_token.roles
+
+######## sg_frontend_multi_tenancy.yml ########
+  sg_frontend_multi_tenancy.yml: |-
+    ---
+    default:
+      enabled: true
+      index: .kibana
+      server_user: kibanaserver
+
+######## sg_roles.yml ########
+  sg_roles.yml: |-
+    ---
     # Define your own search guard roles here
     # or use the built-in search guard roles
     # See https://docs.search-guard.com/latest/roles-permissions
 {{ if .Values.common.roles }}
 {{ toYaml .Values.common.roles | indent 4 }}
+{{ else }}
+    {}
 {{ end }}
-  sg_roles_mapping.yml: |-
-    _sg_meta:
-      type: "rolesmapping"
-      config_version: 2
 
+######## sg_roles_mapping.yml ########
+  sg_roles_mapping.yml: |-
+    ---
     # Define your roles mapping here
     # See https://docs.search-guard.com/latest/mapping-users-roles
 
@@ -103,11 +140,9 @@ data:
 {{ toYaml .Values.common.rolesmapping | indent 4 }}
 {{ end }}
 
+######## sg_internal_users.yml ########
   sg_internal_users.yml: |-
-
-    _sg_meta:
-      type: "internalusers"
-      config_version: 2
+    ---
     # This is the internal user database
 
     admin:
@@ -135,19 +170,18 @@ data:
 {{ if .Values.common.users }}
 {{ toYaml .Values.common.users | indent 4 }}
 {{ end }}
-  sg_action_groups.yml: |-
-    _sg_meta:
-      type: "actiongroups"
-      config_version: 2
 
+######## sg_action_groups.yml ########
+  sg_action_groups.yml: |-
+    ---
     # Define your own action groups here
     # or use the built-in groups
     # See https://docs.search-guard.com/latest/action-groups
+    {}
 
+######## sg_tenants.yml ########
   sg_tenants.yml: |-
-    _sg_meta:
-      type: "tenants"
-      config_version: 2
-
+    ---
     # Define your tenants here
     # See https://docs.search-guard.com/latest/kibana-multi-tenancy
+    {}

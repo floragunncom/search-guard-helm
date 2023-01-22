@@ -114,6 +114,44 @@ spec:
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
+
+                    function try_loop {
+                        for (( c=1; c<=100; c++ )); do \
+                            eval $@ && exit_code=0 && break || exit_code=$? && echo "Retry $c in 5s" && \
+                            sleep 5; \
+                            done; \
+                            (exit $exit_code)
+                    }
+
+                    
+                    try_loop nc -z $DISCOVERY_SERVICE 9300
+                    try_loop nc -z $DISCOVERY_SERVICE 9200
+                    
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout=300&pretty" > /tmp/poststart 2>&1 || true
+
+                    try_loop nc -z $HOSTNAME 9200
+
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": null
+                      }
+                    }
+                    ' >> /tmp/poststart 2>&1 || true
+
+          preStop:
+{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": "primaries"
+                      }
+                    }
+                    ' #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X POST "https://$HOSTNAME:9200/_flush/synced?pretty" #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
         securityContext:
           capabilities:
             add:
@@ -188,6 +226,9 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
+        - name: secret-volume-admin-cert
+          readOnly: true
+          mountPath: /sgcerts/
       volumes:
         - name: secret-volume
           secret:
@@ -201,6 +242,9 @@ spec:
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
+        - name: secret-volume-admin-cert
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
   volumeClaimTemplates:
   - metadata:
       name: storage

@@ -131,9 +131,6 @@ spec:
               cpu: 100m
               memory: 256Mi
 {{ include "searchguard.generate-certificates-init-container" . | indent 8 }}
-        {{ if .Values.common.es_upgrade_order }}
-{{ include "searchguard.kibana-wait-container" . | indent 8 }}
-        {{ end }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
       - name: {{ .Values.common.docker_registry.imagePullSecret }}

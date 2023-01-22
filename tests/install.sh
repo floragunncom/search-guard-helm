@@ -58,9 +58,9 @@ echo ""
 echo "Installing OK ($(date))"
 SG_ADMIN_PWD=$(kubectl get secrets sg-elk-search-guard-flx-passwd-secret -n ${NSP} -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
 POD_NAME=$(kubectl get pods -n ${NSP} -l "component=sg-elk-search-guard-flx,role=client" -o jsonpath="{.items[0].metadata.name}")
-KPOD_NAME=$(kubectl get pods -n ${NSP} -l "component=sg-elk-search-guard-flx,role=kibana" -o jsonpath="{.items[0].metadata.name}")
+#KPOD_NAME=$(kubectl get pods -n ${NSP} -l "component=sg-elk-search-guard-flx,role=kibana" -o jsonpath="{.items[0].metadata.name}")
 kubectl port-forward -n ${NSP} $POD_NAME 9200:9200 &
-kubectl port-forward -n ${NSP} $KPOD_NAME 5601:5601 &
+#kubectl port-forward -n ${NSP} $KPOD_NAME 5601:5601 &
 sleep 5
 until curl --fail -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&wait_for_nodes=7&pretty"; do
      echo "Wait for port forward ... ($?)"

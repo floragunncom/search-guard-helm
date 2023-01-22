@@ -14,11 +14,11 @@
    limitations under the License.
 */}}
 
-{{ if .Values.common.disable_sharding }}
+{{ if .Release.IsInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "searchguard.fullname" . }}-sgctl-postupgrade"
+  name: "{{ template "searchguard.fullname" . }}-sgctl-initialize"
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
@@ -27,15 +27,10 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}-sgctl
     role: sgctl
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-    "helm.sh/hook": post-upgrade
-    "helm.sh/hook-weight": "-1"
 spec:
   template:
     metadata:
-      name: {{ template "searchguard.fullname" . }}-sgctl-postupgrade"
+      name: "{{ .Release.Name }}"
       labels:
         release: "{{ .Release.Name }}"
         app: {{ template "searchguard.fullname" . }}
@@ -44,8 +39,10 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
+      initContainers:
+{{ include "searchguard.kubectl-init-container" . | indent 6 }}
       containers:
-      - name: sgctl-postupgrade
+      - name: sgctl-complete
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
@@ -55,22 +52,28 @@ spec:
           - bash
           - -c
           - |
-              set -e
+              
+              set -x
+
               while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
                 echo "Wait for $DISCOVERY_SERVICE service to be ready";
                 sleep 10 ;
               done
-              echo "Getting password for admin user"
-              export ADMIN_PWD=$(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
-              echo "Disabling shard allocation in ES cluster to https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200 "
-              curl --fail -u admin:$ADMIN_PWD -k -X PUT "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
-              {
-              "persistent": {
-                "cluster.routing.allocation.enable": "all",
-                "cluster.routing.rebalance.enable" : "all"
+
+              function try_loop {
+                for (( c=1; c<=100; c++ )); do \
+                    eval $@ && exit_code=0 && break || exit_code=$? && echo "Retry $c in 5s" && \
+                    sleep 5; \
+                    done; \
+                    (exit $exit_code)
               }
-              }
-              '
+                    
+              try_loop nc -z $DISCOVERY_SERVICE 9300
+              try_loop nc -z $DISCOVERY_SERVICE 9200
+
+              echo "Executing sgctl to update the configs ..."
+              /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /sgconfig
+
               RET=$?
               echo "Result $RET"
               exit $RET
@@ -82,16 +85,22 @@ spec:
             cpu: 100m
             memory: 256Mi
         volumeMounts:
+          - mountPath: /sgconfig/
+            name: searchguard-config
           - name: secret-volume
             readOnly: true
             mountPath: /sgcerts/
           - name: kubectl
             subPath: kubectl
             mountPath: /usr/local/bin/kubectl
+            readOnly: true
       volumes:
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+        - configMap:
+            name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
+          name: searchguard-config
         - name: kubectl
           emptyDir: {}
 {{ end }}

@@ -1,9 +1,4 @@
 common:
-
-  #Disable sharding in the ES cluster during helm upgrade procedure and enabling afterwards.
-  disable_sharding: false
-  #Enable this flag if you want to upgrade ES cluster version according to https://www.elastic.co/guide/en/elasticsearch/reference/7.10/rolling-upgrades.html#rolling-upgrades
-  es_upgrade_order: false
   # Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
   #Set to true of you want to remove persistent storage claims with helm delete command
@@ -139,24 +134,14 @@ common:
 #          allowed_actions:
 #            - SGS_READ
 
-#  #Configure authentication/authorization
-  sg_config:
-    dynamic:
-      authc:
-#        basic_internal_auth_domain:
-#          http_enabled: true
-#          transport_enabled: false
-#          order: 5
-#          http_authenticator:
-#            type: basic
-#            challenge: true
-#          authentication_backend:
-#            type: intern
-#      authz:
-#        roles_from_myldap:
-#          description: "Authorize via LDAP or Active Directory"
-#          http_enabled: false
-#          transport_enabled: false
+  authc:
+    debug: false
+    auth_domains:
+    - type: basic/internal_users_db
+
+  authz:
+    debug: false
+    ignore_unauthorized_indices.enabled: true
 
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}
