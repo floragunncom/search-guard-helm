@@ -26,16 +26,16 @@
 
 ## Status
 
-This is repo is considered beta status and supports Search Guard for Elasticsearch 7.
+This is repo is considered beta status and supports Search Guard FLX for Elasticsearch 7.
 
 ## Support
 
-Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-helm/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
+Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
 
 ## Requirements
 
-* Kubernetes 1.16 or later (Minikube and kops managed AWS Kubernetes cluster  are tested)
-* Helm (v.3.2.4 or later). Please, follow [Helm installation steps][] for your OS.
+* Kubernetes 1.23 or later (Minikube and kops managed AWS Kubernetes cluster  are tested)
+* Helm (v.3.8 or later). Please, follow [Helm installation steps][] for your OS.
 * kubectl. Please, check [kubectl installation guide][]
 * Optional: Minikube. Please, follow [Minikube installation steps][].
 * Optional: [Docker][], if you like to build and push customized images
@@ -71,7 +71,7 @@ Please, be aware that such Elasticsearch cluster configuration could be used onl
 helm repo add search-guard https://helm.search-guard.com
 helm repo update
 helm search "search guard"
-helm install sg-elk search-guard/search-guard-helm
+helm install sg-elk search-guard/search-guard-flx
 ```
 
 Please refer to the [Helm Documentation][] on how to override the chart default
@@ -84,19 +84,19 @@ or by providing them in helm installation command.
 
 Example usage for AWS EBS:
 ```
-helm install --set data.storageClass=gp2 --set master.storageClass=gp2  sg-elk search-guard/search-guard-helm
+helm install --set data.storageClass=gp2 --set master.storageClass=gp2  sg-elk search-guard/search-guard-flx
 ```
 
 
 ### Deploy via GitLab
 
-To deply from Git repository, you should clone the project, update helm dependencies and install it in your cluster.
+To deploy from Git repository, you should clone the project, update helm dependencies and install it in your cluster.
 Optionally read the comments in `values.yaml` and customize them to suit your needs.
 
 ```
-$ git clone git@git.floragunn.com:search-guard/search-guard-helm.git
-$ helm dependency update search-guard-helm
-$ helm install sg-elk search-guard-helm
+$ git clone git@git.floragunn.com:search-guard/search-guard-flx.git
+$ helm dependency update search-guard-flx
+$ helm install sg-elk search-guard-flx
 ```
 
 Please refer to the [Helm Documentation][] on how to override the chart default
@@ -109,7 +109,7 @@ or by providing them in helm installation command.
 
 Example usage for AWS EBS:
 ```
-helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk search-guard-helm
+helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk search-guard-flx
 ```
 
 
@@ -143,7 +143,7 @@ minikube tunnel
 
 Get Ingress address:
 ```
-kubectl get ing --namespace default sg-elk-search-guard-helm-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'
+kubectl get ing --namespace default sg-elk-search-guard-flx-ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'
 ```
 Create records in local etc/hosts 
 ```
@@ -152,7 +152,7 @@ Create records in local etc/hosts
 ```
 Get Admin user 'admin' password:
 ```
-kubectl get secrets sg-elk-search-guard-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d
+kubectl get secrets sg-elk-search-guard-flx-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d
 ```
 Access Kibana `https://kibana.sg-helm.example.com` with `admin/<admin user password>`
 Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
@@ -161,14 +161,14 @@ Access Elasticsearch  `https://es.sg-helm.example.com/_searchguard/health`
 ### Random passwords and certificates
 
 Passwords for admin user (`admin`), kibana user (`kibanaro`), kibana server (`kibanaserver`) and custom users specified in [values.yaml][] are generated randomly on initial deployment.
-They are stored in a secret named `<installation-name>-search-guard-helm-passwd-secret`. 
+They are stored in a secret named `<installation-name>-search-guard-flx-passwd-secret`. 
 
 To get user related password:
-`kubectl get secrets sg-elk-search-guard-helm-passwd-secret -o jsonpath="{.data.SG_<USERNAME_UPPERCASE>_PWD}" | base64 -d`
+`kubectl get secrets sg-elk-search-guard-flx-passwd-secret -o jsonpath="{.data.SG_<USERNAME_UPPERCASE>_PWD}" | base64 -d`
 
 
-You can find the root ca in a secret named `<installation-name>-search-guard-helm-root-ca-secret`, the SG Admin certificate in `<installation-name>-search-guard-helm-admin-cert-secret` and the node certificates in `<installation-name>-search-guard-helm-nodes-cert-secret`.
-Whenever a node pod restarts we create a new certificate and remove the old one from `<installation-name>-search-guard-helm-nodes-cert-secret`.
+You can find the root ca in a secret named `<installation-name>-search-guard-flx-root-ca-secret`, the SG Admin certificate in `<installation-name>-search-guard-flx-admin-cert-secret` and the node certificates in `<installation-name>-search-guard-flx-nodes-cert-secret`.
+Whenever a node pod restarts we create a new certificate and remove the old one from `<installation-name>-search-guard-flx-nodes-cert-secret`.
 
 
 ### Use custom images
@@ -254,7 +254,6 @@ and upgrade fails.
  | common.cluster_name | cluster.name parameter in elasticsearch.yml | searchguard |
  | common.config.* | Additional configuration that will be added to elasticsearch.yml | null |
  | common.debug_job_mode | Feature to disable removal process of completed jobs | false |
- | common.disable_sharding | Feature to disable Elasticsearch cluster sharding during Helm upgrade procedure | false | 
  | common.do_not_fail_on_forbidden | With this mode enabled Search Guard filters all indices from a query a user does not have access to. Thus not security exception is raised. See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden | false |
  | common.docker_registry.email | Email information for Docker account in docker registry | null |
  | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false |
@@ -263,20 +262,12 @@ and upgrade fails.
  | common.docker_registry.server | Docker registry address | null |
  | common.docker_registry.username | Login of docker registry account | null |
  | common.elkversion | Version of Elasticsearch and Kibana in ES cluster | 7.9.1 |
- | common.es_upgrade_order | Feature to enable rolling upgrades of Elasticsearch cluster: upgrading Client and Data nodes, then upgrading Master nodes and then Kibana nodes | false |
- | common.external_ca_certificates_enabled | Feature that enables possibility to upload customer ca signed certificates for each node in the ES cluster | false |
- | common.external_ca_single_certificate_enabled | Feature that enables possibility to upload single customer ca signed certificate for all nodes in the ES cluster | false |
  | common.images.elasticsearch_base_image | Docker image name with Elasticsearch and Search Guard plugin installed | sg-elasticsearch |
  | common.images.kibana_base_image | Docker image name with Kibana and Search Guard plugin installed | sg-kibana |
  | common.images.repository | Docker registry repository for docker images in the ES cluster | docker.io |
  | common.images.provider | Docker registry provider of docker images in the ES cluster | floragunncom |
  | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin |
  | common.images.sg_specific | The option to specify if custom docker image source to be used  only for SG images or for third party images as well | true |
- | common.ingressNginx.enabled | Enabling NGINX Ingress that exposes Elasticsearch and Kibana services outside the ES cluster | true |
- | common.ingressNginx.ingressCertificates | Ingress Certificates types: "self-signed" for auto-generated with TLS tool self-signed certificates, "external" for customer ca signed certificates | self-signed |
- | common.ingressNginx.ingressElasticsearchDomain | Elasticsearch service domain that is exposed outside the ES cluster | es.sg-helm.example.com |
- | common.ingressNginx.ingressKibanaDomain | Kibana service domain that is exposed outside the ES cluster | kibana.sg-helm.example.com |
- | common.ingressNginx.install_dependency | Option to enable/disable ingress-nginx subcharts installation | true |
  | common.nodes_dn | Certificate DN of the nodes in the ES cluster | CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
  | common.plugins | List of additional Elasticsearch plugins to be installed on the nodes of the ES cluster | null |
  | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. | false |
@@ -346,7 +337,7 @@ and upgrade fails.
 ## License
 
 ```
-Copyright 2021 floragunn GmbH
+Copyright 2021-2023 floragunn GmbH
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -363,16 +354,16 @@ limitations under the License.
 
 [contact with us]: https://search-guard.com/contacts/
 [Docker]: https://docs.docker.com/engine/install/
-[docker folder]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/docker
-[example with custom configuration]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_sg_config
-[example with custom domains]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_service_certs
+[docker folder]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/docker
+[example with custom configuration]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_sg_config
+[example with custom domains]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_service_certs
 [Helm Documentation]: https://helm.sh/docs/intro/using_helm/
 [Helm installation steps]: https://helm.sh/docs/intro/install/
 [kubectl installation guide]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [Minikube installation steps]: https://minikube.sigs.k8s.io/docs/start/
-[setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_ca
-[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_custom_elasticsearch_certs
-[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/search-guard/search-guard-helm/-/tree/master/examples/setup_single_elasticsearch_cert
+[setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_ca
+[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_elasticsearch_certs
+[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_single_elasticsearch_cert
 [Storage type]: https://kubernetes.io/docs/concepts/storage/storage-classes/
-[values.yaml]: https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/values.yaml
-[./tools/sg_aws_kops.sh]: https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/tools/sg_aws_kops.sh
+[values.yaml]: https://git.floragunn.com/search-guard/search-guard-flx/-/blob/master/values.yaml
+[./tools/sg_aws_kops.sh]: https://git.floragunn.com/search-guard/search-guard-flx/-/blob/master/tools/sg_aws_kops.sh
