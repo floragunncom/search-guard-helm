@@ -60,6 +60,9 @@ spec:
           
               set -x
 
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+
               kubectl --namespace {{ .Release.Namespace }} get secrets | grep {{ template "searchguard.fullname" . }}-passwd-secret 
               RET="$?"
 

@@ -44,7 +44,7 @@ data:
     node.name: ${NODE_NAME}
     node.ingest: ${NODE_INGEST:true}
 
-    path.data: /storage/data    
+    #path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
     {{- $master_name := printf "- %s-%s-%s" .Release.Name .Chart.Name "master" }}

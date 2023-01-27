@@ -27,6 +27,11 @@ common:
   #  email: info@domain.com
   #  imagePullSecret: <your-custom-secret>
 
+  # Kubelet image pull policy
+  # https://kubernetes.io/docs/concepts/containers/images/
+  #pullPolicy: Always
+  pullPolicy: IfNotPresent
+
   # Elasticsearch and Kibana version
   # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.17.8"
@@ -427,8 +432,5 @@ rbac:
   create: true
 
 
-# Kubelet image pull policy
-# https://kubernetes.io/docs/concepts/containers/images/
-#pullPolicy: Always
-pullPolicy: IfNotPresent
+
   

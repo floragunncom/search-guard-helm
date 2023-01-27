@@ -152,11 +152,7 @@ spec:
 
                     curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X POST "https://$HOSTNAME:9200/_flush/synced?pretty" #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
 
-        securityContext:
-          capabilities:
-            add:
-              - IPC_LOCK
-              - SYS_RESOURCE
+{{ include "searchguard.security-context.least" . | indent 8 }}
         envFrom:
         - secretRef:
             name: {{ template "searchguard.fullname" . }}-passwd-secret
@@ -212,8 +208,12 @@ spec:
         resources:
 {{ toYaml .Values.data.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /storage/
+        - mountPath: /usr/share/elasticsearch/data
           name: storage
+          subPath: data
+        - mountPath: /usr/share/elasticsearch/logs
+          name: storage
+          subPath: logs
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml

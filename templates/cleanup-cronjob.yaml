@@ -42,6 +42,7 @@
 #               command:
 #                 - bash
 #                 - -c
+#                 - if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
 #                 - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
 #                 - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
 #           restartPolicy: Never

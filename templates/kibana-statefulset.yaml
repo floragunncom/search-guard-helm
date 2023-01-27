@@ -115,6 +115,9 @@ spec:
             - bash
             - -c
             - |
+                
+                if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+                id -u
                 set -e
                 until kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
                   echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
@@ -137,11 +140,7 @@ spec:
       {{ end }}
       containers:
       - name: kibana
-        securityContext:
-          capabilities:
-            add:
-              - IPC_LOCK
-              - SYS_RESOURCE
+{{ include "searchguard.security-context.least" . | indent 8 }}
       {{ if .Values.common.xpack_basic }}
         image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
       {{ else }}
@@ -196,8 +195,8 @@ spec:
         resources:
 {{ toYaml .Values.kibana.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /storage/
-          name: storage
+        #- mountPath: /storage/
+        #  name: storage
         - mountPath: /usr/share/kibana/config/kibana.yml
           name: config
           subPath: kibana.yml
@@ -218,12 +217,12 @@ spec:
           name: config
         - name: kubectl
           emptyDir: {}
-  volumeClaimTemplates:
-    - metadata:
-        name: storage
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: {{ .Values.kibana.storageClass }}
-        resources:
-          requests:
-            storage: {{ .Values.kibana.storage }}
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: storage
+  #     spec:
+  #       accessModes: [ "ReadWriteOnce" ]
+  #       storageClassName: {{ .Values.kibana.storageClass }}
+  #       resources:
+  #         requests:
+  #           storage: {{ .Values.kibana.storage }}

@@ -52,6 +52,7 @@ exec:
     - |
         
         shopt -s dotglob
+        if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
         rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
 
@@ -66,6 +67,7 @@ init container template
 - name: searchguard-generate-certificates
   image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
+{{ include "searchguard.security-context.least" . | indent 2 }}   
   volumeMounts:
     - name: kubectl
       subPath: kubectl
@@ -88,6 +90,9 @@ init container template
     - bash
     - -c
     - |
+        
+        if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+        id -u
         set -e
 
         #cp /usr/bin/kubectl /kubectl/kubectl
@@ -197,11 +202,7 @@ init container template
   image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
-  securityContext:
-    capabilities:
-      add:
-        - IPC_LOCK
-        - SYS_RESOURCE
+{{ include "searchguard.security-context.least" . | indent 2 }}   
   resources:
     limits:
       cpu: "500m"
@@ -212,6 +213,8 @@ init container template
   command:
     - "sh"
     - "-c"
+    - id -u
+    - if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
     - "{{- range .Values.common.plugins }}elasticsearch-plugin install -b {{ . }};{{- end }} true"
   env:
   - name: NODE_NAME
@@ -224,30 +227,16 @@ init container template
       cpu: 100m
       memory: 256Mi
   volumeMounts:
-  - mountPath: /storage/
+  - mountPath: /usr/share/elasticsearch/data
     name: storage
+    subPath: data
+  - mountPath: /usr/share/elasticsearch/logs
+    name: storage
+    subPath: logs
   - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
     name: config
     subPath: elasticsearch.yml
 {{- end }}
-- name: permissions
-{{- if not .sg_specific }}
-  image: {{ .Values.common.images.repository }}/library/busybox
-{{- else }}
-  image: docker.io/library/busybox
-{{- end }}
-  imagePullPolicy: {{ .Values.common.pullPolicy }}
-  command: ["sh", "-c", "chown -R 1000: /storage/; true"]
-  resources:
-    limits:
-      cpu: "500m"
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 256Mi
-  volumeMounts:
-  - mountPath: /storage
-    name: storage
 {{- end -}}
 
 {{- define "searchguard.authorization.apiVersion" -}}
@@ -322,8 +311,30 @@ image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider 
 - name: init-kubectl
 {{ include "searchguard.kubectl-image" . | indent 2 }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
+{{ include "searchguard.security-context.least" . | indent 2 }}
   volumeMounts:
   - name: kubectl
     mountPath: /data
-  command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
+  command: 
+  - bash
+  - -c
+  - | 
+      set -e
+
+      id -u
+      if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+      cp -v /usr/bin/kubectl /data/kubectl
+
+{{- end -}}
+
+{{- define "searchguard.security-context.least" -}}
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 {{- end -}}

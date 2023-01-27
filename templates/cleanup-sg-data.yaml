@@ -57,6 +57,8 @@
 #             - bash
 #             - -c
 #             - |
+#
+#                 if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
 # {{ if .Values.common.remove_pvc_on_delete }}
 #                 kubectl --namespace {{ .Release.Namespace }} delete $$(kubectl --namespace {{ .Release.Namespace }} get pvc -l component={{ template "searchguard.fullname" . }} -o name)
 # {{ end }}

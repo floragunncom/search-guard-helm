@@ -104,11 +104,7 @@ spec:
       {{ end }}
       containers:
       - name: elasticsearch
-        securityContext:
-          capabilities:
-            add:
-              - IPC_LOCK
-              - SYS_RESOURCE
+{{ include "searchguard.security-context.least" . | indent 8 }}        
       {{ if .Values.common.xpack_basic }}
         image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
       {{ else }}
@@ -175,8 +171,12 @@ spec:
         resources:
 {{ toYaml .Values.client.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /storage/
+        - mountPath: /usr/share/elasticsearch/data
           name: storage
+          subPath: data
+        - mountPath: /usr/share/elasticsearch/logs
+          name: storage
+          subPath: logs
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml

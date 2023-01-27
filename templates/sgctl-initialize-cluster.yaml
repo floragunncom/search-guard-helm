@@ -55,6 +55,9 @@ spec:
               
               set -x
 
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+
               while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
                 echo "Wait for $DISCOVERY_SERVICE service to be ready";
                 sleep 10 ;
