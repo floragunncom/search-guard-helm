@@ -63,37 +63,44 @@ data:
 ######## sg_blocks.yml ########
   sg_blocks.yml: |-
     ---
+{{ if .Values.common.blocks }}
+{{ toYaml .Values.common.blocks | indent 4 }}
+{{ else if not .Values.common.blocks }}
     {}
+{{ end }}
 
 ######## sg_frontend_authc.yml ########
   sg_frontend_authc.yml: |-
     ---
+{{ if .Values.common.frontend_authc }}
+{{ toYaml .Values.common.frontend_authc | indent 4 }}
+{{ else if not .Values.common.frontend_authc }}
     default:
       debug: false
       auth_domains:
       - type: basic
-      - type: saml
-        enabled: false
-        label: "SAML Login"
-        saml.idp.metadata_url: "https://your.idp.example.com/saml-metadata.xml"
-        saml.idp.entity_id: urn:saml-metadata-entity-id
-        saml.sp.entity_id: service-provider-id
-        user_mapping.roles.from: saml_response.roles
-      - type: oidc
-        enabled: false
-        label: "OIDC Login"
-        oidc.client_id: "your-oidc-client-id"
-        oidc.client_secret: "your-oidc-client-secret"
-        oidc.idp.openid_configuration_url: "https://your.idp.example.com/auth/realms/master/.well-known/openid-configuration"
-        user_mapping.roles.from: oidc_id_token.roles
+{{ end }}
+
+######## sg_auth_token_service.yml ########
+  sg_auth_token_service.yml: |-
+    ---
+{{ if .Values.common.auth_token_service }}
+{{ toYaml .Values.common.auth_token_service | indent 4 }}
+{{ else if not .Values.common.auth_token_service }}
+    enabled: false 
+{{ end }}
 
 ######## sg_frontend_multi_tenancy.yml ########
   sg_frontend_multi_tenancy.yml: |-
     ---
+{{ if .Values.common.frontend_multi_tenancy }}
+{{ toYaml .Values.common.frontend_multi_tenancy | indent 4 }}
+{{ else if not .Values.common.frontend_multi_tenancy }}
     default:
       enabled: true
       index: .kibana
       server_user: kibanaserver
+{{ end }}
 
 ######## sg_roles.yml ########
   sg_roles.yml: |-
@@ -174,14 +181,17 @@ data:
 ######## sg_action_groups.yml ########
   sg_action_groups.yml: |-
     ---
-    # Define your own action groups here
-    # or use the built-in groups
-    # See https://docs.search-guard.com/latest/action-groups
+{{ if .Values.common.action_groups }}
+{{ toYaml .Values.common.action_groups | indent 4 }}
+{{ else if not .Values.common.action_groups }}
     {}
+{{ end }}
 
 ######## sg_tenants.yml ########
   sg_tenants.yml: |-
     ---
-    # Define your tenants here
-    # See https://docs.search-guard.com/latest/kibana-multi-tenancy
+{{ if .Values.common.tenants }}
+{{ toYaml .Values.common.tenants | indent 4 }}
+{{ else if not .Values.common.tenants }}
     {}
+{{ end }}

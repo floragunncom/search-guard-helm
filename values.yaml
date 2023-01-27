@@ -62,7 +62,7 @@ common:
   #  when set to 'true'
   sg_enterprise_modules_enabled: true
   
-  # Run automatically sgctl whenever neccessary 
+  # Run automatically sgctl whenever necessary 
   update_sgconfig_on_change: true
 
   # Restart pods automatically when their configuration was changed
@@ -100,14 +100,23 @@ common:
   # Will be added to all elasticsearch.yml files on all nodes
 
 
-#  config:
-#    http:
-#      compression: false
-#      cors:
-#        enabled: false
-#        allow-origin: "*"
-#    index.codec: best_compression
+  config:
+    #logger.org.elasticsearch: "ERROR"
+    #logger.com.floragunn: "ERROR"
 
+    #memory_lock not necessary because swap is off on K8S
+    #bootstrap.memory_lock: false
+    
+    #http.compression: false
+    #http.cors.enabled: false
+    #http.cors.allow-origin: "*"    
+    #index.codec: best_compression
+
+    ingest.geoip.downloader.enabled: false
+    
+    searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
+    searchguard.check_snapshot_restore_write_privileges: true
+    searchguard.audit.type: internal_elasticsearch
 
 #  # Configure additional users (maps to sg_internal_users.yml)
 #  users:
@@ -142,6 +151,57 @@ common:
   authz:
     debug: false
     ignore_unauthorized_indices.enabled: true
+
+  frontend_authc:
+    default:
+      debug: false
+      auth_domains:
+      - type: basic
+      - type: saml
+        enabled: false
+        label: "SAML Login"
+        saml.idp.metadata_url: "https://your.idp.example.com/saml-metadata.xml"
+        saml.idp.entity_id: urn:saml-metadata-entity-id
+        saml.sp.entity_id: service-provider-id
+        user_mapping.roles.from: saml_response.roles
+      - type: oidc
+        enabled: false
+        label: "OIDC Login"
+        oidc.client_id: "your-oidc-client-id"
+        oidc.client_secret: "your-oidc-client-secret"
+        oidc.idp.openid_configuration_url: "https://your.idp.example.com/auth/realms/master/.well-known/openid-configuration"
+        user_mapping.roles.from: oidc_id_token.roles
+
+  # blocks:
+  #   demo_ip_blocked:
+  #     type: "ip"
+  #     verdict: "disallow"
+  #     value: ["172.16.0.254", "172.16.0.230"]
+  #     description: "Demo IP blocked, i.e. this specific IP gets blocked"
+
+  frontend_multi_tenancy:
+    default:
+      enabled: true
+      index: .kibana
+      server_user: kibanaserver
+
+
+  action_groups:
+    MY_ACTION_GROUP:
+      allowed_actions:
+        - "indices:data/read/search*"
+        - "indices:data/read/msearch*"
+
+  tenants:
+    human_resources:
+    description: "The human resources tenant"
+
+  # auth_token_service:
+  #   enabled: true
+  #   jwt_signing_key_hs512: "..."
+  #   jwt_encryption_key_a256kw: "..."   # Omit this to have unencrypted keys
+  #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
+  #   max_tokens_per_user: 100  
 
   # If you want any plugins installed, give them here as a list. They will be
   # passed to elasticsearch-plugin install -b {line here}

@@ -36,9 +36,7 @@ data:
     xpack.monitoring.collection.enabled: true
 {{ end }}
     network.host: "0.0.0.0"
-    #network.host: ${NODE_NAME}
-    #TODO support memory_lock
-    bootstrap.memory_lock: false
+
     cluster.name: {{ .Values.common.cluster_name }}
 
     node.master: ${NODE_MASTER:true}
@@ -49,29 +47,20 @@ data:
     path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
-    {{- if eq (.Values.common.elkversion | substr 0 1) "7" }}
     {{- $master_name := printf "- %s-%s-%s" .Release.Name .Chart.Name "master" }}
     cluster.initial_master_nodes:
       {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
       {{ $master_name }}-{{ $ordinal }}
       {{- end }}
     discovery.seed_hosts: ${DISCOVERY_SERVICE:}
-    {{ else }}
-    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
-    #(master/2)+1
-    discovery.zen.minimum_master_nodes: {{ add (div .Values.master.replicas  2)  1 }}
-    {{ end }}
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
-    searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
     searchguard.authcz.admin_dn:
 {{ toYaml .Values.common.admin_dn | indent 6 }}
     searchguard.nodes_dn:
 {{ toYaml .Values.common.nodes_dn | indent 6 }}  
     searchguard.allow_unsafe_democertificates: false
     searchguard.allow_default_init_sgindex: false
-    searchguard.check_snapshot_restore_write_privileges: true
-    searchguard.audit.type: internal_elasticsearch
     searchguard.ssl.http.enabled: true
     searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
     searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem

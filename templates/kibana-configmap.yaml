@@ -36,7 +36,7 @@ data:
 {{ end }}
 
     server.name: kibana
-    server.host: "0"
+    server.host: "0.0.0.0"
 
     elasticsearch.hosts: ["https://${DISCOVERY_SERVICE}:9200"]
 
@@ -53,7 +53,7 @@ data:
 
     # Set to false to have a complete disregard for the validity of the SSL
     # certificate.
-    #elasticsearch.ssl.verificationMode: certificate
+    elasticsearch.ssl.verificationMode: "full"
 
     # If you would like to send the log output to a file you can set the path below.
     logging.dest: stdout
