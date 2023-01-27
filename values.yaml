@@ -317,9 +317,87 @@ kibana:
 
   # Defines the service type for all Kibana outward-facing (non-discovery) services.
   # WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
-  serviceType: ClusterIP
+  #serviceType: ClusterIP
   #serviceType: NodePort
-  #serviceType: LoadBalancer
+  serviceType: LoadBalancer
+
+  # static node port. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  #nodePort: 30007
+
+  # load balancer ip. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  #loadBalancerIp: 192.0.2.127
+
+  # AWS specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  #service_annotations:
+    #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012
+    #service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
+    #service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+    # Specifies whether access logs are enabled for the load balancer
+    #service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+    # The interval for publishing the access logs. You can specify an interval of either 5 or 60 (minutes).
+    #service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
+    # The name of the Amazon S3 bucket where the access logs are stored
+    #service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "my-bucket"
+    # The logical hierarchy you created for your Amazon S3 bucket, for example `my-bucket-prefix/prod`
+    #service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "my-bucket-prefix/prod"
+    #service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
+    #service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "60"
+
+    # The time, in seconds, that the connection is allowed to be idle (no data has been sent
+    # over the connection) before it is closed by the load balancer
+    #service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+
+    # Specifies whether cross-zone load balancing is enabled for the load balancer
+    #service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+    # A comma-separated list of key-value pairs which will be recorded as
+    # additional tags in the ELB.
+    #service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "environment=prod,owner=devops"
+
+    # The number of successive successful health checks required for a backend to
+    # be considered healthy for traffic. Defaults to 2, must be between 2 and 10
+    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: ""
+
+    # The number of unsuccessful health checks required for a backend to be
+    # considered unhealthy for traffic. Defaults to 6, must be between 2 and 10
+    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
+
+    # The approximate interval, in seconds, between health checks of an
+    # individual instance. Defaults to 10, must be between 5 and 300
+    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "20"
+
+    # The amount of time, in seconds, during which no response means a failed
+    # health check. This value must be less than the service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval
+    # value. Defaults to 5, must be between 2 and 60
+    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+
+    # A list of existing security groups to be configured on the ELB created. Unlike the annotation
+    # service.beta.kubernetes.io/aws-load-balancer-extra-security-groups, this replaces all other
+    # security groups previously assigned to the ELB and also overrides the creation
+    # of a uniquely generated security group for this ELB.
+    # The first security group ID on this list is used as a source to permit incoming traffic to
+    # target worker nodes (service traffic and health checks).
+    # If multiple ELBs are configured with the same security group ID, only a single permit line
+    # will be added to the worker node security groups, that means if you delete any
+    # of those ELBs it will remove the single permit line and block access for all ELBs that shared the same security group ID.
+    # This can cause a cross-service outage if not used properly
+    #service.beta.kubernetes.io/aws-load-balancer-security-groups: "sg-53fae93f"
+
+    # A list of additional security groups to be added to the created ELB, this leaves the uniquely
+    # generated security group in place, this ensures that every ELB
+    # has a unique security group ID and a matching permit line to allow traffic to the target worker nodes
+    # (service traffic and health checks).
+    # Security groups defined here can be shared between services.
+    #service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-53fae93f,sg-42efd82e"
+
+    # A comma separated list of key-value pairs which are used
+    # to select the target nodes for the load balancer
+    #service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
+
+
   # Additional config which will be appended to kibana.yml
   config:
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]

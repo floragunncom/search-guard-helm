@@ -26,6 +26,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}
     role: kibana
+  {{ if and .Values.kibana.service_annotations (eq .Values.kibana.serviceType "LoadBalancer")}}
+  annotations:
+    {{- .Values.kibana.service_annotations | toYaml | nindent 4 }}
+  {{ end }}
+
 spec:
   type: {{ .Values.kibana.serviceType }}
   selector:
@@ -36,4 +41,13 @@ spec:
     port: {{ .Values.kibana.httpPort }}
     targetPort: 5601
     protocol: TCP
+    {{ if and .Values.kibana.nodePort (eq .Values.kibana.serviceType "NodePort") }}
+    nodePort: {{ .Values.kibana.nodePort }}
+    {{ end }}
+{{ if and .Values.kibana.loadBalancerIp (eq .Values.kibana.serviceType "LoadBalancer") }}
+status:
+  loadBalancer:
+    ingress:
+    - ip: {{ .Values.kibana.loadBalancerIp }}
+{{ end }}    
 
