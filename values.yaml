@@ -206,13 +206,7 @@ common:
   #   jwt_signing_key_hs512: "..."
   #   jwt_encryption_key_a256kw: "..."   # Omit this to have unencrypted keys
   #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
-  #   max_tokens_per_user: 100  
-
-  # If you want any plugins installed, give them here as a list. They will be
-  # passed to elasticsearch-plugin install -b {line here}
-  # Do not add the searchguard plugin here, because its already installed in the main image
-  #plugins:
-  #  - analysis-phonetic
+  #   max_tokens_per_user: 100
 
 # Client/ingest nodes can execute pre-processing pipelines, composed of
 # one or more ingest processors. Depending on the type of operations performed

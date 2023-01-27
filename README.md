@@ -185,10 +185,7 @@ When you are ready with custom Docker images, please refer to `common.images` an
 to point to your custom docker images location.
 
 ### Install plugins
-You can install all required plugins for your Elasticsearch nodes
-by providing plugins as a list in `common.plugins` section in [values.yaml][] 
-The plugins from this list will be passed to `elasticsearch-plugin install -b {line here}`.
-Do not add the Search Guard plugins to the list as they are already installed by default in the images.
+These need to be baked into the docker image
 
 
 ### Custom configuration for Search Guard, Elasticsearch and Kibana
@@ -269,7 +266,6 @@ and upgrade fails.
  | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin |
  | common.images.sg_specific | The option to specify if custom docker image source to be used  only for SG images or for third party images as well | true |
  | common.nodes_dn | Certificate DN of the nodes in the ES cluster | CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
- | common.plugins | List of additional Elasticsearch plugins to be installed on the nodes of the ES cluster | null |
  | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. | false |
  | common.restart_pods_on_config_change | Feature to restart pods automatically when their configuration was changed | true |
  | common.roles | Additional roles configuration in sg_roles.yml | null |

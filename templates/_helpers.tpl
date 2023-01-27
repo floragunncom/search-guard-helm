@@ -192,51 +192,6 @@ init container template
     privileged: true
 
 {{ include "searchguard.generate-certificates-init-container" . }}
-
-
-{{- if .Values.common.plugins }}
-- name: es-plugin-install
-{{ if .Values.common.xpack_basic }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
-{{ else }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
-{{ end }}
-  imagePullPolicy: {{ .Values.common.pullPolicy }}
-{{ include "searchguard.security-context.least" . | indent 2 }}   
-  resources:
-    limits:
-      cpu: "500m"
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 256Mi
-  command:
-    - "sh"
-    - "-c"
-    - id -u
-    - if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
-    - "{{- range .Values.common.plugins }}elasticsearch-plugin install -b {{ . }};{{- end }} true"
-  env:
-  - name: NODE_NAME
-    value: es-plugin-install
-  resources:
-    limits:
-      cpu: "500m"
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 256Mi
-  volumeMounts:
-  - mountPath: /usr/share/elasticsearch/data
-    name: storage
-    subPath: data
-  - mountPath: /usr/share/elasticsearch/logs
-    name: storage
-    subPath: logs
-  - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
-    name: config
-    subPath: elasticsearch.yml
-{{- end }}
 {{- end -}}
 
 {{- define "searchguard.authorization.apiVersion" -}}
