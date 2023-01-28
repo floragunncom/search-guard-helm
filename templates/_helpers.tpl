@@ -177,6 +177,7 @@ init container template
 {{- end -}}
 
 {{- define "searchguard.init-containers" -}}
+{{ if .Values.common.init_sysctl }}
 - name: init-sysctl
   image: {{ .Values.common.images.repository }}/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -190,7 +191,7 @@ init container template
       memory: 256Mi
   securityContext:
     privileged: true
-
+{{ end }}
 {{ include "searchguard.generate-certificates-init-container" . }}
 {{- end -}}
 

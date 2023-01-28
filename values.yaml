@@ -89,6 +89,8 @@ common:
   #By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
   debug_job_mode: false
 
+  init_sysctl: true
+
   # Defines the service type for all elasticsearch outward-facing (non-discovery) services.
   # This does not apply to Kibana.
   # WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
