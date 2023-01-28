@@ -148,8 +148,6 @@ spec:
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
-          postStart:
-{{ include "searchguard.remove-demo-certs" . | indent 12 }}
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         envFrom:

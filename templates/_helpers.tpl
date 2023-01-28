@@ -39,9 +39,9 @@ exec:
     - bash
     - -c
     - |
-        
         kubectl --namespace {{ .Release.Namespace }} patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
         kubectl --namespace {{ .Release.Namespace }} patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+
 {{- end -}}
 
 {{- define "searchguard.remove-demo-certs" -}}
@@ -49,10 +49,8 @@ exec:
   command:
     - bash
     - -c
-    - |
-        
+    - | 
         shopt -s dotglob
-        if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
         rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
 
