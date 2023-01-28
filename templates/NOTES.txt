@@ -34,16 +34,17 @@ The Search Guard FLX protected Elasticsearch cluster has been installed.
         https://KI_NODE_IP:KI_NODE_PORT
 {{ else if contains "LoadBalancer" .Values.common.serviceType }}
     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-          You can watch the status of by running 'kubectl get svc -w {{ template "searchguard.fullname" . }}'
+          You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "searchguard.fullname" . }}'
 
-    * Get address of LoadBalancer service
+    * Get address of LoadBalancer services
 
         export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "searchguard.fullname" . }}-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
+        export KIBANA_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "searchguard.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}')
 
     * Access the services:
 
         - Elasticsearch at https://$SERVICE_IP:9200
-        - Kibana at https://$SERVICE_IP:5601
+        - Kibana at https://$KIBANA_IP:5601
 
 {{ else if contains "ClusterIP"  .Values.common.serviceType }}
 
@@ -73,7 +74,7 @@ The Search Guard FLX protected Elasticsearch cluster has been installed.
         Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
 
         Username: kibanaserver
-        Password: $(kubectl get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
+        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
 
     NOTE: Please, give Helm charts few minutes to complete startup process for all pods. This is expected that Kibana pod startup time is higher than other pods.
 
