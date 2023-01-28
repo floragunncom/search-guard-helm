@@ -6,8 +6,13 @@ NSP="$1"
 CONTEXT="$(kubectl config current-context)"
 
 if [ "$4" != "nocontext" ]; then
+  if [ "$CONTEXT" != "multinode" ] && [ "$CONTEXT" != "kind-kind" ]; then
+    echo "Assume AWS ($CONTEXT)"
+    OVERRIDE="$SCRIPT_DIR/initial_values_aws.yaml"
+  else
     echo "Assume Minikube ($CONTEXT)"
     OVERRIDE="$SCRIPT_DIR/initial_values_minikube.yaml"
+  fi
 else
   OVERRIDE="$SCRIPT_DIR/empty.yaml"
   echo "${CONTEXT}, no override"
@@ -16,6 +21,8 @@ fi
 if [ -z "$CI" ]; then
   kill -9 $(pgrep -d ' ' -f "kubectl port-forward")  > /dev/null 2>&1
 fi
+
+
 kubectl delete jobs -n ${NSP} -l app=sg-elk-search-guard-flx > /dev/null 2>&1
 kubectl delete secrets -n ${NSP} -l app=sg-elk-search-guard-flx > /dev/null 2>&1
 helm del sg-elk --wait --timeout 30m0s -n ${NSP}
