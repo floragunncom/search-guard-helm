@@ -259,7 +259,7 @@ init container template
 {{- end -}}
 
 {{- define "searchguard.kubectl-image" -}}
-image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kubectl_base_image }}:{{ trimPrefix "v" .Capabilities.KubeVersion.Version  }}
+image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kubectl_base_image }}:{{ trimPrefix "v" (split "-" .Capabilities.KubeVersion.Version)._0 }}
 {{- end -}}
 
 {{- define "searchguard.kubectl-init-container" -}}
