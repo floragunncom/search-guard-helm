@@ -14,36 +14,64 @@
   limitations under the License.
 */}}
 
-# apiVersion: {{ template "searchguard.cronjob.apiVersion" . }}
-# kind: CronJob
-# metadata:
-#   name: "{{ template "searchguard.fullname" . }}-cleanup-job"
-# spec:
-#   schedule: "*/5 * * * *"
-#   successfulJobsHistoryLimit: 1
-#   failedJobsHistoryLimit: 1
-#   concurrencyPolicy: Forbid
-#   suspend: {{ .Values.common.debug_job_mode }}
-#   jobTemplate:
-#     spec:
-#       template:
-#         spec:
-#           serviceAccountName: {{ template "searchguard.fullname" . }}
-#           containers:
-#             - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
-#               image: {{ .Values.common.images.repository }}/busybox
-#               resources:
-#                 limits:
-#                   cpu: "500m"
-#                   memory: 256Mi
-#                 requests:
-#                   cpu: 100m
-#                   memory: 256Mi
-#               command:
-#                 - bash
-#                 - -c
-#                 - if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
-#                 - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
-#                 - kubectl --namespace {{ .Release.Namespace }} delete job $(kubectl --namespace {{ .Release.Namespace }} get job -o=jsonpath='{.items[?(@.status.failed>0)].metadata.name}')
-#           restartPolicy: Never
-#       backoffLimit: 1
+apiVersion: {{ template "searchguard.cronjob.apiVersion" . }}
+kind: CronJob
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-cleanup-job"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ template "searchguard.fullname" . }}
+          containers:
+            - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
+{{ include "searchguard.kubectl-image" . | indent 14 }}
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1000
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                limits:
+                  cpu: 25m
+                  memory: 64Mi
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+              command:
+                - /bin/bash
+                - -c
+                - |
+
+                    set -e
+
+                    if [ "{{ .Values.common.debug_job_mode }}" = "true" ]; then
+                      echo "Debug mode is on, will not delete any jobs"
+                    else
+
+                      echo "Debug mode is off, will delete succeeded jobs"
+
+                      SUCCEEDED_JOBS=$(kubectl get job -n {{ .Release.Namespace }} -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
+
+                      if [ "$SUCCEEDED_JOBS" != "" ]; then
+                        kubectl delete job $SUCCEEDED_JOBS -n {{ .Release.Namespace }}
+                      fi
+                    fi
+          restartPolicy: Never
+      backoffLimit: 1
