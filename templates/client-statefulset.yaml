@@ -31,7 +31,7 @@ spec:
   serviceName: {{ template "searchguard.fullname" . }}-client
   replicas: {{ .Values.client.replicas }}
   updateStrategy:
-    type: RollingUpdate
+    type: OnDelete
   podManagementPolicy: Parallel
   selector:
     matchLabels:

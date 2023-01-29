@@ -88,12 +88,17 @@ init container template
     - bash
     - -c
     - |
+
+
+        #sed -i 's/appender.rolling.layout.type = ESJsonLayout/appender.rolling.layout.type = PatternLayout/g' /usr/share/elasticsearch/config/log4j2.properties
+        #sed -i '/appender.rolling.layout.type_name = server/d' /usr/share/elasticsearch/config/log4j2.properties
+        #echo "" >> /usr/share/elasticsearch/config/log4j2.properties
+        #echo 'appender.rolling.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %.-10000m%n' >> /usr/share/elasticsearch/config/log4j2.properties
         
         if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
         id -u
         set -e
 
-        #cp /usr/bin/kubectl /kubectl/kubectl
         until kubectl get secrets {{ template "searchguard.fullname" . }}-admin-cert-secret; do
             echo 'Wait for Admin certificate secrets to be generated or uploaded';
             sleep 10 ;

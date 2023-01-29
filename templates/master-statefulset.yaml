@@ -32,7 +32,7 @@ spec:
   serviceName: {{ template "searchguard.fullname" . }}-master
   replicas: {{ .Values.master.replicas }}
   updateStrategy:
-    type: RollingUpdate
+    type: OnDelete
   podManagementPolicy: Parallel
   selector:
     matchLabels:
@@ -157,10 +157,13 @@ spec:
           name: http
           protocol: TCP
         readinessProbe:
-          tcpSocket:
-            port: transport
+          httpGet:
+            path: /_searchguard/health?mode=nonstrict
+            port: http
+            scheme: HTTPS
           initialDelaySeconds: 20
-          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 30
         livenessProbe:
           tcpSocket:
             port: transport

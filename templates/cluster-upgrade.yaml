@@ -1,0 +1,166 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-cluster-upgrade"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: sgctl
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      name: "{{ template "searchguard.fullname" . }}-cluster-upgrade"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: sgctl
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      securityContext:
+        fsGroup: 1000
+# include "searchguard.imagePullSecret" . | indent 6 #
+      initContainers:
+{{ include "searchguard.kubectl-init-container" . | indent 8 }}
+      containers:
+        - name: cluster-upgrade
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+          - name: DISCOVERY_SERVICE
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+{{ include "searchguard.kubectl-image" . | indent 10 }}
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: secret-volume
+              readOnly: true
+              mountPath: /sgcerts/
+            - name: kubectl
+              subPath: kubectl
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
+          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+                echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
+
+                #curl "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout={{ .Values.common.cluster_status_timeout }}&pretty"
+                #checkExitCode
+
+                function waitForStatefulSet() {
+                  SETNAME="$1"
+                  
+                  STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                  REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+                  while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
+                    echo "$RR out of $REPLICAS replicas are ready for $SETNAME, wait ... ($CR/$UR)"
+                    sleep 3
+                    STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                    REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+                    CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                    UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+                    
+
+                    # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                    # and can be removed if the issue is fixed.
+
+                    echo ""
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                    {
+                      "transient": {
+                        "logger.dummy.dummy": "ERROR"
+                      }
+                    }'
+                    echo ""
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                    {
+                      "transient": {
+                        "logger.dummy.dummy": null
+                      }
+                    }'
+                    echo ""
+                    # end workaround
+
+                  done
+
+                  echo "$RR out of $REPLICAS replicas are ready for $SETNAME, proceed ..."
+
+                
+                }
+
+                function updateIfRequired() {
+
+                  SETNAME="$1"
+
+                  # check if we need to update the stateful set
+                  # this is the case when .status.currentRevision != .status.updateRevision
+                  STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+                  if [ "$CR" != "$UR" ]; then
+                    echo "Update needed for $SETNAME"
+                    if [ "$SETNAME" == "kibana" ]; then
+                      kubectl scale --replicas=1 statefulset/{{ template "searchguard.fullname" . }}-kibana -n {{ .Release.Namespace }} 
+                    fi
+
+                    kubectl patch statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
+                    waitForStatefulSet "$SETNAME"
+                    
+                    if [ "$SETNAME" == "kibana" ]; then
+                      kubectl scale --replicas={{ .Values.kibana.replicas }} statefulset/{{ template "searchguard.fullname" . }}-kibana -n {{ .Release.Namespace }}
+                    fi
+                    
+                    kubectl patch statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
+                  else
+                    echo "No Update needed for $SETNAME"
+                  fi
+
+                }
+
+                updateIfRequired "client"
+                updateIfRequired "data"
+                updateIfRequired "master"
+
+                if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
+                updateIfRequired "kibana"
+                fi
+
+                echo "Cluster ugrade finished"
+                exit 0
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+        - name: kubectl
+          emptyDir: {}

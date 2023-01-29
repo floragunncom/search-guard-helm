@@ -15,6 +15,22 @@ metadata:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-6"
 rules:
-  - apiGroups: ["","batch", "apps","policy","extensions"]
-    resources: ["pods","persistentvolumes","persistentvolumeclaims","configmaps","secrets","deployments","replicasets","jobs","cronjobs","ingresses","statefulsets","services","replicationcontrollers"]
-    verbs: ["*"]
+    #"get","list", "watch"
+  - apiGroups: ["","apps","batch"]
+    resources: ["pods","persistentvolumes","persistentvolumeclaims","configmaps","services","secrets","statefulsets","controllerrevisions","jobs","statefulsets/scale"]
+    verbs: ["get","list", "watch"]
+    
+    #"delete"
+  - apiGroups: ["","batch"]
+    resources: ["pods","persistentvolumeclaims","secrets","jobs"]
+    verbs: ["delete"]
+
+    #create, patch
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create","patch"]
+
+    #patch (scaling)
+  - apiGroups: ["apps"]
+    resources: ["statefulsets","statefulsets/scale"]
+    verbs: ["patch"]

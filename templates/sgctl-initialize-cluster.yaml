@@ -79,6 +79,64 @@ spec:
 
               RET=$?
               echo "Result $RET"
+
+              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                
+                
+                echo "Wait for all data nodes to be ready";
+
+                # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                # and can be removed if the issue is fixed.
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": "ERROR"
+                  }
+                }'
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": null
+                  }
+                }'
+                echo ""
+                # end workaround
+
+                sleep 10 ;
+              
+              
+              done
+
+
+              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                echo "Wait for all client nodes to be ready";
+
+                # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                # and can be removed if the issue is fixed.
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": "ERROR"
+                  }
+                }'
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": null
+                  }
+                }'
+                echo ""
+                # end workaround
+
+                sleep 10 ;
+              done
+
+              echo "Cluster initialization finished"
+
               exit $RET
         resources:
           limits:

@@ -30,7 +30,7 @@ spec:
   serviceName: {{ template "searchguard.fullname" . }}-kibana
   replicas: {{ .Values.kibana.replicas }}
   updateStrategy:
-    type: RollingUpdate
+    type: OnDelete
   podManagementPolicy: Parallel
   selector:
     matchLabels:

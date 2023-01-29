@@ -50,6 +50,7 @@ KIBANA_REPLICAS=$(kubectl get sts sg-elk-search-guard-flx-kibana -n ${NSP} -o=js
 if [ "$KIBANA_REPLICAS" != "0" ];then
 
   echo "Waiting for kibana ($(date)) ..."
+  sleep 20
   kubectl wait --for=condition=Ready pod/sg-elk-search-guard-flx-kibana-0 --timeout=300s -n ${NSP}
   retVal=$?
   echo ""
