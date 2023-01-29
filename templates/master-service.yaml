@@ -28,7 +28,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}
     role: master
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
 spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
   selector:
     component: {{ template "searchguard.fullname" . }}
     role: master
