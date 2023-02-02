@@ -182,7 +182,7 @@ init container template
 {{- define "searchguard.init-containers" -}}
 {{ if .Values.common.init_sysctl }}
 - name: init-sysctl
-  image: {{ .Values.common.images.repository }}/busybox
+  image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/busybox
   imagePullPolicy: {{ .Values.common.pullPolicy }}
   command: ["sysctl", "-w", "vm.max_map_count=262144"]
   resources:
