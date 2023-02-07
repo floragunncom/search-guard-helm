@@ -4,10 +4,13 @@ ARG ELK_FLAVOUR
 # https://github.com/elastic/kibana-docker
 FROM docker.elastic.co/elasticsearch/elasticsearch${ELK_FLAVOUR}:${ELK_VERSION} as base
 
-# Install repository-azure repository-gcs repository-hdfs analysis-icu plugins analysis-phonetic
+# Install repository-azure repository-gcs repository-hdfs analysis-icu plugins analysis-phonetic plugins
+# This is optional and can be safely removed or commented out if those plugin are not needed
 RUN if [ "$(echo $ELK_VERSION | cut -c1-1)" = "7" ]; then for plugin in repository-s3 repository-azure repository-gcs repository-hdfs analysis-icu analysis-phonetic; do \
     bin/elasticsearch-plugin install --verbose --batch "https://artifacts.elastic.co/downloads/elasticsearch-plugins/${plugin}/${plugin}-${ELK_VERSION}.zip"; \
     done; fi
+# End install optional plugins
+
 
 # Search Guard plugin
 ARG SG_VERSION
