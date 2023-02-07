@@ -79,9 +79,9 @@ spec:
               cat >"{{ template "searchguard.fullname" . }}-root-ca.yml" <<EOL
               ca:
                 root:
-                    dn: CN={{ template "searchguard.fullname" . }}-root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com
-                    keysize: 2048
-                    validityDays: 365
+                    dn: {{ .Values.common.tls.root_dn }}
+                    validityDays: {{ .Values.common.tls.validity_days }}
+                    keysize: {{ .Values.common.tls.keysize }}
                     pkPassword: none
                     file: root-ca.pem
               EOL
@@ -120,10 +120,12 @@ spec:
                     {{ end }}
               defaults:
                 pkPassword: none
+                validityDays: {{ .Values.common.tls.validity_days }}
+                keysize: {{ .Values.common.tls.keysize }}
               clients:
                 - name: admin
                   admin: true
-                  dn: CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                  dn: {{ .Values.common.tls.admin_dn }}
               EOL
 
               /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/
@@ -199,11 +201,13 @@ spec:
                   pkPassword: {{ .Values.common.ca_password }}
                   {{ end }}
               defaults:
-                pkPassword: none                  
+                pkPassword: none
+                validityDays: {{ .Values.common.tls.validity_days }}
+                keysize: {{ .Values.common.tls.keysize }} 
               clients:
               - name: admin
                 admin: true
-                dn: CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                dn: {{ .Values.common.tls.admin_dn }}
               EOL
 
               /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-admin-cert.yml" -t /tmp/

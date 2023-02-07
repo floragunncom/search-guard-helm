@@ -103,6 +103,16 @@ common:
   
   #Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
+  
+  tls:
+    #root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
+    root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
+    #node_dn must match common.nodes_dn
+    node_dn: 'CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com'
+    #admin_dn must match common.admin_dn and may not overlap with common.nodes_dn
+    admin_dn: 'CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com'
+    keysize: 2048
+    validity_days: 365
 
   certificates_directory: secrets
 

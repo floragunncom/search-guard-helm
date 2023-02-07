@@ -139,18 +139,15 @@ init container template
               {{ end }}
         
         defaults:
-          validityDays: 365
+          validityDays: {{ .Values.common.tls.validity_days }}
+          keysize: {{ .Values.common.tls.keysize }}
           pkPassword: none
           httpsEnabled: true
           reuseTransportCertificatesForHttp: true
-          verifyHostnames: true
-          resolveHostnames: true
-          nodesDn:
-            - CN=*-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
         
         nodes:
           - name: $NODE_NAME
-            dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+            dn: {{ .Values.common.tls.node_dn }}
             dns:
               - $NODE_NAME
               - {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
