@@ -97,6 +97,10 @@ spec:
                   component: {{ template "searchguard.fullname" . }}
                   role: data
       {{- end }}
+      {{ if .Values.data.tolerations }}
+      tolerations:
+{{ toYaml .Values.data.tolerations | indent 6 }}
+      {{ end }}
       initContainers:
 {{ include "searchguard.init-containers" . | indent 6 }}
       {{ if .Values.common.docker_registry.enabled }}

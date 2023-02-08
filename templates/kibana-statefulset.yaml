@@ -95,6 +95,10 @@ spec:
                   component: {{ template "searchguard.fullname" . }}
                   role: kibana
       {{- end }}
+      {{ if .Values.kibana.tolerations }}
+      tolerations:
+{{ toYaml .Values.kibana.tolerations | indent 6 }}
+      {{ end }}
       initContainers:
         - name: init-kubectl-0 #doubled, we need a better solution
         {{ include "searchguard.kubectl-image" . | indent 2 }}

@@ -254,6 +254,16 @@ client:
       cpu: 100m
       memory: 1500Mi
 
+  #tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
+
 # Data nodes hold the shards that contain the documents you have indexed. Data
 # nodes handle data related operations like CRUD, search, and aggregations.
 # These operations are I/O-, memory-, and CPU-intensive. It is important to
@@ -286,6 +296,16 @@ data:
       cpu: 1
       memory: 1500Mi
 
+  #tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
+
 # The master node is responsible for lightweight cluster-wide actions such as
 # creating or deleting an index, tracking which nodes are part of the
 # cluster, and deciding which shards to allocate to which nodes. It is
@@ -314,6 +334,16 @@ master:
     requests:
       cpu: 100m
       memory: 1500Mi
+
+  #tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
 
 kibana:
   # Incoming port of the service
@@ -411,6 +441,15 @@ kibana:
     # to select the target nodes for the load balancer
     #service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
 
+  #tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
 
   # Additional config which will be appended to kibana.yml
   config:
