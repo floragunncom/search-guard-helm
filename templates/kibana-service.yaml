@@ -33,6 +33,9 @@ metadata:
 
 spec:
   type: {{ .Values.kibana.serviceType }}
+{{ if and .Values.kibana.loadBalancerIp (eq .Values.kibana.serviceType "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.kibana.loadBalancerIp }}
+{{ end }} 
   selector:
     component: {{ template "searchguard.fullname" . }}
     role: kibana
@@ -44,10 +47,4 @@ spec:
     {{ if and .Values.kibana.nodePort (eq .Values.kibana.serviceType "NodePort") }}
     nodePort: {{ .Values.kibana.nodePort }}
     {{ end }}
-{{ if and .Values.kibana.loadBalancerIp (eq .Values.kibana.serviceType "LoadBalancer") }}
-status:
-  loadBalancer:
-    ingress:
-    - ip: {{ .Values.kibana.loadBalancerIp }}
-{{ end }}    
 
