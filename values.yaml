@@ -453,6 +453,7 @@ kibana:
 
   # Additional config which will be appended to kibana.yml
   config:
+    #server.publicBaseUrl: https://domain:5601 
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
     searchguard.auth.type: default
     # Disallow login for service users
