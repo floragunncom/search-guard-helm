@@ -264,6 +264,12 @@ client:
   #    value: "value1"
   #    effect: "NoExecute"
 
+  #nodeAffinity:
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+  # preferredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+
 # Data nodes hold the shards that contain the documents you have indexed. Data
 # nodes handle data related operations like CRUD, search, and aggregations.
 # These operations are I/O-, memory-, and CPU-intensive. It is important to
@@ -306,6 +312,12 @@ data:
   #    value: "value1"
   #    effect: "NoExecute"
 
+  #nodeAffinity:
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+  # preferredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+
 # The master node is responsible for lightweight cluster-wide actions such as
 # creating or deleting an index, tracking which nodes are part of the
 # cluster, and deciding which shards to allocate to which nodes. It is
@@ -344,6 +356,12 @@ master:
   #    operator: "Equal"
   #    value: "value1"
   #    effect: "NoExecute"
+
+  #nodeAffinity:
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+  # preferredDuringSchedulingIgnoredDuringExecution:
+  #   ...
 
 kibana:
   # Incoming port of the service
@@ -450,6 +468,12 @@ kibana:
   #    operator: "Equal"
   #    value: "value1"
   #    effect: "NoExecute"
+
+  #nodeAffinity:
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+  # preferredDuringSchedulingIgnoredDuringExecution:
+  #   ...
 
   # Additional config which will be appended to kibana.yml
   config:

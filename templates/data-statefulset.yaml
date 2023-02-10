@@ -61,8 +61,14 @@ spec:
       serviceAccountName: {{ template "searchguard.fullname" . }}
       securityContext:
         fsGroup: 1000
-      {{- if eq .Values.data.antiAffinity "hard" }}
+      {{ if or .Values.data.nodeAffinity .Values.data.antiAffinity }}
       affinity:
+      {{ if .Values.data.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml .Values.data.nodeAffinity | indent 10 }}
+      {{ end }}     
+      {{ end }}    
+      {{- if eq .Values.data.antiAffinity "hard" }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: "kubernetes.io/hostname"
@@ -79,7 +85,6 @@ spec:
                   component: {{ template "searchguard.fullname" . }}
                   role: data
       {{- else if eq .Values.data.antiAffinity "soft" }}
-      affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
