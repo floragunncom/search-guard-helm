@@ -28,8 +28,15 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}
     role: client
+  {{ if and .Values.common.service_annotations (eq .Values.common.serviceType "LoadBalancer")}}
+  annotations:
+    {{- .Values.common.service_annotations | toYaml | nindent 4 }}
+  {{ end }}
 spec:
   type: {{ .Values.common.serviceType }}
+{{ if and .Values.common.loadBalancerIp (eq .Values.common.serviceType "LoadBalancer") }}
+  loadBalancerIP: {{ .Values.common.loadBalancerIp }}
+{{ end }} 
   selector:
     component: {{ template "searchguard.fullname" . }}
     role: client
@@ -38,6 +45,9 @@ spec:
     port: {{ .Values.service.httpPort }}
     targetPort: 9200
     protocol: TCP
+    {{ if and .Values.common.nodePort (eq .Values.common.serviceType "NodePort") }}
+    nodePort: {{ .Values.common.nodePort }}
+    {{ end }}
   - name: transport
     port: {{ .Values.service.transportPort }}
     targetPort: 9300
