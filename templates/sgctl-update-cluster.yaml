@@ -43,6 +43,10 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      {{ end }}
       initContainers:
 {{ include "searchguard.kubectl-init-container" . | indent 6 }}
       containers:

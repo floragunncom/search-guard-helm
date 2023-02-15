@@ -35,6 +35,10 @@ spec:
       template:
         spec:
           serviceAccountName: {{ template "searchguard.fullname" . }}
+          {{ if .Values.common.docker_registry.enabled }}
+          imagePullSecrets:
+          - name: {{ .Values.common.docker_registry.imagePullSecret }}
+          {{ end }}
           containers:
             - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
 {{ include "searchguard.kubectl-image" . | indent 14 }}

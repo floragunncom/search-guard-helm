@@ -29,7 +29,10 @@ spec:
       serviceAccountName: {{ template "searchguard.fullname" . }}
       securityContext:
         fsGroup: 1000
-# include "searchguard.imagePullSecret" . | indent 6 #
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      {{ end }}
       initContainers:
 {{ include "searchguard.kubectl-init-container" . | indent 8 }}
       containers:
