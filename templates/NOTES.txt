@@ -65,16 +65,6 @@ The Search Guard FLX protected Elasticsearch cluster has been installed.
         - Elasticsearch at https://127.0.0.1:9200
         - Kibana at https://127.0.0.1:5601
 {{ end }}
-    Following users were configured in the Elasticsearch cluster:
-
-        Username: admin
-        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
-
-        Username: kibanaro
-        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANARO_PWD}" | base64 -d)
-
-        Username: kibanaserver
-        Password: $(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_KIBANASERVER_PWD}" | base64 -d)
 
     NOTE: Please, give Helm charts few minutes to complete startup process for all pods. This is expected that Kibana pod startup time is higher than other pods.
 

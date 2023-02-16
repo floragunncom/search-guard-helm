@@ -120,29 +120,6 @@ data:
     # Define your roles mapping here
     # See https://docs.search-guard.com/latest/mapping-users-roles
 
-    ## Demo roles mapping
-
-    SGS_ALL_ACCESS:
-      reserved: true
-      backend_roles:
-      - "admin"
-      description: "Maps admin to SGS_ALL_ACCESS"
-
-    SGS_KIBANA_USER:
-      reserved: false
-      backend_roles:
-      - "kibanauser"
-      description: "Maps kibanauser to SGS_KIBANA_USER"
-
-    SGS_READALL:
-      reserved: true
-      backend_roles:
-      - "readall"
-
-    SGS_KIBANA_SERVER:
-      reserved: true
-      users:
-      - "kibanaserver"
 {{ if .Values.common.rolesmapping }}
 {{ toYaml .Values.common.rolesmapping | indent 4 }}
 {{ end }}

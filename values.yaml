@@ -163,10 +163,29 @@ common:
 #
 #
 #  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
-#  rolesmapping:
-#    sg_read_beats:
-#      backend_roles:
-#        - beatsreader
+  rolesmapping:
+    # demo roles:
+    SGS_ALL_ACCESS:
+      reserved: true
+      backend_roles:
+      - "admin"
+      description: "Maps admin to SGS_ALL_ACCESS"
+
+    SGS_KIBANA_USER:
+      reserved: false
+      backend_roles:
+      - "kibanauser"
+      description: "Maps kibanauser to SGS_KIBANA_USER"
+
+    SGS_READALL:
+      reserved: true
+      backend_roles:
+      - "readall"
+
+    SGS_KIBANA_SERVER:
+      reserved: true
+      users:
+      - "kibanaserver"
 #
 #  # Configure additional role (maps to sg_roles.yml)
 #  roles:
