@@ -71,9 +71,10 @@ spec:
             - -c
             - |
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
+                echo "Wait until {{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }} node are up and the cluster is at least yellow"
 
-                #curl "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout={{ .Values.common.cluster_status_timeout }}&pretty"
-                #checkExitCode
+                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout=300&pretty"
+
 
                 function waitForStatefulSet() {
                   SETNAME="$1"
@@ -132,7 +133,8 @@ spec:
                   UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
 
                   if [ "$CR" != "$UR" ]; then
-                    echo "Update needed for $SETNAME"
+                    echo "Update needed for $SETNAME because currentRevision $CR does not match updateRevision $UR"
+                    echo "$STATUS_JSON"
                     if [ "$SETNAME" == "kibana" ]; then
                       kubectl scale --replicas=1 statefulset/{{ template "searchguard.fullname" . }}-kibana -n {{ .Release.Namespace }} 
                     fi
