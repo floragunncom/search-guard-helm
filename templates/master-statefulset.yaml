@@ -150,6 +150,20 @@ spec:
           value: "false"
         - name: PROCESSORS
           value: "{{ .Values.master.processors }}"
+
+        {{ if or .Release.IsInstall (not .Values.common.remove_initial_master_nodes_after_install) }}
+        {{- $master_name := printf "%s-%s-%s" .Release.Name .Chart.Name "master" }}
+        {{- $zkservers := list -}}
+        {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
+        {{- $zkservers = printf "%s-%d" $master_name $ordinal | append $zkservers -}}
+        {{- end -}}
+
+        - name: "cluster.initial_master_nodes"
+          value: {{ join "," $zkservers | quote }}
+
+        {{ end }}
+
+
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}

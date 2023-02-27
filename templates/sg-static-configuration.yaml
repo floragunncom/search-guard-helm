@@ -46,18 +46,7 @@ data:
 
     #path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
-    processors: ${PROCESSORS}
-    
-    {{ if and .Release.IsInstall }}
-
-    {{- $master_name := printf "- %s-%s-%s" .Release.Name .Chart.Name "master" }}
-    cluster.initial_master_nodes:
-      {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
-      {{ $master_name }}-{{ $ordinal }}
-      {{- end }}
-    
-    {{ end }}
-    
+    processors: ${PROCESSORS}  
     discovery.seed_hosts: ${DISCOVERY_SERVICE}
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
