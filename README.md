@@ -26,7 +26,7 @@
 
 ## Status
 
-This is repo is considered beta status and supports Search Guard FLX for Elasticsearch 7.
+This is repo is considered GA status and supports Search Guard FLX for Elasticsearch 7.
 
 ## Support
 
