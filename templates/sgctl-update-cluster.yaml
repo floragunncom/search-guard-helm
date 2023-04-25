@@ -47,6 +47,10 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.common.docker_registry.imagePullSecret }}
       {{ end }}
+      {{ if .Values.common.tolerations }}
+      tolerations:
+{{ toYaml .Values.common.tolerations | indent 6 }}
+      {{ end }}
       initContainers:
 {{ include "searchguard.kubectl-init-container" . | indent 6 }}
       containers:

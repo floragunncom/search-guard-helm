@@ -39,6 +39,10 @@ spec:
           imagePullSecrets:
           - name: {{ .Values.common.docker_registry.imagePullSecret }}
           {{ end }}
+          {{ if .Values.common.tolerations }}
+          tolerations:
+{{ toYaml .Values.common.tolerations | indent 10 }}
+          {{ end }}
           containers:
             - name: "{{ template "searchguard.fullname" . }}-cleanup-job"
 {{ include "searchguard.kubectl-image" . | indent 14 }}
