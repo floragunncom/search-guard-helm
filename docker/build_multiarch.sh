@@ -8,6 +8,10 @@ DEFAULT_PLATFORMS="linux/arm64,linux/amd64"
 # architecture of your build system set DEFAULT_PLATFORMS=local
 #DEFAULT_PLATFORMS="local"
 
+# set this to true if you want to install the typical plugins like
+# repository-s3 repository-azure repository-gcs repository-hdfs analysis-icu analysis-phonetic
+INSTALL_DEFAULT_PLUGINS="false"
+
 versions=(
     #flx
     #7.10.2 kibana does not have a out of the box arm64 image
@@ -133,7 +137,7 @@ do
 
     
 
-    build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION"
+    build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" --build-arg INSTALL_DEFAULT_PLUGINS="$INSTALL_DEFAULT_PLUGINS"
     
     if [ -z "$KIBANA_PLATFORMS" ]; then
         PLATFORMS="$DEFAULT_PLATFORMS"
