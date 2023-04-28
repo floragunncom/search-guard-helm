@@ -54,7 +54,7 @@ spec:
       {{ if .Values.common.nodeAffinity }}
       affinity:
         nodeAffinity:
-{{ toYaml .Values.client.nodeAffinity | indent 8 }}
+{{ toYaml .Values.client.nodeAffinity | indent 10 }}
       {{ end }}
       initContainers:
 {{ include "searchguard.kubectl-init-container" . | indent 6 }}

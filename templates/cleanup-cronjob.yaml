@@ -47,7 +47,7 @@ spec:
           {{ if .Values.common.nodeAffinity }}
           affinity:
             nodeAffinity:
-{{ toYaml .Values.client.nodeAffinity | indent 12 }}
+{{ toYaml .Values.client.nodeAffinity | indent 14 }}
           {{ end }}
 
           containers:
