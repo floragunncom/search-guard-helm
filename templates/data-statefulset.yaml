@@ -136,7 +136,7 @@ spec:
                     try_loop nc -z $DISCOVERY_SERVICE 9300
                     try_loop nc -z $DISCOVERY_SERVICE 9200
                     
-                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout=300&pretty" > /tmp/poststart 2>&1 || true
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_status=yellow&timeout=300s&pretty" > /tmp/poststart 2>&1 || true
 
                     try_loop nc -z $HOSTNAME 9200
 

@@ -260,6 +260,24 @@ common:
   #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
   #   max_tokens_per_user: 100
 
+  # tolerations for all pods which are not master, client, data or kibana
+  # tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
+
+  # nodeAffinity for all pods which are not master, client, data or kibana
+  # nodeAffinity:
+  # requiredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+  # preferredDuringSchedulingIgnoredDuringExecution:
+  #   ...
+
 # Client/ingest nodes can execute pre-processing pipelines, composed of
 # one or more ingest processors. Depending on the type of operations performed
 # by the ingest processors and the required resources, it may make sense to
