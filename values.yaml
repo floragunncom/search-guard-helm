@@ -1,14 +1,14 @@
 common:
-  # Elasticsearch cluster name, maps to cluster.name
+  ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
-  #Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
-  #If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
-  # - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
-  # - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
-  # - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
-  # - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
-  # - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
+  ## Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
+  ## If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
+  ## - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
+  ## - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
+  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
+  ## - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
+  ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
   images:
     repository: "docker.io"
     provider: "floragunncom"
@@ -17,138 +17,138 @@ common:
     sgctl_base_image: "sg-sgctl-h4"
     kubectl_base_image: "sg-kubectl-h4"
 
-  #Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
+  ## Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
   docker_registry:
     enabled: false
-  #  server: https://index.docker.io/v1/
-  #  username: username
-  #  password: password
-  #  email: info@domain.com
-  #  imagePullSecret: <your-custom-secret>
+    # server: https://index.docker.io/v1/
+    # username: username
+    # password: password
+    # email: info@domain.com
+    # imagePullSecret: <your-custom-secret>
 
-  # Kubelet image pull policy
-  # https://kubernetes.io/docs/concepts/containers/images/
-  #pullPolicy: Always
+  ## Kubelet image pull policy
+  ## https://kubernetes.io/docs/concepts/containers/images/
+  # pullPolicy: Always
   pullPolicy: IfNotPresent
 
-  # Elasticsearch and Kibana version
-  # See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
+  ## Elasticsearch and Kibana version
+  ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.17.8"
 
-  # Search Guard plugin version
+  ## Search Guard plugin version
   sgversion: "1.1.0-flx"
 
-  # Search Guard Kibana plugin version
-  # See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  ## Search Guard Kibana plugin version
+  ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
   sgkibanaversion: "1.1.0-flx"
 
   sgctl_version: 1.1.0
 
-  # If true then install also all free and basic x-pack features
-  # If false then only the "oss" version of Elasticsearch and Kibana gets installed 
+  ## If true then install also all free and basic x-pack features
+  ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
   xpack_basic: true
 
-  # DN of the admin certificate
-  # See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
+  ## DN of the admin certificate
+  ## See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
   admin_dn:
     - "CN=admin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
-  # Search Guard needs to securely and reliably identify internal communication between 
-  # Elasticsearch nodes (inter-node traffic). This communication happens for example if 
-  # one node receives a GET request on the HTTP layer, but needs to forward it to another 
-  # node that holds the actual data.
-  # See https://docs.search-guard.com/latest/tls-in-production#node-certificates
+  ## Search Guard needs to securely and reliably identify internal communication between 
+  ## Elasticsearch nodes (inter-node traffic). This communication happens for example if 
+  ## one node receives a GET request on the HTTP layer, but needs to forward it to another 
+  ## node that holds the actual data.
+  ## See https://docs.search-guard.com/latest/tls-in-production#node-certificates
   nodes_dn:
     - "CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
-  # Enable or disable Search Guard enterprise modules
-  # If you run Search Guard in production you need to obtain a license
-  #  when set to 'true'
+  ## Enable or disable Search Guard enterprise modules
+  ## If you run Search Guard in production you need to obtain a license
+  ## when set to 'true'
   sg_enterprise_modules_enabled: true
   
-  # Run automatically sgctl whenever necessary 
+  ## Run automatically sgctl whenever necessary 
   update_sgconfig_on_change: true
 
-  # Restart pods automatically when their configuration was changed
+  ## Restart pods automatically when their configuration was changed
   restart_pods_on_config_change: true
   
-  # Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  ## Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
   pod_disruption_budget_enable: true
 
-  # Search Guard can be run do not fail on forbidden mode.
-  # With this mode enabled Search Guard filters all indices from a query a user does not have access to. 
-  # Thus not security exception is raised.
-  # See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
+  ## Search Guard can be run do not fail on forbidden mode.
+  ## With this mode enabled Search Guard filters all indices from a query a user does not have access to. 
+  ## Thus not security exception is raised.
+  ## See https://docs.search-guard.com/latest/kibana-plugin-installation#configuring-elasticsearch-enable-do-not-fail-on-forbidden
   do_not_fail_on_forbidden: true
   
-  #After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
+  ## After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
   license: none
   
-  #By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
-  #By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
+  ## By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
+  ## By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
   debug_job_mode: false
 
   remove_initial_master_nodes_after_install: true
 
   init_sysctl: true
 
-  # Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
-  # This does not apply to Kibana.
-  # WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
+  ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
+  ## This does not apply to Kibana.
+  ## WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
   serviceType: ClusterIP
-  #serviceType: NodePort
-  #serviceType: LoadBalancer
+  # serviceType: NodePort
+  # serviceType: LoadBalancer
 
-  # static node port for client services. If omitted a random one is chosen. Only applies if serviceType == NodePort
-  # This does not apply to Kibana.
-  #nodePort: 30007
+  ## static node port for client services. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  ## This does not apply to Kibana.
+  # nodePort: 30007
 
-  # load balancer ip for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
-  # This does not apply to Kibana.
-  #loadBalancerIp: 192.0.2.127
+  ## load balancer ip for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  ## This does not apply to Kibana.
+  # loadBalancerIp: 192.0.2.127
 
-  # AWS specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
-  #service_annotations:
-    #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
-    #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
-    #...
-    #... see below for more options
+  ## AWS specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  # service_annotations:
+  #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
+  #   service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
+  #   ...
+  #   ... see below for more options
 
-  #PKI approaches are specified with the following keys:
-  #Set sgctl_certificates_enabled if certificates are self-signed and generated by SG TLS tool
+  ## PKI approaches are specified with the following keys:
+  ## Set sgctl_certificates_enabled if certificates are self-signed and generated by SG TLS tool
   sgctl_certificates_enabled: true
   
-  #Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
+  ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
   
   tls:
-    #root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
+    ## root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
     root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
-    #node_dn must match common.nodes_dn
+    ## node_dn must match common.nodes_dn
     node_dn: 'CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com'
-    #admin_dn must match common.admin_dn and may not overlap with common.nodes_dn
+    ## admin_dn must match common.admin_dn and may not overlap with common.nodes_dn
     admin_dn: 'CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com'
     keysize: 2048
     validity_days: 365
 
   certificates_directory: secrets
 
-  # Any extra or specific configuration that is needed can be added here.
-  # Will be added to all elasticsearch.yml files on all nodes
+  ## Any extra or specific configuration that is needed can be added here.
+  ## Will be added to all elasticsearch.yml files on all nodes
 
 
   config:
-    #logger.org.elasticsearch: "ERROR"
-    #logger.com.floragunn: "ERROR"
+    logger.org.elasticsearch: "ERROR"
+    # logger.com.floragunn: "ERROR"
 
-    #memory_lock not necessary because swap is off on K8S
-    #bootstrap.memory_lock: false
+    ## memory_lock not necessary because swap is off on K8S
+    # bootstrap.memory_lock: false
     
-    #http.compression: false
-    #http.cors.enabled: false
-    #http.cors.allow-origin: "*"    
-    #index.codec: best_compression
+    # http.compression: false
+    # http.cors.enabled: false
+    # http.cors.allow-origin: "*"    
+    # index.codec: best_compression
 
     ingest.geoip.downloader.enabled: false
     
@@ -156,15 +156,15 @@ common:
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
 
-#  # Configure additional users (maps to sg_internal_users.yml)
-#  users:
-#    demouser:
-#      hash: ${envbc.SG_DEMOUSER_PWD}
-#      backend_roles:
-#        - beatsreader
-#
-#
-#  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
+  ## Configure additional users (maps to sg_internal_users.yml)
+  # users:
+  #   demouser:
+  #     hash: ${envbc.SG_DEMOUSER_PWD}
+  #     backend_roles:
+  #       - beatsreader
+
+
+  ## Configure additional rolemappings (maps to sg_roles_mapping.yml)
   rolesmapping:
     # demo roles:
     SGS_ALL_ACCESS:
@@ -188,17 +188,17 @@ common:
       reserved: true
       users:
       - "kibanaserver"
-#
-#  # Configure additional role (maps to sg_roles.yml)
-#  roles:
-#    sg_read_beats:
-#      cluster_permissions:
-#        - SGS_CLUSTER_COMPOSITE_OPS_RO
-#      index_permissions:
-#        - index_patterns:
-#            - "*beat*"
-#          allowed_actions:
-#            - SGS_READ
+
+  ## Configure additional role (maps to sg_roles.yml)
+  # roles:
+  #   sg_read_beats:
+  #     cluster_permissions:
+  #       - SGS_CLUSTER_COMPOSITE_OPS_RO
+  #     index_permissions:
+  #       - index_patterns:
+  #           - "*beat*"
+  #         allowed_actions:
+  #           - SGS_READ
 
   authc:
     debug: false
@@ -260,7 +260,7 @@ common:
   #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
   #   max_tokens_per_user: 100
 
-  # tolerations for all pods which are not master, client, data or kibana
+  ## tolerations for all pods which are not master, client, data or kibana
   # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
@@ -271,33 +271,44 @@ common:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  # nodeAffinity for all pods which are not master, client, data or kibana
+  ## node affinity for all pods which are not master, client, data or kibana
   # nodeAffinity:
-  # requiredDuringSchedulingIgnoredDuringExecution:
-  #   ...
-  # preferredDuringSchedulingIgnoredDuringExecution:
-  #   ...
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #         - key: label-1
+  #           operator: In
+  #           values:
+  #           - key-1
 
-# Client/ingest nodes can execute pre-processing pipelines, composed of
-# one or more ingest processors. Depending on the type of operations performed
-# by the ingest processors and the required resources, it may make sense to
-# have dedicated ingest nodes, that will only perform this specific task.
+## Client/ingest nodes can execute pre-processing pipelines, composed of
+## one or more ingest processors. Depending on the type of operations performed
+## by the ingest processors and the required resources, it may make sense to
+## have dedicated ingest nodes, that will only perform this specific task.
 client:
-  # For production we recommend at least 2 replicas
+  ## For production we recommend at least 2 replicas
   replicas: 2
-  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
-  # 'soft' will do this "best effort"
-  # For production we recommend setting this to 'hard'
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
   antiAffinity: "soft"
-  # Specify this if external_ca_certificates_enabled: true
+  ## Specify this if external_ca_certificates_enabled: true
   storage: 2Gi
-  #Set storageClass if non-default storage is used.
-  #storageClass:
+  ## Set storageClass if non-default storage is used.
+  # storageClass:
 
-  # For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
+  ## For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
-  # More info on what this setting does is in the config map. Only change this
-  # if you set the cpu limit to over 1 full cpu.
+  ## More info on what this setting does is in the config map. Only change this
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
@@ -309,43 +320,55 @@ client:
       cpu: 100m
       memory: 1500Mi
 
-  #tolerations:
-  #  - key: "key1"
-  #    operator: "Equal"
-  #    value: "value1"
-  #    effect: "NoSchedule"
-  #  - key: "key1"
-  #    operator: "Equal"
-  #    value: "value1"
-  #    effect: "NoExecute"
+  tolerations:
+   - key: "key1"
+     operator: "Equal"
+     value: "value1"
+     effect: "NoSchedule"
+   - key: "key1"
+     operator: "Equal"
+     value: "value1"
+     effect: "NoExecute"
 
-  #nodeAffinity:
-  # requiredDuringSchedulingIgnoredDuringExecution:
-  #   ...
-  # preferredDuringSchedulingIgnoredDuringExecution:
-  #   ...
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: label-1
+            operator: In
+            values:
+            - key-1
 
-# Data nodes hold the shards that contain the documents you have indexed. Data
-# nodes handle data related operations like CRUD, search, and aggregations.
-# These operations are I/O-, memory-, and CPU-intensive. It is important to
-# monitor these resources and to add more data nodes if they are overloaded.
-#
-# The main benefit of having dedicated data nodes is the separation of the
-# master and data roles.
+## Data nodes hold the shards that contain the documents you have indexed. Data
+## nodes handle data related operations like CRUD, search, and aggregations.
+## These operations are I/O-, memory-, and CPU-intensive. It is important to
+## monitor these resources and to add more data nodes if they are overloaded.
+##
+## The main benefit of having dedicated data nodes is the separation of the
+## master and data roles.
 data:
-  # For production we recommend at least 2 replicas
+  ## For production we recommend at least 2 replicas
   replicas: 2
-  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
-  # 'soft' will do this "best effort"
-  # For production we recommend setting this to 'hard'
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 4Gi
-  #Set storageClass if non-default storage is used.
-  #storageClass: "gp2"
-  # For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
+  ## Set storageClass if non-default storage is used.
+  # storageClass: "gp2"
+  
+  ## For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
-  # More info on what this setting does is in the config map. Only change this
-  # if you set the cpu limit to over 1 full cpu.
+  ## More info on what this setting does is in the config map. Only change this
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
@@ -357,7 +380,7 @@ data:
       cpu: 1
       memory: 1500Mi
 
-  #tolerations:
+  # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
   #    value: "value1"
@@ -367,30 +390,42 @@ data:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  #nodeAffinity:
-  # requiredDuringSchedulingIgnoredDuringExecution:
-  #   ...
-  # preferredDuringSchedulingIgnoredDuringExecution:
-  #   ...
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #         - key: label-1
+  #           operator: In
+  #           values:
+  #           - key-1
 
-# The master node is responsible for lightweight cluster-wide actions such as
-# creating or deleting an index, tracking which nodes are part of the
-# cluster, and deciding which shards to allocate to which nodes. It is
-# important for cluster health to have a stable master node.
+## The master node is responsible for lightweight cluster-wide actions such as
+## creating or deleting an index, tracking which nodes are part of the
+## cluster, and deciding which shards to allocate to which nodes. It is
+## important for cluster health to have a stable master node.
 master:
-  # For production we recommend at least 3 replicas. Number must be odd.
+  ## For production we recommend at least 3 replicas. Number must be odd.
   replicas: 3
-  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
-  # 'soft' will do this "best effort"
-  # For production we recommend setting this to 'hard'
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
   antiAffinity: "soft"
   storage: 2Gi
-  #Set storageClass if non-default storage is used.
-  #storageClass: "gp2"
-  # For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  ## Set storageClass if non-default storage is used.
+  # storageClass: "gp2"
+  
+  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
-  # More info on what this setting does is in the config map. Only change this
-  # if you set the cpu limit to over 1 full cpu.
+  ## More info on what this setting does is in the config map. Only change this
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
@@ -402,7 +437,7 @@ master:
       cpu: 100m
       memory: 1500Mi
 
-  #tolerations:
+  # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
   #    value: "value1"
@@ -412,109 +447,120 @@ master:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  #nodeAffinity:
-  # requiredDuringSchedulingIgnoredDuringExecution:
-  #   ...
-  # preferredDuringSchedulingIgnoredDuringExecution:
-  #   ...
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #         - key: label-1
+  #           operator: In
+  #           values:
+  #           - key-1
 
 kibana:
-  # Incoming port of the service
+  ## Incoming port of the service
   httpPort: 5601
   replicas: 1
-  # 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
-  # 'soft' will do this "best effort"
-  # For production we recommend setting this to 'hard'
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
   antiAffinity: "soft"
 
-  # Specify this if external_ca_certificates_enabled: true. Set storageClass if non-default storage is used.
+  ## Specify this if external_ca_certificates_enabled: true. Set storageClass if non-default storage is used.
   storage: 2Gi
-  #Set storageClass if non-default storage is used.
-  #storageClass:
+  ## Set storageClass if non-default storage is used.
+  # storageClass:
 
-  # Defines the service type for all Kibana outward-facing (non-discovery) services.
-  # WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
+  ## Defines the service type for all Kibana outward-facing (non-discovery) services.
+  ## WARNING: Setting this to 'LoadBalancer' will probably expose Kibana to the outside/internet
   serviceType: ClusterIP
-  #serviceType: NodePort
-  #serviceType: LoadBalancer
+  # serviceType: NodePort
+  # serviceType: LoadBalancer
 
-  # static node port. If omitted a random one is chosen. Only applies if serviceType == NodePort
-  #nodePort: 30007
+  ## static node port. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  # nodePort: 30007
 
-  # load balancer ip. Only applies when serviceType == LoadBalancer and supported by the cloud provider
-  #loadBalancerIp: 192.0.2.127
+  ## load balancer ip. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  # loadBalancerIp: 192.0.2.127
 
-  # AWS specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
-  #service_annotations:
-    #service.beta.kubernetes.io/aws-load-balancer-internal: "true"
-    #service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012
-    #service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
-    #service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
-    # Specifies whether access logs are enabled for the load balancer
-    #service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
-    # The interval for publishing the access logs. You can specify an interval of either 5 or 60 (minutes).
-    #service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
-    # The name of the Amazon S3 bucket where the access logs are stored
-    #service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "my-bucket"
-    # The logical hierarchy you created for your Amazon S3 bucket, for example `my-bucket-prefix/prod`
-    #service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "my-bucket-prefix/prod"
-    #service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
-    #service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "60"
+  ## AWS specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  # service_annotations:
+  #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+  #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
+  #   service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443,8443"
+  #   service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012
+  #   service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
+  #   service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+  #   ## Specifies whether access logs are enabled for the load balancer
+  #   service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+  #   ## The interval for publishing the access logs. You can specify an interval of either 5 or 60 (minutes).
+  #   service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
+  #   ## The name of the Amazon S3 bucket where the access logs are stored
+  #   service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "my-bucket"
+  #   ## The logical hierarchy you created for your Amazon S3 bucket, for example `my-bucket-prefix/prod`
+  #   service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "my-bucket-prefix/prod"
+  #   service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
+  #   service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "60"
 
-    # The time, in seconds, that the connection is allowed to be idle (no data has been sent
-    # over the connection) before it is closed by the load balancer
-    #service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
+  #   ## The time, in seconds, that the connection is allowed to be idle (no data has been sent
+  #   ## over the connection) before it is closed by the load balancer
+  #   service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"
 
-    # Specifies whether cross-zone load balancing is enabled for the load balancer
-    #service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+  #   ## Specifies whether cross-zone load balancing is enabled for the load balancer
+  #   service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
 
-    # A comma-separated list of key-value pairs which will be recorded as
-    # additional tags in the ELB.
-    #service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "environment=prod,owner=devops"
+  #   ## A comma-separated list of key-value pairs which will be recorded as
+  #   ## additional tags in the ELB.
+  #   service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "environment=prod,owner=devops"
 
-    # The number of successive successful health checks required for a backend to
-    # be considered healthy for traffic. Defaults to 2, must be between 2 and 10
-    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: ""
+  #   ## The number of successive successful health checks required for a backend to
+  #   ## be considered healthy for traffic. Defaults to 2, must be between 2 and 10
+  #   service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: ""
 
-    # The number of unsuccessful health checks required for a backend to be
-    # considered unhealthy for traffic. Defaults to 6, must be between 2 and 10
-    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
+  #   ## The number of unsuccessful health checks required for a backend to be
+  #   ## considered unhealthy for traffic. Defaults to 6, must be between 2 and 10
+  #   service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
 
-    # The approximate interval, in seconds, between health checks of an
-    # individual instance. Defaults to 10, must be between 5 and 300
-    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "20"
+  #   ## The approximate interval, in seconds, between health checks of an
+  #   ## individual instance. Defaults to 10, must be between 5 and 300
+  #   service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "20"
 
-    # The amount of time, in seconds, during which no response means a failed
-    # health check. This value must be less than the service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval
-    # value. Defaults to 5, must be between 2 and 60
-    #service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
+  #   ## The amount of time, in seconds, during which no response means a failed
+  #   ## health check. This value must be less than the service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval
+  #   ## value. Defaults to 5, must be between 2 and 60
+  #   service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout: "5"
 
-    # A list of existing security groups to be configured on the ELB created. Unlike the annotation
-    # service.beta.kubernetes.io/aws-load-balancer-extra-security-groups, this replaces all other
-    # security groups previously assigned to the ELB and also overrides the creation
-    # of a uniquely generated security group for this ELB.
-    # The first security group ID on this list is used as a source to permit incoming traffic to
-    # target worker nodes (service traffic and health checks).
-    # If multiple ELBs are configured with the same security group ID, only a single permit line
-    # will be added to the worker node security groups, that means if you delete any
-    # of those ELBs it will remove the single permit line and block access for all ELBs that shared the same security group ID.
-    # This can cause a cross-service outage if not used properly
-    #service.beta.kubernetes.io/aws-load-balancer-security-groups: "sg-53fae93f"
+  #   ## A list of existing security groups to be configured on the ELB created. Unlike the annotation
+  #   ## service.beta.kubernetes.io/aws-load-balancer-extra-security-groups, this replaces all other
+  #   ## security groups previously assigned to the ELB and also overrides the creation
+  #   ## of a uniquely generated security group for this ELB.
+  #   ## The first security group ID on this list is used as a source to permit incoming traffic to
+  #   ## target worker nodes (service traffic and health checks).
+  #   ## If multiple ELBs are configured with the same security group ID, only a single permit line
+  #   ## will be added to the worker node security groups, that means if you delete any
+  #   ## of those ELBs it will remove the single permit line and block access for all ELBs that shared the same security group ID.
+  #   ## This can cause a cross-service outage if not used properly
+  #   service.beta.kubernetes.io/aws-load-balancer-security-groups: "sg-53fae93f"
 
-    # A list of additional security groups to be added to the created ELB, this leaves the uniquely
-    # generated security group in place, this ensures that every ELB
-    # has a unique security group ID and a matching permit line to allow traffic to the target worker nodes
-    # (service traffic and health checks).
-    # Security groups defined here can be shared between services.
-    #service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-53fae93f,sg-42efd82e"
+  #   ## A list of additional security groups to be added to the created ELB, this leaves the uniquely
+  #   ## generated security group in place, this ensures that every ELB
+  #   ## has a unique security group ID and a matching permit line to allow traffic to the target worker nodes
+  #   ## (service traffic and health checks).
+  #   ## Security groups defined here can be shared between services.
+  #   service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-53fae93f,sg-42efd82e"
 
-    # A comma separated list of key-value pairs which are used
-    # to select the target nodes for the load balancer
-    #service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
+  #   ## A comma separated list of key-value pairs which are used
+  #   ## to select the target nodes for the load balancer
+  #   service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
 
-  #tolerations:
+  # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
   #    value: "value1"
@@ -524,27 +570,38 @@ kibana:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  #nodeAffinity:
-  # requiredDuringSchedulingIgnoredDuringExecution:
-  #   ...
-  # preferredDuringSchedulingIgnoredDuringExecution:
-  #   ...
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #         - key: label-1
+  #           operator: In
+  #           values:
+  #           - key-1
 
   readinessProbe:
     httpGet:
-      # path might need to be changed when server.basePath is set 
+      ## path might need to be changed when server.basePath is set 
       path: api/status
       port: http
       scheme: HTTPS
     initialDelaySeconds: 60
     timeoutSeconds: 5
 
-  # Additional config which will be appended to kibana.yml
+  ## Additional config which will be appended to kibana.yml
   config:
-    #server.publicBaseUrl: https://domain:5601 
+    # server.publicBaseUrl: https://domain:5601 
     elasticsearch.requestHeadersWhitelist: ["sgtenant","authorization"]
     searchguard.auth.type: default
-    # Disallow login for service users
+    ## Disallow login for service users
     searchguard.basicauth.forbidden_usernames: ["kibanaserver"]
   labels: {}
   annotations: {}
@@ -556,15 +613,15 @@ kibana:
       cpu: 100m
       memory: 2500Mi
 
-# Incoming port of the service
+## Incoming port of the service
 service:
   httpPort: 9200
   transportPort: 9300
 
-# Kubernetes Role-based access control
-# https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-#Use "true" for first time installation for certain release in certain cluster/namespace
-#Use "false" for second+ time installations for certain release in certain cluster/namespace
+## Kubernetes Role-based access control
+## https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+## Use "true" for first time installation for certain release in certain cluster/namespace
+## Use "false" for second+ time installations for certain release in certain cluster/namespace
 rbac:
   create: true
 
