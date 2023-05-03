@@ -44,7 +44,6 @@ data:
     node.name: ${NODE_NAME}
     node.ingest: ${NODE_INGEST:true}
 
-    #path.data: /storage/data    
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS}  
     discovery.seed_hosts: ${DISCOVERY_SERVICE}
