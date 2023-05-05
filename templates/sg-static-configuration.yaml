@@ -42,10 +42,10 @@ data:
   
     {{- if eq (.Values.common.elkversion | substr 0 1) "7" }}
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
-    processors: ${PROCESSORS}    
+    processors: ${PROCESSORS}
     {{- end }}
 
-    node.roles: [${NODE_ROLES}]
+    node.roles: ${NODE_ROLES}
     
     discovery.seed_hosts: ${DISCOVERY_SERVICE}
     # Search Guard
