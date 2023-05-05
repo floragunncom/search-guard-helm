@@ -27,7 +27,7 @@ metadata:
 data:
   kibana.yml: |-
 
-{{ if .Values.common.xpack_basic }}
+{{ if and .Values.common.xpack_basic (eq (.Values.common.elkversion | substr 0 1) "7") }}
     xpack.security.enabled: false
     xpack.spaces.enabled: false
     xpack.ml.enabled: false
@@ -55,12 +55,14 @@ data:
     # certificate.
     elasticsearch.ssl.verificationMode: "full"
 
+{{ if (eq (.Values.common.elkversion | substr 0 1) "7") }}
     # If you would like to send the log output to a file you can set the path below.
     logging.dest: stdout
 
     # Set this to true to suppress all logging output except for error messages.
     logging.quiet: false
     logging.verbose: false
+{{ end }}
     
     #### Search Guard specific config ####
     searchguard.multitenancy.enabled: true

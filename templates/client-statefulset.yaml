@@ -142,12 +142,8 @@ spec:
           value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
-        - name: NODE_DATA
-          value: "false"
-        - name: NODE_MASTER
-          value: "false"
-        - name: NODE_INGEST
-          value: "true"
+        - name: NODE_ROLES
+          value: "{{ join "," .Values.client.roles }}"
         - name: PROCESSORS
           value: "{{ .Values.client.processors }}"
         {{- range $key, $value :=  .Values.common.env }}

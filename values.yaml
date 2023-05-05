@@ -288,6 +288,12 @@ common:
 ## by the ingest processors and the required resources, it may make sense to
 ## have dedicated ingest nodes, that will only perform this specific task.
 client:
+
+  roles:
+    - transform
+    - remote_cluster_client
+    - ingest
+
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -302,7 +308,7 @@ client:
   ## For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu.
+  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
   processors: 1
   labels: {}
   annotations: {}
@@ -349,6 +355,11 @@ client:
 ## The main benefit of having dedicated data nodes is the separation of the
 ## master and data roles.
 data:
+
+  roles:
+    - data
+    - remote_cluster_client
+
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -362,7 +373,7 @@ data:
   ## For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu.
+  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
   processors: 1
   labels: {}
   annotations: {}
@@ -406,6 +417,11 @@ data:
 ## cluster, and deciding which shards to allocate to which nodes. It is
 ## important for cluster health to have a stable master node.
 master:
+
+  roles:
+    - master
+    - remote_cluster_client
+
   ## For production we recommend at least 3 replicas. Number must be odd.
   replicas: 3
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -419,7 +435,7 @@ master:
   ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu.
+  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
   processors: 1
   labels: {}
   annotations: {}
