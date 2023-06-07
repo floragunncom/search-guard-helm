@@ -149,6 +149,7 @@ common:
     searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
+      
 
   ## Configure additional users (maps to sg_internal_users.yml)
   # users:
@@ -247,6 +248,8 @@ common:
     human_resources:
     description: "The human resources tenant"
 
+
+
   # auth_token_service:
   #   enabled: true
   #   jwt_signing_key_hs512: "..."
@@ -287,6 +290,10 @@ common:
 ## one or more ingest processors. Depending on the type of operations performed
 ## by the ingest processors and the required resources, it may make sense to
 ## have dedicated ingest nodes, that will only perform this specific task.
+
+  custom_elasticsearch_keystore:
+    enabled: false
+
 client:
   ## For production we recommend at least 2 replicas
   replicas: 2

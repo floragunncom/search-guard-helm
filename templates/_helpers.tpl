@@ -193,6 +193,10 @@ init container template
     privileged: true
 {{ end }}
 {{ include "searchguard.generate-certificates-init-container" . }}
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
+{{ include "searchguard.custom-elasticsearch-keystore-init-container" . }}
+{{ end }}
+
 {{- end -}}
 
 {{- define "searchguard.authorization.apiVersion" -}}
@@ -294,3 +298,62 @@ securityContext:
     drop:
       - ALL
 {{- end -}}
+
+
+{{- define "searchguard.custom-elasticsearch-keystore-init-container" -}}
+- name: searchguard-custom-elasticsearch-keystore
+{{ if .Values.common.xpack_basic }}
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+{{ else }}
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
+{{ end }}
+  imagePullPolicy: {{ .Values.common.pullPolicy }}
+{{ include "searchguard.security-context.least" . | indent 2 }}   
+  volumeMounts:
+    - name: elasticsearch-keystore
+      mountPath: /custom-elasticsearch-keystore 
+  env:
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    {{- range .Values.common.custom_elasticsearch_keystore.extraEnvs }}
+    {{- if .value }}
+    - name: {{ .name }}
+      value: {{ .value }}
+    {{- else if .valueFrom }}
+    - name: {{ .name }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ .valueFrom.secretKeyRef.name }}
+          key: {{ .valueFrom.secretKeyRef.key }}
+    {{- end }}
+    {{- end }}          
+  command:
+    - bash
+    - -c
+    - | 
+        ELASTICSEARCH_KEYSTORE=/usr/share/elasticsearch/bin/elasticsearch-keystore
+        $ELASTICSEARCH_KEYSTORE create
+        {{-  .Values.common.custom_elasticsearch_keystore.script | nindent 8 }}
+        cp /usr/share/elasticsearch/config/elasticsearch.keystore /custom-elasticsearch-keystore
+    
+  resources:
+    limits:
+      cpu: "500m"
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+{{- end -}}
+
+{{- define "searchguard.custom-elasticsearch-keystore-volumeMounts" -}}
+- name: elasticsearch-keystore
+  mountPath: /usr/share/elasticsearch/config/elasticsearch.keystore 
+  subPath: elasticsearch.keystore 
+{{- end -}} 
+
+
+
+
+ 

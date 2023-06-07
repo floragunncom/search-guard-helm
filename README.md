@@ -277,6 +277,9 @@ and upgrade fails.
  | common.update_sgconfig_on_change | Run automatically sgadmin whenever neccessary  | true |
  | common.users | Additional users configuration in sg_internal_users.yml | null |
  | common.xpack_basic | Enable/Disable X-Pack in the ES cluster | false |
+ | common.custom_elasticsearch_keystore.enabled | Enable/Disable custom elasticsearch keystore  | false |
+ | common.custom_elasticsearch_keystore.extraEnvs | Use extra environment variables for elasticsearch keystore   | null |
+ | common.custom_elasticsearch_keystore.script | Use custom scrript to generate for elasticsearch keystore   | null |
  | data.annotations | Metadata to attach to data nodes | null |
  | data.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
  | data.heapSize | HeapSize limit for data nodes | 1g |
