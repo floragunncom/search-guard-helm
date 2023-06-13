@@ -1,4 +1,4 @@
-common:          
+common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
@@ -85,14 +85,14 @@ common:
   remove_initial_master_nodes_after_install: true
 
   init_sysctl: true
-  
+
   ingress:
     enabled: false
     className: ""
-    annotations: 
+    annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     labels: {}
-    # hosts: 
+    # hosts:
     #   - host: kibana.local
     #     paths:
     #       - path: /
@@ -112,7 +112,7 @@ common:
      # - secretName: clients-tls
      #   hosts:
      #     - clients.local
- 
+
 
   ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.
@@ -145,15 +145,15 @@ common:
   ca_certificates_enabled: false
   
 
-  # Create pods with installed sgctl.sh tool 
+  # Create pods with installed sgctl.sh tool
   sgctl_cli: false
 
   #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
   sg_dynamic_configuration_from_secret:
     enabled: false
     secret_name: "sg-dynamic-configuration-secret"
-    
-    
+
+
   tls:
     ## root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
     root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
@@ -187,7 +187,7 @@ common:
     searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
-      
+
 
   ## Configure additional users (maps to sg_internal_users.yml)
   # users:
@@ -268,8 +268,8 @@ common:
   #     verdict: "disallow"
   #     value: ["172.16.0.254", "172.16.0.230"]
   #     description: "Demo IP blocked, i.e. this specific IP gets blocked"
-  # 
-  
+  #
+
   # enable default frontend_multi_tenancy configuration for FLX 2 and above
   frontend_multi_tenancy_enabled: false
 
@@ -277,7 +277,7 @@ common:
   # frontend_multi_tenancy:
   #   enabled: true
   #   server_user: kibanaserver
-  #   global_tenant_enabled : true 
+  #   global_tenant_enabled : true
 
 
   action_groups:
@@ -525,7 +525,7 @@ datacontent:
       memory: 2000Mi
     requests:
       cpu: 800m
-      memory: 2000Mi   
+      memory: 2000Mi
 
   # tolerations:
   #  - key: "key1"
