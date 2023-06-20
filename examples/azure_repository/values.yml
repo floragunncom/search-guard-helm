@@ -1,0 +1,24 @@
+common:
+  config:
+    azure.client:
+      default:
+        timeout: 10s
+        max_retries: 7
+        endpoint_suffix: core.windows.net   
+  custom_elasticsearch_keystore:
+    enabled: true
+    extraEnvs: 
+    - name: AZURE_CLIENT_DEFAULT_ACCOUNT
+      valueFrom:
+        secretKeyRef:
+          name: azure-client-secret 
+          key: azureclientdefaultaccount
+    - name: AZURE_CLIENT_DEFAULT_KEY 
+      valueFrom:
+        secretKeyRef:
+          name: azure-client-secret    
+          key: azureclientdefaultkey      
+    script: |
+      echo $AZURE_CLIENT_DEFAULT_ACCOUNT | $ELASTICSEARCH_KEYSTORE add --stdin azure.client.default.account
+      echo $AZURE_CLIENT_DEFAULT_KEY | $ELASTICSEARCH_KEYSTORE add --stdin azure.client.default.key
+      

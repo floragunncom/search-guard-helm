@@ -213,6 +213,9 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}              
+{{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
+{{ end }}              
       volumes:
         - name: secret-volume
           secret:
@@ -226,6 +229,10 @@ spec:
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}          
+        - name: elasticsearch-keystore
+          emptyDir: {}        
+{{ end }}          
   volumeClaimTemplates:
   - metadata:
       name: storage
