@@ -1,7 +1,7 @@
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-focal
 
-ARG TLS_TOOL_VERSION=1.8
+ARG TLS_TOOL_VERSION=1.9.1
 
 RUN groupadd -g 1000 sg && \
     adduser --uid 1000 --gid 1000 --home /usr/share/sg sg && \
@@ -25,7 +25,7 @@ RUN mkdir sgctl
 RUN wget -nv https://maven.search-guard.com/search-guard-flx-release/com/floragunn/sgctl/${SGCTL_VERSION}/sgctl-${SGCTL_VERSION}.sh -O sgctl/sgctl.sh
 RUN chmod +x sgctl/sgctl.sh
 
-RUN wget -nv https://maven.search-guard.com/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
+RUN wget -nv https://maven.search-guard.com//search-guard-tlstool/com/floragunn/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
 
 RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION}.zip -d tlstool/
 RUN rm -rf search-guard-tlstool-${TLS_TOOL_VERSION}.zip

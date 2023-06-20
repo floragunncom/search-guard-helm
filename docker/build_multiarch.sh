@@ -25,7 +25,7 @@ versions=(
 )
 
 sgctl_versions=(
-    "SGCTL_VERSION=1.2.0 JAVA_VERSION=17-jre"
+    "SGCTL_VERSION=1.2.1 JAVA_VERSION=17-jre"
 )
 
 kubectl_versions=(
