@@ -87,11 +87,21 @@ spec:
               try_loop nc -z $DISCOVERY_SERVICE 9300
               try_loop nc -z $DISCOVERY_SERVICE 9200
 
+              mkdir /tmp/sgconfig
+              cp -v /sgconfig/*.yml /tmp/sgconfig/
+
               echo "Executing sgctl to update the configs ..."
-              /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /sgconfig
+              /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /tmp/sgconfig
 
               RET=$?
-              echo "Result $RET"
+
+              if [ $RET -ne 0 ];
+              then
+                echo "sgctl failed with exit code $RET"
+                exit -1
+              else
+                echo "sgctl successful"
+              fi
 
               while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
                 
