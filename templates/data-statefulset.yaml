@@ -17,7 +17,7 @@
 */}}
 
 
-{{- $dataValues := .Values.data }} 
+{{- $dataValues := .Values.data }}
 {{- if not (kindIs "slice" .Values.data) }}
 {{- $dataValues = list (merge (dict "name" "data") .Values.data) }}
 {{- end }}
@@ -114,7 +114,7 @@ spec:
       tolerations:
 {{ toYaml .data.tolerations | indent 6 }}
       {{ end }}
-      initContainers:  
+      initContainers:
 {{ include "searchguard.init-containers" $ | indent 6 }}
       {{ if $.Values.common.docker_registry.enabled }}
       imagePullSecrets:
@@ -218,7 +218,7 @@ spec:
         resources:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:
-{{- include "searchguard.config-volume-mount" $ | nindent 8 }}          
+{{- include "searchguard.config-volume-mount" $ | nindent 8 }}
         - mountPath: /usr/share/elasticsearch/data
           name: storage
           subPath: data
@@ -245,7 +245,7 @@ spec:
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
 {{ end }}
       volumes:
-{{- include "searchguard.config-volumes" $ | nindent 8 }}             
+{{- include "searchguard.config-volumes" $ | nindent 8 }}
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
@@ -266,7 +266,7 @@ spec:
 {{ end }}
   volumeClaimTemplates:
   - metadata:
-      name: storage 
+      name: storage
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: {{ .storageClass }}

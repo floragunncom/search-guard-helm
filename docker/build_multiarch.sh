@@ -13,28 +13,26 @@ DEFAULT_PLATFORMS="linux/arm64,linux/amd64"
 INSTALL_DEFAULT_PLUGINS="false"
 
 versions=(
-    #7.10.2 kibana does not have a out of the box arm64 image
-    # "SG_FLAVOUR=flx ELK_VERSION=7.10.2 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0 KIBANA_PLATFORMS=linux/amd64"
-    # "SG_FLAVOUR=flx ELK_VERSION=7.10.2 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0 KIBANA_PLATFORMS=linux/amd64 ELK_FLAVOUR=-oss"
-    # "SG_FLAVOUR=flx ELK_VERSION=7.17.7 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0"
-    "SG_FLAVOUR=flx ELK_VERSION=7.17.8 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0"
     # version 8
-    "SG_FLAVOUR=flx ELK_VERSION=8.6.2 SG_VERSION=1.1.1 SG_KIBANA_VERSION=1.1.0"
+    "ES_VERSION=4.0.0 SG_VERSION=8.19.6 SG_KIBANA_VERSION=8.19.6"
+    "ES_VERSION=4.0.0 SG_VERSION=8.19.6 SG_KIBANA_VERSION=8.19.7"
     # version 9
-    "SG_FLAVOUR=flx ELK_VERSION=9.0.1 SG_VERSION=3.1.1 SG_KIBANA_VERSION=3.1.1"
-    "SG_FLAVOUR=flx ELK_VERSION=9.0.2 SG_VERSION=3.1.1 SG_KIBANA_VERSION=3.1.1"
-    "SG_FLAVOUR=flx ELK_VERSION=9.0.3 SG_VERSION=3.1.1 SG_KIBANA_VERSION=3.1.1"
+    "ES_VERSION=9.1.7 SG_VERSION=4.0.0 SG_KIBANA_VERSION=9.1.5"
+    "ES_VERSION=9.1.7 SG_VERSION=4.0.0 SG_KIBANA_VERSION=9.1.6"
+    "ES_VERSION=9.1.7 SG_VERSION=4.0.0 SG_KIBANA_VERSION=9.1.7"
 )
 
 sgctl_versions=(
     "SGCTL_VERSION=3.1.1 JAVA_VERSION=17-jre"
+    "SGCTL_VERSION=3.1.2 JAVA_VERSION=17-jre"
+    "SGCTL_VERSION=3.1.3 JAVA_VERSION=17-jre"
+    "SGCTL_VERSION=3.1.4 JAVA_VERSION=17-jre"
 )
 
-kubectl_versions=(
-    "KUBECTL_VERSION=1.33.2"
-    "KUBECTL_VERSION=1.33.1"
-    "KUBECTL_VERSION=1.32.6"
-    
+cluster_config_versions=(
+    "KUBECTL_VERSION=1.31.0"
+    "KUBECTL_VERSION=1.32.0"
+    "KUBECTL_VERSION=1.33.0"
 )
 
 
@@ -43,11 +41,11 @@ kubectl_versions=(
 ##################################################
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-DOCKER_USER=${1:-floragunncom}
+DOCKER_USER=${1:-helmeltest}
 DOCKER_REPO=${2:-docker.io}
 
-PREFIX="sg-"
-POSTFIX="-h4"
+PREFIX="search-guard-flx-"
+POSTFIX=""
 
 export DOCKER_SCAN_SUGGEST=false
 export BUILDKIT_PROGRESS=plain
@@ -68,15 +66,26 @@ check() {
          retVal=$status
     fi
 }
+get_major_minor_version() {
+    local full_version=$1
+    local major_minor_version=$(echo "$full_version" | awk -F. '{print $1"."$2}')
+    echo $major_minor_version
+}
 
 build() {
     COMPONENT="$1"
+    if [ "$COMPONENT" == "cluster-config" ]; then
+        VERSION=$(get_major_minor_version $2)
+    else
+        VERSION="$2"
+    fi
+
     cd "$DIR/$COMPONENT"
-    TAG="$DOCKER_REPO/$DOCKER_USER/$PREFIX$COMPONENT$POSTFIX:$2"
+    TAG="$DOCKER_REPO/$DOCKER_USER/$PREFIX$COMPONENT$POSTFIX:$VERSION"
     LOGFILE="${TAG////_}"
     LOGFILE="${LOGFILE/:/__}"
     echo "Build and push image $TAG for $PLATFORMS"
-    
+
     if [ "$PLATFORMS" = "local" ]; then
         docker build -t "$TAG" "${@:3}" . > "$LOGFILE.log" 2>&1
         check "  Build $TAG"
@@ -87,13 +96,12 @@ build() {
         check "  Buildx $TAG"
     fi
 
-    
 }
 
 
 PREFIX= POSTFIX= PLATFORMS="$DEFAULT_PLATFORMS" build busybox latest
 
-for versionstring in "${kubectl_versions[@]}"
+for versionstring in "${cluster_config_versions[@]}"
 do
     eval "$versionstring"
 
@@ -101,7 +109,7 @@ do
         PLATFORMS="$DEFAULT_PLATFORMS"
     fi
 
-    build kubectl "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
+    build cluster-config "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
     PLATFORMS=
 done
 
@@ -126,31 +134,21 @@ do
         PLATFORMS="$DEFAULT_PLATFORMS"
     fi
 
-    if [ "$SG_FLAVOUR" = "non-flx" ] && [ "$(echo $ELK_VERSION | cut -d. -f1-1)" = "7" ];then
-        SG_FLAVOUR_COMPAT=""
-    else
-        SG_FLAVOUR_COMPAT="-flx"
-    fi
+    build elasticsearch "$SG_VERSION-es-$ELK_VERSION"  --build-arg ES_VERSION="$ELK_VERSION"   --build-arg SG_VERSION="$SG_VERSION"
 
-    
-
-    build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" --build-arg INSTALL_DEFAULT_PLUGINS="$INSTALL_DEFAULT_PLUGINS"
-    
     if [ -z "$KIBANA_PLATFORMS" ]; then
         PLATFORMS="$DEFAULT_PLATFORMS"
     else
         PLATFORMS="$KIBANA_PLATFORMS"
     fi
-    
+
     if [ ! -z "$SG_KIBANA_VERSION" ]; then
-        build kibana "$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"
+        build kibana "$SG_KIBANA_VERSION-es-$ELK_VERSION"  --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"
     fi
 
     PLATFORMS=
     KIBANA_PLATFORMS=
     JAVA_VERSION=
-    ELK_FLAVOUR=
-    SG_FLAVOUR=
     JAVA_BASE_IMAGE=
 done
 

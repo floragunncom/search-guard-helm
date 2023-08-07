@@ -1,8 +1,9 @@
+ARG SG_KIBANA_VERSION
 ARG ELK_VERSION
 ARG ELK_FLAVOUR
 
 # https://github.com/elastic/kibana-docker
-FROM docker.elastic.co/kibana/kibana${ELK_FLAVOUR}:${ELK_VERSION} as base
+FROM docker.elastic.co/kibana/kibana:${ELK_VERSION} as base
 
 USER root
 RUN if ! command -v pgrep >/dev/null 2>&1; then \
@@ -15,12 +16,7 @@ USER 1000
 # Search Guard plugin
 ARG SG_KIBANA_VERSION
 ARG ELK_VERSION
-ARG ELK_FLAVOUR
-ARG SG_FLAVOUR
-
-FROM base as non-flx
-ENV FULL_SG_VERSION=${ELK_VERSION}-${SG_KIBANA_VERSION}
-RUN kibana-plugin install https://maven.search-guard.com/search-guard-kibana-plugin-release/com/floragunn/search-guard-kibana-plugin/${FULL_SG_VERSION}/search-guard-kibana-plugin-${FULL_SG_VERSION}.zip
+ENV FULL_SG_VERSION=${SG_KIBANA_VERSION}-es-${ELK_VERSION}
 
 FROM base as flx
 ARG TARGETARCH
