@@ -264,7 +264,8 @@ init container template
 {{- end -}}
 
 {{- define "searchguard.kubectl-image" -}}
-image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kubectl_base_image }}:{{ trimPrefix "v" (split "-" .Capabilities.KubeVersion.Version)._0 }}
+image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.cluster_config_base_image }}:{{- printf "%s.%s" (split "." (trimPrefix "v" (split "-" .Capabilities.KubeVersion.Version)._0))._0 (split "." (trimPrefix "v" (split "-" .Capabilities.KubeVersion.Version)._0))._1 -}}
+
 {{- end -}}
 
 {{- define "searchguard.kubectl-init-container" -}}
@@ -303,7 +304,7 @@ securityContext:
 {{- define "searchguard.custom-elasticsearch-keystore-init-container" -}}
 - name: searchguard-custom-elasticsearch-keystore
 {{ if .Values.common.xpack_basic }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.sgversion }}-es-{{ .Values.common.elkversion }}"
 {{ else }}
   image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}

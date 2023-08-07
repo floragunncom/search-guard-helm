@@ -151,7 +151,7 @@ spec:
       - name: kibana
 {{ include "searchguard.security-context.least" . | indent 8 }}
       {{ if .Values.common.xpack_basic }}
-        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.sgkibanaversion }}-es-{{ .Values.common.elkversion }}"
       {{ else }}
         image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
       {{ end }}
