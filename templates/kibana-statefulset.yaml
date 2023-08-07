@@ -15,7 +15,7 @@
 */}}
 
 
-{{- $kibanaValues := .Values.kibana }} 
+{{- $kibanaValues := .Values.kibana }}
 {{- if not (kindIs "slice" .Values.kibana) }}
 {{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
 {{- end }}
@@ -123,7 +123,7 @@ spec:
             mountPath: /data
           command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
         - name: kibana-init
-          image: {{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.sgctl_base_image }}:{{ $.Values.common.sgctl_version }}
+          image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.sgctl_base_image }}:{{ $.Values.common.sgctl_version }}"
           imagePullPolicy: {{ $.Values.common.pullPolicy }}
           volumeMounts:
             - name: kubectl
@@ -161,7 +161,7 @@ spec:
       - name: kibana
 {{ include "searchguard.security-context.least" . | indent 8 }}
       {{ if $.Values.common.xpack_basic }}
-        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-{{ $.Values.common.sgkibanaversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.sgkibanaversion }}-es-{{ $.Values.common.elkversion }}"
       {{ else }}
         image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgkibanaversion }}"
       {{ end }}
@@ -246,5 +246,5 @@ spec:
   #       resources:
   #         requests:
   #           storage: {{ .storage }}
-  
+
   {{- end }}

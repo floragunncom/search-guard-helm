@@ -30,11 +30,10 @@ sgctl_versions=(
     "SGCTL_VERSION=3.1.1 JAVA_VERSION=17-jre"
 )
 
-kubectl_versions=(
+cluster_config_versions=(
     "KUBECTL_VERSION=1.33.2"
     "KUBECTL_VERSION=1.33.1"
     "KUBECTL_VERSION=1.32.6"
-    
 )
 
 
@@ -46,8 +45,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_USER=${1:-floragunncom}
 DOCKER_REPO=${2:-docker.io}
 
-PREFIX="sg-"
-POSTFIX="-h4"
+PREFIX="search-guard-flx-"
+POSTFIX=""
 
 export DOCKER_SCAN_SUGGEST=false
 export BUILDKIT_PROGRESS=plain
@@ -68,15 +67,26 @@ check() {
          retVal=$status
     fi
 }
+get_major_minor_version() {
+    local full_version=$1
+    local major_minor_version=$(echo "$full_version" | awk -F. '{print $1"."$2}')
+    echo $major_minor_version
+}
 
 build() {
     COMPONENT="$1"
+    if [ "$COMPONENT" == "cluster-config" ]; then
+        VERSION=$(get_major_minor_version $2)
+    else
+        VERSION="$2"
+    fi
+
     cd "$DIR/$COMPONENT"
-    TAG="$DOCKER_REPO/$DOCKER_USER/$PREFIX$COMPONENT$POSTFIX:$2"
+    TAG="$DOCKER_REPO/$DOCKER_USER/$PREFIX$COMPONENT$POSTFIX:$VERSION"
     LOGFILE="${TAG////_}"
     LOGFILE="${LOGFILE/:/__}"
     echo "Build and push image $TAG for $PLATFORMS"
-    
+
     if [ "$PLATFORMS" = "local" ]; then
         docker build -t "$TAG" "${@:3}" . > "$LOGFILE.log" 2>&1
         check "  Build $TAG"
@@ -87,13 +97,12 @@ build() {
         check "  Buildx $TAG"
     fi
 
-    
 }
 
 
 PREFIX= POSTFIX= PLATFORMS="$DEFAULT_PLATFORMS" build busybox latest
 
-for versionstring in "${kubectl_versions[@]}"
+for versionstring in "${cluster_config_versions[@]}"
 do
     eval "$versionstring"
 
@@ -101,7 +110,7 @@ do
         PLATFORMS="$DEFAULT_PLATFORMS"
     fi
 
-    build kubectl "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
+    build cluster-config "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
     PLATFORMS=
 done
 
@@ -126,31 +135,21 @@ do
         PLATFORMS="$DEFAULT_PLATFORMS"
     fi
 
-    if [ "$SG_FLAVOUR" = "non-flx" ] && [ "$(echo $ELK_VERSION | cut -d. -f1-1)" = "7" ];then
-        SG_FLAVOUR_COMPAT=""
-    else
-        SG_FLAVOUR_COMPAT="-flx"
-    fi
+    build elasticsearch "$SG_VERSION-es-$ELK_VERSION"  --build-arg ES_VERSION="$ELK_VERSION"   --build-arg SG_VERSION="$SG_VERSION"
 
-    
-
-    build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" --build-arg INSTALL_DEFAULT_PLUGINS="$INSTALL_DEFAULT_PLUGINS"
-    
     if [ -z "$KIBANA_PLATFORMS" ]; then
         PLATFORMS="$DEFAULT_PLATFORMS"
     else
         PLATFORMS="$KIBANA_PLATFORMS"
     fi
-    
+
     if [ ! -z "$SG_KIBANA_VERSION" ]; then
-        build kibana "$ELK_VERSION$ELK_FLAVOUR-$SG_KIBANA_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"
+        build kibana "$SG_KIBANA_VERSION-es-$ELK_VERSION"  --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_KIBANA_VERSION="$SG_KIBANA_VERSION"
     fi
 
     PLATFORMS=
     KIBANA_PLATFORMS=
     JAVA_VERSION=
-    ELK_FLAVOUR=
-    SG_FLAVOUR=
     JAVA_BASE_IMAGE=
 done
 
