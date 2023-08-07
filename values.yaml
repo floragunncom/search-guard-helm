@@ -3,19 +3,19 @@ common:
   cluster_name: "searchguard"
 
   ## Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
-  ## If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
+  ## If you use custom images for ES, Kibana and sg-admin instances, please, use these naming convention for them:
   ## - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
   ## - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
-  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
+  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<sgversion>-es-<elkversion>
   ## - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
-  ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
+  ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<sgversion>-es-<elkversion>
   images:
     repository: "docker.io"
-    provider: "floragunncom"
-    elasticsearch_base_image: "sg-elasticsearch-h4"
-    kibana_base_image: "sg-kibana-h4"
-    sgctl_base_image: "sg-sgctl-h4"
-    kubectl_base_image: "sg-kubectl-h4"
+    provider: "helmeltest"
+    elasticsearch_base_image: "search-guard-flx-elasticsearch"
+    kibana_base_image: "search-guard-flx-kibana"
+    sgctl_base_image: "search-guard-flx-sgctl"
+    cluster_config_base_image: "search-guard-flx-cluster-config"
 
   ## Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
   docker_registry:
@@ -37,10 +37,11 @@ common:
 
   ## Search Guard plugin version
   sgversion: "1.1.1-flx"
+  sgversion: "1.1.0"
 
   ## Search Guard Kibana plugin version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "1.1.0-flx"
+  sgkibanaversion: "1.1.0"
 
   sgctl_version: 1.1.0
 
