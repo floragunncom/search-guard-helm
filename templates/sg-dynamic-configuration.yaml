@@ -172,3 +172,12 @@ data:
 {{ else if not .Values.common.tenants }}
     {}
 {{ end }}
+
+######## sg_authz_dlsfls.yml ########
+  sg_authz_dlsfls.yml: |-
+    ---
+{{ if .Values.common.fieldAnonymization }}
+{{ toYaml .Values.common.fieldAnonymization | indent 4 }}
+{{ else if not .Values.common.fieldAnonymization }}
+    {}
+{{ end }}
