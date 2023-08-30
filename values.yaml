@@ -33,17 +33,16 @@ common:
 
   ## Elasticsearch and Kibana version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "8.6.2"
+  elkversion: "8.7.0"
 
   ## Search Guard plugin version
-  sgversion: "1.1.1-flx"
-  sgversion: "1.1.0"
+  sgversion: "1.3.0"
 
   ## Search Guard Kibana plugin version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "1.1.0"
+  sgkibanaversion: "1.3.0"
 
-  sgctl_version: 1.1.0
+  sgctl_version: 1.3.0
 
   ## If true then install also all free and basic x-pack features
   ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
