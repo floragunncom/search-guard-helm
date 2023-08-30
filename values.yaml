@@ -11,7 +11,7 @@ common:
   ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<sgversion>-es-<elkversion>
   images:
     repository: "docker.io"
-    provider: "helmeltest"
+    provider: "floragunncom"
     elasticsearch_base_image: "search-guard-flx-elasticsearch"
     kibana_base_image: "search-guard-flx-kibana"
     sgctl_base_image: "search-guard-flx-sgctl"
