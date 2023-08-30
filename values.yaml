@@ -6,7 +6,7 @@ common:
   ## If you use custom images for ES, Kibana and sg-admin instances, please, use these naming convention for them:
   ## - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
   ## - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
-  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<sgversion>-es-<elkversion>
+  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<sgversion>-<elkversion>
   ## - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
   ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<sgversion>-es-<elkversion>
   images:

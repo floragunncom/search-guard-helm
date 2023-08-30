@@ -304,7 +304,7 @@ securityContext:
 {{- define "searchguard.custom-elasticsearch-keystore-init-container" -}}
 - name: searchguard-custom-elasticsearch-keystore
 {{ if .Values.common.xpack_basic }}
-  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.sgversion }}-es-{{ .Values.common.elkversion }}"
+  image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.sgversion }}-{{ .Values.common.elkversion }}"
 {{ else }}
   image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}
