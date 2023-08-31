@@ -55,6 +55,21 @@ exec:
 {{- end -}}
 
 
+{{- define "searchguard.patch-node-certificates" -}}
+kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5
+{{- end -}}
+
+{{- define "searchguard.recreate-node-certificates" -}}
+kubectl get secret {{ template "searchguard.fullname" . }}-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+nodes_certs_status=$?
+if [ $nodes_certs_status -ne 0 ]; then
+  echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+  {{ include "searchguard.patch-node-certificates" . }}  
+fi
+{{- end -}}
+
+
+
 {{/*
 init container template
 
@@ -71,6 +86,9 @@ init container template
       subPath: kubectl
       mountPath: /usr/local/bin/kubectl
       readOnly: true
+    - name: nodes-cert
+      mountPath: /sg-nodes-certs
+      readOnly: false           
   env:
     - name: NAMESPACE
       valueFrom:
@@ -164,8 +182,13 @@ init container template
 
         /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
 
-        kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /tmp/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /tmp/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
-        #cat /tmp/*snippet.yml
+        for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+        do
+           cp -rf /tmp/$sgfile /sg-nodes-certs/
+        done    
+            
+        {{ include "searchguard.patch-node-certificates" . }}        
+
 
   resources:
     limits:
