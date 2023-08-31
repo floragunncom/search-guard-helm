@@ -123,6 +123,7 @@ spec:
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -164,7 +165,7 @@ spec:
         livenessProbe:
           tcpSocket:
             port: transport
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
           httpGet:
@@ -195,6 +196,9 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true          
       volumes:
         - name: secret-volume
           secret:
@@ -208,6 +212,8 @@ spec:
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
+        - name: nodes-cert
+          emptyDir: {}          
   volumeClaimTemplates:
     - metadata:
         name: storage

@@ -123,6 +123,7 @@ spec:
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
 
                     function try_loop {
                         for (( c=1; c<=100; c++ )); do \
@@ -208,7 +209,7 @@ spec:
         livenessProbe:
           tcpSocket:
             port: transport
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         resources:
 {{ toYaml .Values.data.resources | indent 10 }}
@@ -234,6 +235,9 @@ spec:
         - name: secret-volume-admin-cert
           readOnly: true
           mountPath: /sgcerts/
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
       volumes:
         - name: secret-volume
           secret:
@@ -250,6 +254,8 @@ spec:
         - name: secret-volume-admin-cert
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+        - name: nodes-cert
+          emptyDir: {}    
   volumeClaimTemplates:
   - metadata:
       name: storage
