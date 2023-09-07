@@ -1,0 +1,33 @@
+common:
+  fieldAnonymization:
+    use_impl: flx
+    field_anonymization:
+      salt: 7A4EB67D40536EB6B107AF3202EA6275
+
+  # Configure additional users (maps to sg_internal_users.yml)
+  users:
+    fieldanonymization:
+      hash: ${envbc.SG_FIELDANONYMIZATION_PWD}
+      backend_roles:
+        - fieldanonymization
+
+
+  # Configure additional rolemappings (maps to sg_roles_mapping.yml)
+  rolesmapping:
+    fieldanonymization:
+      backend_roles:
+        - fieldanonymization
+
+  # Configure additional role (maps to sg_roles.yml)
+  roles:
+    fieldanonymization:
+      cluster_permissions:
+        - SGS_CLUSTER_COMPOSITE_OPS_RO
+      index_permissions:
+        - index_patterns:
+            - "*"
+          allowed_actions:
+            - SGS_INDICES_ALL
+          masked_fields:
+            - '*Name'
+            - 'Address'   
