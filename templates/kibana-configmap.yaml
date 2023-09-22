@@ -29,7 +29,7 @@ data:
 
 {{ if .Values.common.xpack_basic }}
     xpack.security.enabled: false
-    xpack.spaces.enabled: false
+    xpack.spaces.enabled: {{ .Values.common.xpack_spaces_enabled }}
     xpack.ml.enabled: false
     xpack.apm.enabled: false
     xpack.graph.enabled: false

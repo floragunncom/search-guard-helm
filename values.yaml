@@ -47,6 +47,9 @@ common:
   ## If true then install also all free and basic x-pack features
   ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
   xpack_basic: true
+  ## set xpack.spaces.enabled in Kibana configmap
+  xpack_spaces_enabled: false
+  
 
   ## DN of the admin certificate
   ## See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
