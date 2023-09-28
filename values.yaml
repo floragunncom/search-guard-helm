@@ -484,6 +484,38 @@ datacontent:
     requests:
       cpu: 800m
       memory: 1500Mi
+# The datacontent node is a part of content tier with  long data retention. 
+# Enabling datacontent will create dedicated statefulset in the cluster
+datacontent:
+  enabled: false
+  roles:
+    - data_content
+    - remote_cluster_client
+
+  ## For production we recommend at least 3 replicas. Number must be odd.
+  replicas: 2
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
+  antiAffinity: "soft"
+  storage: 2Gi
+  ## Set storageClass if non-default storage is used.
+  # storageClass: "gp2"
+  
+  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  heapSize: 1g
+  ## More info on what this setting does is in the config map. Only change this
+  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  processors: 1
+  labels: {}
+  annotations: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1500Mi
+    requests:
+      cpu: 100m
+      memory: 1500Mi      
 
   # tolerations:
   #  - key: "key1"
