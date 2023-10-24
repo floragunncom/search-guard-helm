@@ -8,5 +8,6 @@ INITIAL="$SCRIPT_DIR/../examples/setup_custom_ca/values.yaml"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/update_static_config/values.yaml" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/update_sg_config/values.yaml" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/scale_cluster/values.yaml" "8"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/enable_data_content_node/values.yaml" "10"
 echo "Finished"
 
