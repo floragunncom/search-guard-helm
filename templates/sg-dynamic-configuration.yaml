@@ -27,7 +27,7 @@ metadata:
 data:
 ######## license_key.yml ########
 {{ if not (eq .Values.common.license "none") }}
-  license_key.yml: |-
+  sg_license_key.yml: |-
     key: {{ .Values.common.license }}
 {{ end }}
 
