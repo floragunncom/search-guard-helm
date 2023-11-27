@@ -186,6 +186,7 @@ spec:
         resources:
 {{ toYaml .Values.client.resources | indent 10 }}
         volumeMounts:
+{{- include "searchguard.config-volume-mount" . | nindent 8 }}
         - mountPath: /usr/share/elasticsearch/data
           name: storage
           subPath: data
@@ -195,8 +196,6 @@ spec:
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
-          name: searchguard-config
         - name: secret-volume
           readOnly: true
           mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
@@ -211,6 +210,7 @@ spec:
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
 {{ end }}
       volumes:
+{{- include "searchguard.config-volumes" . | nindent 8 }}        
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
@@ -218,9 +218,6 @@ spec:
         - configMap:
             name: {{ template "searchguard.fullname" . }}-config
           name: config
-        - configMap:
-            name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
-          name: searchguard-config
         - name: kubectl
           emptyDir: {}
         - name: nodes-cert

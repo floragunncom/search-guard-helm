@@ -1,0 +1,68 @@
+{{- if .Values.common.sgctl_cli }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "searchguard.fullname" . }}-sgctl-cli
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}-sgctl-cli
+    role: sgctl-cli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ template "searchguard.fullname" . }}
+      role: sgctl-cli
+  template:
+    metadata:
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: sgctl-cli
+    spec:
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      {{ end }}
+      {{ if .Values.common.tolerations }}
+      tolerations:
+{{ toYaml .Values.common.tolerations | indent 6 }}
+      {{ end }}
+      {{ if .Values.common.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+{{ toYaml .Values.common.nodeAffinity | indent 10 }}
+      {{ end }}
+      containers:
+      - name: sgctl-cli
+        env:
+          - name: DISCOVERY_SERVICE
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc 
+        image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+          - mountPath: /sgconfig/
+            name: searchguard-config
+          - name: secret-volume
+            readOnly: true
+            mountPath: /sgcerts/
+      volumes:
+{{- include "searchguard.config-volumes" . | nindent 8 }}            
+        - name: secret-volume
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+{{- end }}            

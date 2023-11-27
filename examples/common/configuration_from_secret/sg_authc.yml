@@ -1,0 +1,9 @@
+debug: false
+auth_domains:
+- type: basic/internal_users_db
+- jwt.signing.jwks.keys:
+  - alg: HS256
+    k: "DI7au8pz29kAbXSbn4c1vT/BavaDHmDyCOxBW/pOfLc="
+    kty: OCTET
+  type: jwt
+  user_mapping.roles.from_comma_separated_string: jwt.roles

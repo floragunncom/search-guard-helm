@@ -38,6 +38,29 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{-  .Values.common.elkversion | substr 0 1 }}
 {{- end }}
 
+{{- define "searchguard.config-volume-mount" -}}
+- mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
+  name: searchguard-config
+{{- end -}}
+
+{{- define "searchguard.config-volumes" -}}
+
+{{- if .Values.common.sg_dynamic_configuration_from_secret.enabled }}
+- name: searchguard-config  
+  projected:
+    sources:
+    - configMap:
+        name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
+    - secret:
+        name: {{ template "searchguard.fullname" . }}-{{.Values.common.sg_dynamic_configuration_from_secret.secret_name}}
+  
+{{- else }}
+- configMap:
+    name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
+  name: searchguard-config  
+{{- end }}  
+{{- end -}}
+
 {{- define "searchguard.lifecycle-cleanup-certs" -}}
 exec:
   command:
