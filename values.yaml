@@ -448,10 +448,10 @@ master:
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 2
       memory: 1500Mi
     requests:
-      cpu: 800m
+      cpu: 2
       memory: 1500Mi
 # The datacontent node is a part of content tier with  long data retention.
 # Enabling datacontent will create dedicated statefulset in the cluster
