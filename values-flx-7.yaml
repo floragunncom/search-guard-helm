@@ -33,10 +33,10 @@ common:
 
   ## Elasticsearch and Kibana version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "8.6.2"
+  elkversion: "7.17.8"
 
   ## Search Guard plugin version
-  sgversion: "1.1.1-flx"
+  sgversion: "1.1.0-flx"
 
   ## Search Guard Kibana plugin version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
@@ -295,12 +295,6 @@ common:
     enabled: false
 
 client:
-
-  roles:
-    - transform
-    - remote_cluster_client
-    - ingest
-
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -315,16 +309,16 @@ client:
   ## For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 500m
       memory: 1500Mi
     requests:
-      cpu: 800m
+      cpu: 100m
       memory: 1500Mi
 
   tolerations:
@@ -362,11 +356,6 @@ client:
 ## The main benefit of having dedicated data nodes is the separation of the
 ## master and data roles.
 data:
-
-  roles:
-    - data
-    - remote_cluster_client
-
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -380,7 +369,7 @@ data:
   ## For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
@@ -389,7 +378,7 @@ data:
       cpu: 1
       memory: 1500Mi
     requests:
-      cpu: 800m
+      cpu: 1
       memory: 1500Mi
 
   # tolerations:
@@ -424,11 +413,6 @@ data:
 ## cluster, and deciding which shards to allocate to which nodes. It is
 ## important for cluster health to have a stable master node.
 master:
-
-  roles:
-    - master
-    - remote_cluster_client
-
   ## For production we recommend at least 3 replicas. Number must be odd.
   replicas: 3
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -442,47 +426,16 @@ master:
   ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  ## if you set the cpu limit to over 1 full cpu.
   processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 500m
       memory: 1500Mi
     requests:
-      cpu: 800m
-      memory: 1500Mi
-# The datacontent node is a part of content tier with  long data retention.
-# Enabling datacontent will create dedicated statefulset in the cluster
-datacontent:
-  enabled: false
-  roles:
-    - data_content
-    - remote_cluster_client
-
-  ## For production we recommend at least 3 replicas. Number must be odd.
-  replicas: 2
-  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node.
-  ## 'soft' will do this "best effort"
-  ## For production we recommend setting this to 'hard'
-  antiAffinity: "soft"
-  storage: 2Gi
-  ## Set storageClass if non-default storage is used.
-  # storageClass: "gp2"
-
-  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
-  heapSize: 1g
-  ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  labels: {}
-  annotations: {}
-  resources:
-    limits:
-      cpu: 1
-      memory: 1500Mi
-    requests:
-      cpu: 800m
+      cpu: 100m
       memory: 1500Mi
 
   # tolerations:
@@ -655,10 +608,10 @@ kibana:
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 500m
       memory: 2500Mi
     requests:
-      cpu: 800m
+      cpu: 100m
       memory: 2500Mi
 
 ## Incoming port of the service

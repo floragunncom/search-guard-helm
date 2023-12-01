@@ -5,4 +5,4 @@ common:
   #Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
   ca_certificates_enabled: true
   ca_password: passca222
-  certificates_directory: "examples/setup_custom_ca/secrets"
+  certificates_directory: "examples/common/setup_custom_ca/secrets"

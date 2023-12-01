@@ -15,76 +15,77 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
+{{- if and (not (eq (include "searchguard.elk-version" .) "7")) .Values.datacontent.enabled }}
 
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" . }}-master
+  name: {{ template "searchguard.fullname" . }}-data-content
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}-master
-    role: master
+    component: {{ template "searchguard.fullname" . }}
+    role: data-content
 spec:
-  serviceName: {{ template "searchguard.fullname" . }}-master
-  replicas: {{ .Values.master.replicas }}
+  serviceName: {{ template "searchguard.fullname" . }}-data-content
+  replicas: {{ .Values.datacontent.replicas }}
   updateStrategy:
     type: OnDelete
   podManagementPolicy: Parallel
   selector:
     matchLabels:
       component: {{ template "searchguard.fullname" . }}
-      role: master
+      role: data-content
   template:
     metadata:
       labels:
         release: "{{ .Release.Name }}"
         app: {{ template "searchguard.fullname" . }}
         component: {{ template "searchguard.fullname" . }}
-        role: master
+        role: data-content
         estype: node
-        {{- if .Values.master.labels }}
-{{ toYaml .Values.master.labels | indent 8 }}
+        {{- if .Values.datacontent.labels }}
+{{ toYaml .Values.datacontent.labels | indent 8 }}
         {{- end }}
       annotations:
         {{ if .Values.common.restart_pods_on_config_change }}
         checksum/config: {{ include (print $.Template.BasePath "/sg-static-configuration.yaml") . | sha256sum }}
         {{ end }}
-      {{- if .Values.master.annotations }}
-{{ toYaml .Values.master.annotations | indent 8 }}
+      {{- if .Values.datacontent.annotations }}
+{{ toYaml .Values.datacontent.annotations | indent 8 }}
       {{- end }}
     spec:
       subdomain: {{ template "searchguard.fullname" . }}
       serviceAccountName: {{ template "searchguard.fullname" . }}
       securityContext:
         fsGroup: 1000
-      {{ if or .Values.master.nodeAffinity .Values.master.antiAffinity }}
+      {{ if or .Values.datacontent.nodeAffinity .Values.datacontent.antiAffinity }}
       affinity:
-      {{ if .Values.master.nodeAffinity }}
+      {{ if .Values.datacontent.nodeAffinity }}
         nodeAffinity:
-{{ toYaml .Values.master.nodeAffinity | indent 10 }}
+{{ toYaml .Values.datacontent.nodeAffinity | indent 10 }}
       {{ end }}     
       {{ end }}    
-      {{- if eq .Values.master.antiAffinity "hard" }}
+      {{- if eq .Values.datacontent.antiAffinity "hard" }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: "topology.kubernetes.io/zone"
+            - topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" . }}
-                  role: master
+                  role: data-content
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-              topologyKey: "kubernetes.io/hostname"
+              topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" . }}
-                  role: master
-      {{- else if eq .Values.master.antiAffinity "soft" }}
+                  role: data-content
+      {{- else if eq .Values.datacontent.antiAffinity "soft" }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -93,28 +94,27 @@ spec:
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" . }}
-                  role: master
+                  role: data-content
           - weight: 2
             podAffinityTerm:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" . }}
-                  role: master
+                  role: data-content
       {{- end }}
-      {{ if .Values.master.tolerations }}
+      {{ if .Values.datacontent.tolerations }}
       tolerations:
-{{ toYaml .Values.master.tolerations | indent 6 }}
+{{ toYaml .Values.datacontent.tolerations | indent 6 }}
       {{ end }}
       initContainers:
 {{ include "searchguard.init-containers" . | indent 6 }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: docker-auth
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
       - name: elasticsearch
-{{ include "searchguard.security-context.least" . | indent 8 }}
       {{ if .Values.common.xpack_basic }}
         image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgversion }}"
       {{ else }}
@@ -125,8 +125,45 @@ spec:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
 {{ include "searchguard.recreate-node-certificates" . | indent 20 }}
+
+                    function try_loop {
+                        for (( c=1; c<=100; c++ )); do \
+                            eval $@ && exit_code=0 && break || exit_code=$? && echo "Retry $c in 5s" && \
+                            sleep 5; \
+                            done; \
+                            (exit $exit_code)
+                    }
+
+                    
+                    try_loop nc -z $DISCOVERY_SERVICE 9300
+                    try_loop nc -z $DISCOVERY_SERVICE 9200
+                    
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_status=yellow&timeout=300s&pretty" > /tmp/poststart 2>&1 || true
+
+                    try_loop nc -z $HOSTNAME 9200
+
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": null
+                      }
+                    }
+                    ' >> /tmp/poststart 2>&1 || true
+
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": "primaries"
+                      }
+                    }
+                    ' #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X POST "https://$HOSTNAME:9200/_flush/synced?pretty" #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
+{{ include "searchguard.security-context.least" . | indent 8 }}
         envFrom:
         - secretRef:
             name: {{ template "searchguard.fullname" . }}-passwd-secret
@@ -142,40 +179,16 @@ spec:
         - name: DISCOVERY_SERVICE
           value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
-          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.master.heapSize }} -Xmx{{ .Values.master.heapSize }}"
-{{- if eq (include "searchguard.elk-version" .) "7" }}
-        - name: NODE_DATA
-          value: "false"
-        - name: NODE_MASTER
-          value: "true"
-        - name: NODE_INGEST
-          value: "false"
-{{- else }}
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.datacontent.heapSize }} -Xmx{{ .Values.datacontent.heapSize }}"
         - name: NODE_ROLES
-          value: "{{ join "," .Values.master.roles }}"
-{{- end }}
-
+          value: "{{ join "," .Values.datacontent.roles }}"
         - name: PROCESSORS
-          value: "{{ .Values.master.processors }}"
-
-        {{ if or .Release.IsInstall (not .Values.common.remove_initial_master_nodes_after_install) }}
-        {{- $master_name := printf "%s-%s-%s" .Release.Name .Chart.Name "master" }}
-        {{- $zkservers := list -}}
-        {{- range $ordinal, $e := untilStep 0 (.Values.master.replicas | int) 1 }}
-        {{- $zkservers = printf "%s-%d" $master_name $ordinal | append $zkservers -}}
-        {{- end -}}
-
-        - name: "cluster.initial_master_nodes"
-          value: {{ join "," $zkservers | quote }}
-
-        {{ end }}
-
-
+          value: "{{ .Values.datacontent.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
-        {{- range $key, $value :=  .Values.master.env }}
+        {{- range $key, $value :=  .Values.datacontent.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
@@ -188,11 +201,11 @@ spec:
           protocol: TCP
         readinessProbe:
           httpGet:
-            path: /_searchguard/health?mode=nonstrict
+            path: /_searchguard/health
             port: http
             scheme: HTTPS
           initialDelaySeconds: 20
-          timeoutSeconds: 10
+          periodSeconds: 10
           failureThreshold: 30
         livenessProbe:
           tcpSocket:
@@ -200,7 +213,7 @@ spec:
           initialDelaySeconds: 120
           periodSeconds: 10
         resources:
-{{ toYaml .Values.master.resources | indent 10 }}
+{{ toYaml .Values.datacontent.resources | indent 10 }}
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data
           name: storage
@@ -220,12 +233,12 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
+        - name: secret-volume-admin-cert
+          readOnly: true
+          mountPath: /sgcerts/
         - name: nodes-cert
           mountPath: /sg-nodes-certs
           readOnly: true
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
-{{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
-{{ end }}
       volumes:
         - name: secret-volume
           secret:
@@ -239,18 +252,19 @@ spec:
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
+        - name: secret-volume-admin-cert
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - name: nodes-cert
-          emptyDir: {}
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
-        - name: elasticsearch-keystore
-          emptyDir: {}
-{{ end }}
+          emptyDir: {}    
   volumeClaimTemplates:
   - metadata:
       name: storage
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.master.storageClass }}
+      storageClassName: {{ .Values.datacontent.storageClass }}
       resources:
         requests:
-          storage: {{ .Values.master.storage }}
+          storage: {{ .Values.datacontent.storage }}
+
+{{ end }}

@@ -157,6 +157,13 @@ spec:
       {{ end }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         lifecycle:
+          postStart:
+            exec:
+              command:
+                - bash
+                - -c
+                - |             
+{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         envFrom:
@@ -190,7 +197,7 @@ spec:
             command:
               - pgrep
               - node
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
 {{ toYaml .Values.kibana.readinessProbe | indent 10 }}
@@ -209,6 +216,9 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true             
       volumes:
         - name: certificates-secrets-volume
           secret:
@@ -219,6 +229,8 @@ spec:
           name: config
         - name: kubectl
           emptyDir: {}
+        - name: nodes-cert
+          emptyDir: {}   
   # volumeClaimTemplates:
   #   - metadata:
   #       name: storage

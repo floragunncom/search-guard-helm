@@ -123,6 +123,7 @@ spec:
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
 
                     function try_loop {
                         for (( c=1; c<=100; c++ )); do \
@@ -178,12 +179,17 @@ spec:
           value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.data.heapSize }} -Xmx{{ .Values.data.heapSize }}"
+{{- if eq (include "searchguard.elk-version" .) "7" }}
         - name: NODE_DATA
           value: "true"
         - name: NODE_MASTER
           value: "false"
         - name: NODE_INGEST
           value: "false"
+{{- else }}
+        - name: NODE_ROLES
+          value: "{{ join "," .Values.data.roles }}"
+{{- end }}
         - name: PROCESSORS
           value: "{{ .Values.data.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -212,7 +218,7 @@ spec:
         livenessProbe:
           tcpSocket:
             port: transport
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         resources:
 {{ toYaml .Values.data.resources | indent 10 }}
@@ -238,9 +244,12 @@ spec:
         - name: secret-volume-admin-cert
           readOnly: true
           mountPath: /sgcerts/
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}              
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
-{{ end }}            
+{{ end }}
       volumes:
         - name: secret-volume
           secret:
@@ -257,10 +266,12 @@ spec:
         - name: secret-volume-admin-cert
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}          
+        - name: nodes-cert
+          emptyDir: {}
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
         - name: elasticsearch-keystore
-          emptyDir: {}        
-{{ end }}                      
+          emptyDir: {}
+{{ end }}
   volumeClaimTemplates:
   - metadata:
       name: storage

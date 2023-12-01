@@ -17,6 +17,7 @@ Includes code from the following Apache 2 licensed projects:
 */}}
 
 
+
 {{/*
 Expand the name of the chart.
 */}}
@@ -32,6 +33,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name }}
 {{- end -}}
+
+{{- define "searchguard.elk-version" -}}
+{{-  .Values.common.elkversion | substr 0 1 }}
+{{- end }}
 
 {{- define "searchguard.lifecycle-cleanup-certs" -}}
 exec:
@@ -55,6 +60,21 @@ exec:
 {{- end -}}
 
 
+{{- define "searchguard.patch-node-certificates" -}}
+kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5
+{{- end -}}
+
+{{- define "searchguard.recreate-node-certificates" -}}
+kubectl get secret {{ template "searchguard.fullname" . }}-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+nodes_certs_status=$?
+if [ $nodes_certs_status -ne 0 ]; then
+  echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+  {{ include "searchguard.patch-node-certificates" . }}  
+fi
+{{- end -}}
+
+
+
 {{/*
 init container template
 
@@ -71,6 +91,9 @@ init container template
       subPath: kubectl
       mountPath: /usr/local/bin/kubectl
       readOnly: true
+    - name: nodes-cert
+      mountPath: /sg-nodes-certs
+      readOnly: false           
   env:
     - name: NAMESPACE
       valueFrom:
@@ -164,8 +187,13 @@ init container template
 
         /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "{{ template "searchguard.fullname" . }}-$NODE_NAME-node-cert.yml" -t /tmp/
 
-        kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /tmp/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /tmp/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /tmp/root-ca.pem | base64 -w0)\"}}" -v=5
-        #cat /tmp/*snippet.yml
+        for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+        do
+           cp -rf /tmp/$sgfile /sg-nodes-certs/
+        done    
+            
+        {{ include "searchguard.patch-node-certificates" . }}        
+
 
   resources:
     limits:
@@ -308,10 +336,10 @@ securityContext:
   image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.elasticsearch_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgversion }}"
 {{ end }}
   imagePullPolicy: {{ .Values.common.pullPolicy }}
-{{ include "searchguard.security-context.least" . | indent 2 }}   
+{{ include "searchguard.security-context.least" . | indent 2 }}
   volumeMounts:
     - name: elasticsearch-keystore
-      mountPath: /custom-elasticsearch-keystore 
+      mountPath: /custom-elasticsearch-keystore
   env:
     - name: NAMESPACE
       valueFrom:
@@ -328,16 +356,16 @@ securityContext:
           name: {{ .valueFrom.secretKeyRef.name }}
           key: {{ .valueFrom.secretKeyRef.key }}
     {{- end }}
-    {{- end }}          
+    {{- end }}
   command:
     - bash
     - -c
-    - | 
+    - |
         ELASTICSEARCH_KEYSTORE=/usr/share/elasticsearch/bin/elasticsearch-keystore
         $ELASTICSEARCH_KEYSTORE create
         {{-  .Values.common.custom_elasticsearch_keystore.script | nindent 8 }}
         cp /usr/share/elasticsearch/config/elasticsearch.keystore /custom-elasticsearch-keystore
-    
+
   resources:
     limits:
       cpu: "500m"
@@ -349,11 +377,11 @@ securityContext:
 
 {{- define "searchguard.custom-elasticsearch-keystore-volumeMounts" -}}
 - name: elasticsearch-keystore
-  mountPath: /usr/share/elasticsearch/config/elasticsearch.keystore 
-  subPath: elasticsearch.keystore 
-{{- end -}} 
+  mountPath: /usr/share/elasticsearch/config/elasticsearch.keystore
+  subPath: elasticsearch.keystore
+{{- end -}}
 
 
 
 
- 
+

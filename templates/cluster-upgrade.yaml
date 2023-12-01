@@ -165,11 +165,13 @@ spec:
                 updateIfRequired "client"
                 updateIfRequired "data"
                 updateIfRequired "master"
-
+                {{- if .Values.datacontent.enabled }}
+                updateIfRequired "data-content"
+                {{- end  }}
                 if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
                 updateIfRequired "kibana"
                 fi
-
+                
                 echo "Cluster ugrade finished"
                 exit 0
       volumes:

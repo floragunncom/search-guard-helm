@@ -1,0 +1,5 @@
+common:
+  elkversion: "8.7.1"
+  sgversion: "1.4.0-flx"
+  sgkibanaversion: "1.4.0-flx"
+  sgctl_version: 1.3.0
