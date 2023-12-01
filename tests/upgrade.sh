@@ -47,7 +47,7 @@ kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx-clients 9200:9200
 kctlpid="$!"
 #kubectl port-forward -n ${NSP} service/sg-elk-search-guard-flx 5601:5601 &
 sleep 5
-until curl --fail -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&pretty&wait_for_nodes=$3"; do
+until curl --fail -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&pretty&wait_for_nodes=$3&timeout=10m"; do
      
      if ! ps -p $kctlpid > /dev/null
      then

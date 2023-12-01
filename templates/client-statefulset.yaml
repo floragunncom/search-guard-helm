@@ -14,7 +14,6 @@
    limitations under the License.
 */}}
 
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -123,6 +122,7 @@ spec:
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" . | indent 12 }}
+{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
@@ -142,12 +142,17 @@ spec:
           value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
+{{- if eq (include "searchguard.elk-version" .) "7" }}
         - name: NODE_DATA
           value: "false"
         - name: NODE_MASTER
           value: "false"
         - name: NODE_INGEST
           value: "true"
+{{- else }}
+        - name: NODE_ROLES
+          value: "{{ join "," .Values.client.roles }}"
+{{- end }}
         - name: PROCESSORS
           value: "{{ .Values.client.processors }}"
         {{- range $key, $value :=  .Values.common.env }}
@@ -168,7 +173,7 @@ spec:
         livenessProbe:
           tcpSocket:
             port: transport
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
           httpGet:
@@ -199,9 +204,12 @@ spec:
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}              
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
-{{ end }}                     
+{{ end }}
       volumes:
         - name: secret-volume
           secret:
@@ -215,10 +223,12 @@ spec:
           name: searchguard-config
         - name: kubectl
           emptyDir: {}
-{{ if .Values.common.custom_elasticsearch_keystore.enabled }}          
+        - name: nodes-cert
+          emptyDir: {}
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
         - name: elasticsearch-keystore
-          emptyDir: {}        
-{{ end }}          
+          emptyDir: {}
+{{ end }}
   volumeClaimTemplates:
     - metadata:
         name: storage

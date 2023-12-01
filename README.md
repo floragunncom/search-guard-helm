@@ -26,7 +26,7 @@
 
 ## Status
 
-This is repo is considered GA status and supports Search Guard FLX for Elasticsearch 7.
+This is repo is considered GA status and supports Search Guard FLX for Elasticsearch 7 and Elasticsearch 8.
 
 ## Support
 
@@ -91,16 +91,24 @@ helm install --set data.storageClass=gp2 --set master.storageClass=gp2  sg-elk s
 ### Deploy via GitLab
 
 To deploy from Git repository, you should clone the project, update helm dependencies and install it in your cluster.
-Optionally read the comments in `values.yaml` and customize them to suit your needs.
+Optionally read the comments in `values.yaml` (for Elasticsearch 8) or `values-flx-7.yaml` (for Elasticsearch 7) and customize them to suit your needs. 
 
+To install Elasticsearch 8
 ```
 $ git clone git@git.floragunn.com:search-guard/search-guard-flx.git
 $ helm dependency update search-guard-flx
 $ helm install sg-elk search-guard-flx
 ```
+To install Elasticsearch 7
+```
+$ git clone git@git.floragunn.com:search-guard/search-guard-flx.git
+$ helm dependency update search-guard-flx
+$ helm install sg-elk search-guard-flx -f values-flx-7.yaml
+```
+
 
 Please refer to the [Helm Documentation][] on how to override the chart default
-settings. See `values.yaml` for the documented set of settings you can override.
+settings. See `values.yaml` for the documented set of settings you can override for Elasticsearch 8 or `values-flx-7.yaml` for Elasticsearch 7 .
 
 Please note that if you are using any other Kubernetes distribution except Minikube,
 check if [Storage type][] "standard" is available in the distribution. 
@@ -112,22 +120,6 @@ Example usage for AWS EBS:
 helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk search-guard-flx
 ```
 
-
-### Deploy on AWS (optional)
-
-This option provides possibility to set up Kubernetes cluster on AWS while having the `awscli` installed and configured and install Search Guard Helm charts in the cluster.
-This script is provided for demo purposes. Please, consider the required AWS resources and Helm chart configuration in the [./tools/sg_aws_kops.sh][].
-
-Setup the Kubernetes AWS cluster with installed Search Guard Helm charts:
-```
-./tools/sg_aws_kops.sh -c mytestcluster
-```
-
-Delete the cluster when you finished with testing Search Guard
-
-```
-./tools/sg_aws_kops.sh -d mytestcluster
-```
 
 ## Usage Tips
 
@@ -231,97 +223,110 @@ and upgrade fails.
 
 ## Configuration parameters
 
- | Parameter | Description | Default value |
- |------|------|------|
- | client.annotation |  Metadata to attach to client nodes | null |
- | client.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible  | soft |
- | client.heapSize | HeapSize limit for client nodes | 1g |
- | client.labels | Metadata to attach to client nodes | null |
- | client.processors | Elasticsearch processors configuration on client nodes | 1|
- | client.replicas | Stable number of client replica Pods running at any given time  | 1 |
- | client.resources.limits.cpu | CPU limits for client nodes | 500m |
- | client.resources.limits.memory | Memory limits for client nodes | 1500Mi |
- | client.resources.requests.cpu | CPU resources requested on cluster start | 100m |
- | client.resources.requests.memory | Memory resources requested on cluster start | 1500Mi |
- | client.storage | Storage size for client nodes | 2Gi |
- | client.storageClass | Storage class for client nodes if you use non-default storage class | default |
- | common.admin_dn | DN of certificate with admin privileges | CN=sgadmin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
- | common.ca_certificates_enabled | Feature that enables possibility to upload customer CA and use it to sign cluster certificates | false |
- | common.certificates_directory | Directory with customer certificates that are used in ES cluster | secrets |
- | common.cluster_name | cluster.name parameter in elasticsearch.yml | searchguard |
- | common.config.* | Additional configuration that will be added to elasticsearch.yml | null |
- | common.debug_job_mode | Feature to disable removal process of completed jobs | false |
- | common.docker_registry.email | Email information for Docker account in docker registry | null |
- | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false |
- | common.docker_registry.imagePullSecret | The existing secret name with all required data to authenticate to docker registry | null |
- | common.docker_registry.password | Password of docker registry account | null |
- | common.docker_registry.server | Docker registry address | null |
- | common.docker_registry.username | Login of docker registry account | null |
- | common.elkversion | Version of Elasticsearch and Kibana in ES cluster | 7.9.1 |
- | common.images.elasticsearch_base_image | Docker image name with Elasticsearch and Search Guard plugin installed | sg-elasticsearch |
- | common.images.kibana_base_image | Docker image name with Kibana and Search Guard plugin installed | sg-kibana |
- | common.images.repository | Docker registry repository for docker images in the ES cluster | docker.io |
- | common.images.provider | Docker registry provider of docker images in the ES cluster | floragunncom |
- | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin |
- | common.images.sg_specific | The option to specify if custom docker image source to be used  only for SG images or for third party images as well | true |
+ | Parameter | Description | Default value | ELK Version
+ |------|------|------|------|
+ | client.annotation |  Metadata to attach to client nodes | null | >=7 |
+ | client.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible  | soft | >=7 |
+ | client.heapSize | HeapSize limit for client nodes | 1g | >=7 |
+ | client.labels | Metadata to attach to client nodes | null | >=7 |
+ | client.processors | Elasticsearch processors configuration on client nodes | 1| >=7 |
+ | client.replicas | Stable number of client replica Pods running at any given time  | 1 | >=7 |
+ | client.resources.limits.cpu | CPU limits for client nodes | 500m | >=7 |
+ | client.resources.limits.memory | Memory limits for client nodes | 1500Mi | >=7 |
+ | client.resources.requests.cpu | CPU resources requested on cluster start | 100m | >=7 |
+ | client.resources.requests.memory | Memory resources requested on cluster start | 1500Mi | >=7 |
+ | client.storage | Storage size for client nodes | 2Gi | >=7 |
+ | client.storageClass | Storage class for client nodes if you use non-default storage class | default | >=7 |
+ | common.admin_dn | DN of certificate with admin privileges | CN=sgadmin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com | >=7 |
+ | common.ca_certificates_enabled | Feature that enables possibility to upload customer CA and use it to sign cluster certificates | false | >=7 |
+ | common.certificates_directory | Directory with customer certificates that are used in ES cluster | secrets | >=7 |
+ | common.cluster_name | cluster.name parameter in elasticsearch.yml | searchguard | >=7 |
+ | common.config.* | Additional configuration that will be added to elasticsearch.yml | null | >=7 |
+ | common.debug_job_mode | Feature to disable removal process of completed jobs | false | >=7 |
+ | common.docker_registry.email | Email information for Docker account in docker registry | null | >=7 |
+ | common.docker_registry.enabled | Enable docker login procedure to docker registry before downloading docker images | false | >=7 |
+ | common.docker_registry.imagePullSecret | The existing secret name with all required data to authenticate to docker registry | null | >=7 |
+ | common.docker_registry.password | Password of docker registry account | null | >=7 |
+ | common.docker_registry.server | Docker registry address | null | >=7 |
+ | common.docker_registry.username | Login of docker registry account | null | >=7 |
+ | common.elkversion | Version of Elasticsearch and Kibana in ES cluster | 7.9.1 | >=7 |
+ | common.images.elasticsearch_base_image | Docker image name with Elasticsearch and Search Guard plugin installed | sg-elasticsearch | >=7 |
+ | common.images.kibana_base_image | Docker image name with Kibana and Search Guard plugin installed | sg-kibana | >=7 |
+ | common.images.repository | Docker registry repository for docker images in the ES cluster | docker.io | >=7 |
+ | common.images.provider | Docker registry provider of docker images in the ES cluster | floragunncom | >=7 |
+ | common.images.sgadmin_base_image | Docker image name with Elasticsearch, Search Guard plugin and Search Guard TLS tool installed | sg-sgadmin | >=7 |
+ | common.images.sg_specific | The option to specify if custom docker image source to be used  only for SG images or for third party images as well | true | >=7 |
  | common.nodes_dn | Certificate DN of the nodes in the ES cluster | CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com |
- | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. | false |
- | common.restart_pods_on_config_change | Feature to restart pods automatically when their configuration was changed | true |
- | common.roles | Additional roles configuration in sg_roles.yml | null |
- | common.rolesmapping | Additional roles mapping configuration in sg_roles_mapping.yml | null |
- | common.serviceType | Type of Elasticsearch services exposing in the ES cluster | ClusterIP |
- | common.sg_enterprise_modules_enabled | Enable or disable Search Guard enterprise modules | false |
- | common.sgadmin_certificates_enabled | Feature to use self-signed certificates generated by Search Guard TLS tool in the cluster | true |
- | common.sgkibanaversion | Search Guard Kibana plugin version to use in the cluster | 45.0.0 |
- | common.sgversion |  Search Guard Kibana plugin version to use in the cluster | 45.0.0 |
- | common.update_sgconfig_on_change | Run automatically sgadmin whenever neccessary  | true |
- | common.users | Additional users configuration in sg_internal_users.yml | null |
- | common.xpack_basic | Enable/Disable X-Pack in the ES cluster | false |
- | common.custom_elasticsearch_keystore.enabled | Enable/Disable custom elasticsearch keystore  | false |
- | common.custom_elasticsearch_keystore.extraEnvs | Use extra environment variables for elasticsearch keystore   | null |
- | common.custom_elasticsearch_keystore.script | Use custom scrript to generate for elasticsearch keystore   | null |
- | data.annotations | Metadata to attach to data nodes | null |
- | data.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
- | data.heapSize | HeapSize limit for data nodes | 1g |
+ | common.pod_disruption_budget_enable | Enable Pod Disruption budget feature for ES and Kibana pods. | false | >=7 |
+ | common.restart_pods_on_config_change | Feature to restart pods automatically when their configuration was changed | true | >=7 |
+ | common.roles | Additional roles configuration in sg_roles.yml | null | >=7 |
+ | common.rolesmapping | Additional roles mapping configuration in sg_roles_mapping.yml | null | >=7 |
+ | common.serviceType | Type of Elasticsearch services exposing in the ES cluster | ClusterIP | >=7 |
+ | common.sg_enterprise_modules_enabled | Enable or disable Search Guard enterprise modules | false | >=7 |
+ | common.sgadmin_certificates_enabled | Feature to use self-signed certificates generated by Search Guard TLS tool in the cluster | true | >=7 |
+ | common.sgkibanaversion | Search Guard Kibana plugin version to use in the cluster | 45.0.0 | >=7 |
+ | common.sgversion |  Search Guard Kibana plugin version to use in the cluster | 45.0.0 | >=7 |
+ | common.update_sgconfig_on_change | Run automatically sgadmin whenever neccessary  | true | >=7 |
+ | common.users | Additional users configuration in sg_internal_users.yml | null | >=7 |
+ | common.xpack_basic | Enable/Disable X-Pack in the ES cluster | false | 7 |
+ | common.custom_elasticsearch_keystore.enabled | Enable/Disable custom elasticsearch keystore  | false | >=7 |
+ | common.custom_elasticsearch_keystore.extraEnvs | Use extra environment variables for elasticsearch keystore   | null | >=7 |
+ | common.custom_elasticsearch_keystore.script | Use custom script to generate for elasticsearch keystore   | null | >=7 |
+ | data.annotations | Metadata to attach to data nodes | null | >=7 |
+ | data.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=7 |
+ | data.heapSize | HeapSize limit for data nodes | 1g | >=7 |
  | data.labels | Metadata to attach to data nodes | null |
- | data.processors | Elasticsearch processors configuration on data nodes | null |
- | data.replicas |  Stable number of data replica Pods running at any given time  | 1 | 
- | data.resources.limits.cpu | CPU limits for data nodes | 1 |
- | data.resources.limits.memory |  Memory limits for data nodes | 2Gi |
- | data.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1 |
- | data.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 1500Mi |
- | data.storage | Storage size for data nodes | 4Gi |
- | data.storageClass | Storage type for data nodes if you use non-default storage class | default |
- | kibana.annotations | Metadata to attach to kibana nodes | null |
- | kibana.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
- | kibana.heapSize | HeapSize limit for kibana nodes | 1g |
- | kibana.httpPort | Port to be exposed by Kibana service in the cluster | 5601 |
- | kibana.labels | Metadata to attach to kibana nodes | null |
- | kibana.processors | Kibana processors configuration on Kibana nodes | 1 |
- | kibana.replicas | Stable number of kibana replica Pods running at any given time | 1 |
- | kibana.resources.limits.cpu | CPU limits for kibana nodes | 500m |
- | kibana.resources.limits.memory | Memory limits for kibana nodes | 1500Mi |
- | kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
- | kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
- | kibana.serviceType | Type of Kibana service exposing in the ES cluster | ClusterIP |
- | kibana.storage | Storage size for client nodes | 2Gi |
- | kibana.storageClass | Storage class for client nodes if you use non-default storage class | default |
- | master.annotations | Metadata to attach to master nodes | null |
- | master.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft |
- | master.heapSize | HeapSize limit for master nodes | 1g |
- | master.labels |  Metadata to attach to master nodes | null |
- | master.processors | Elasticsearch processors configuration for master nodes | null |
- | master.replicas | Stable number of master replica Pods running at any given time | 1 |
- | master.resources.limits.cpu | CPU limits for master nodes | 500m |
- | master.resources.limits.memory | Memory limits for data nodes | 1500Mi |
- | master.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m |
- | master.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
- | master.storage | Storage size for master nodes | 2Gi |
- | master.storageClass | Storage class for master nodes if you use non-default storage class | default |
- | pullPolicy | Kubernetes image pull policy | IfNotPresent |
- | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true |
- | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 |
- | service.transportPort | Port to be exposed by Elasticsearch service for transport communication in the cluster | 9300 |
+ | data.processors | Elasticsearch processors configuration on data nodes | null | >=7 |
+ | data.replicas |  Stable number of data replica Pods running at any given time  | 1 | >=7 |
+ | data.resources.limits.cpu | CPU limits for data nodes | 1 | >=7 |
+ | data.resources.limits.memory |  Memory limits for data nodes | 2Gi | >=7 |
+ | data.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1 | >=7 |
+ | data.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 1500Mi | >=7 |
+ | data.storage | Storage size for data nodes | 4Gi | >=7 |
+ | data.storageClass | Storage type for data nodes if you use non-default storage class | default | >=7 |
+ | datacontent.annotations | Metadata to attach to data_content nodes | null | >=8 |
+ | datacontent.antiAffinity | Affinity policy for data_content nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=8 |
+ | datacontent.antiAffinity | Affinity policy for datacontent nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=8 |
+ | datacontent.enabled | Enable data_content node  | false | >=8 |
+ | datacontent.labels |  Metadata to attach to data_content nodes | null | >=8 |
+ | datacontent.replicas | Stable number of data_content replica Pods running at any given time | 2 | >=8 | 
+ | datacontent.resources.limits.cpu | CPU limits for data_content nodes | 500m | >=8 |
+ | datacontent.resources.limits.memory | Memory limits for data_content nodes | 1500Mi | >=8 |
+ | datacontent.resources.requests.cpu | CPU resources requested on cluster start for data_content nodes | 100m | >=8 |
+ | datacontent.resources.requests.memory | Memory resources requested on cluster start for data_content nodes | 2500Mi | >=8 |
+ | datacontent.storage | Storage size for data_content nodes | 2Gi | >=8 |
+ | datacontent.storageClass | Storage class for data_content nodes if you use non-default storage class | default | >=8 |
+ | datacontent.storageClass | Storage type for data_content nodes if you use non-default storage class | default | >=8 | 
+ | kibana.annotations | Metadata to attach to kibana nodes | null | >=8 |
+ | kibana.antiAffinity | Affinity policy for kibana nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=8 |
+ | kibana.heapSize | HeapSize limit for kibana nodes | 1g | >=7 |
+ | kibana.httpPort | Port to be exposed by Kibana service in the cluster | 5601 | >=7 |
+ | kibana.labels | Metadata to attach to kibana nodes | null | >=7 |
+ | kibana.processors | Kibana processors configuration on Kibana nodes | 1 | >=7 |
+ | kibana.replicas | Stable number of kibana replica Pods running at any given time | 1 | >=7 |
+ | kibana.resources.limits.cpu | CPU limits for kibana nodes | 500m | >=7 |
+ | kibana.resources.limits.memory | Memory limits for kibana nodes | 1500Mi | >=7 |
+ | kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m | >=7 |
+ | kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi | >=7 |
+ | kibana.serviceType | Type of Kibana service exposing in the ES cluster | ClusterIP | >=7 |
+ | kibana.storage | Storage size for client nodes | 2Gi | >=7 |
+ | kibana.storageClass | Storage class for client nodes if you use non-default storage class | default | >=7 |
+ | master.annotations | Metadata to attach to master nodes | null | >=7 |
+ | master.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=7 |
+ | master.heapSize | HeapSize limit for master nodes | 1g | >=7 |
+ | master.labels |  Metadata to attach to master nodes | null | >=7 |
+ | master.processors | Elasticsearch processors configuration for master nodes | null | >=7 |
+ | master.replicas | Stable number of master replica Pods running at any given time | 1 | >=7 |
+ | master.resources.limits.cpu | CPU limits for master nodes | 500m | >=7 |
+ | master.resources.limits.memory | Memory limits for data nodes | 1500Mi | >=7 |
+ | master.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 100m | >=7 |
+ | master.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi | >=7 |
+ | master.storage | Storage size for master nodes | 2Gi | >=7 |
+ | master.storageClass | Storage class for master nodes if you use non-default storage class | default | >=7 |
+ | pullPolicy | Kubernetes image pull policy | IfNotPresent | >=7 |
+ | rbac.create | Feature to create Kubernetes entities for Role-based access control in the Kubernetes cluster | true | >=7 |
+ | service.httpPort | Port to be exposed by Elasticsearch service in the cluster | 9200 | >=7 |
+ | service.transportPort | Port to be exposed by Elasticsearch service for transport communication in the cluster | 9300 | >=7 |
 
 
 
@@ -329,7 +334,7 @@ and upgrade fails.
 
 * https://github.com/lalamove/helm-elasticsearch
 * https://github.com/pires/kubernetes-elasticsearch-cluster
-* https://github.com/kubernetes/charts/tree/master/incubator/elasticsearch
+* https://github.com/kubernetes/charts/tree/main/incubator/elasticsearch
 * https://github.com/clockworksoul/helm-elasticsearch
 
 ## License
@@ -352,16 +357,16 @@ limitations under the License.
 
 [contact with us]: https://search-guard.com/contacts/
 [Docker]: https://docs.docker.com/engine/install/
-[docker folder]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/docker
-[example with custom configuration]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_sg_config
-[example with custom domains]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_service_certs
+[docker folder]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/docker
+[example with custom configuration]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/examples/common/setup_custom_sg_config
+[example with custom domains]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/examples/common/setup_custom_service_certs
 [Helm Documentation]: https://helm.sh/docs/intro/using_helm/
 [Helm installation steps]: https://helm.sh/docs/intro/install/
 [kubectl installation guide]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [Minikube installation steps]: https://minikube.sigs.k8s.io/docs/start/
-[setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_ca
-[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_custom_elasticsearch_certs
-[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/master/examples/setup_single_elasticsearch_cert
+[setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/examples/common/setup_custom_ca
+[setup with custom Elasticsearch cluster nodes certificates]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/examples/common/setup_custom_elasticsearch_certs
+[setup with single certificates for Elasticsearch cluster nodes]: https://git.floragunn.com/search-guard/search-guard-flx/-/tree/main/examples/common/setup_single_elasticsearch_cert
 [Storage type]: https://kubernetes.io/docs/concepts/storage/storage-classes/
 [values.yaml]: https://git.floragunn.com/search-guard/search-guard-flx/-/blob/master/values.yaml
-[./tools/sg_aws_kops.sh]: https://git.floragunn.com/search-guard/search-guard-flx/-/blob/master/tools/sg_aws_kops.sh
+[values-flx-7.yaml]: https://git.floragunn.com/search-guard/search-guard-flx/-/blob/master/values-flx-7.yaml

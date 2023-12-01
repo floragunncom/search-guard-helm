@@ -10,7 +10,7 @@ minikube config set memory 8192 -p "$PROFILE"
 minikube config set cpus 4 -p "$PROFILE"
 minikube delete -p "$PROFILE"
 set -e
-minikube start --kubernetes-version "v1.23.3" --nodes 3 -p "$PROFILE" --wait=true
+minikube start --kubernetes-version "v1.27.6" --nodes 3 -p "$PROFILE" --wait=true
 
 #fix minikube issues with hostpath permissions on multicluster nodes
 #https://github.com/kubernetes/minikube/issues/12165
@@ -18,7 +18,7 @@ minikube start --kubernetes-version "v1.23.3" --nodes 3 -p "$PROFILE" --wait=tru
 curl -Ss https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml | sed 's/\/opt\/local-path-provisioner/\/var\/opt\/local-path-provisioner/ ' | kubectl apply -f -
 kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-
+minikube -p "$PROFILE" addons enable metrics-server
 minikube dashboard -p "$PROFILE" &
 
 
