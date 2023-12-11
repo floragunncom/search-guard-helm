@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-# Contains code from https://github.com/bitnami/bitnami-docker-kubectl/blob/main/1.23/debian-10/Dockerfile
+# Contains code from https://github.com/bitnami/bitnami-docker-kubectl/blob/master/1.23/debian-10/Dockerfile
 # under the Apache 2 License
 # Credits: Bitnami
 
