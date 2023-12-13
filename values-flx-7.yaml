@@ -295,6 +295,11 @@ common:
     enabled: false
 
 client:
+  roles:
+    - transform
+    - remote_cluster_client
+    - ingest
+
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -356,6 +361,10 @@ client:
 ## The main benefit of having dedicated data nodes is the separation of the
 ## master and data roles.
 data:
+  roles:
+    - data
+    - remote_cluster_client
+
   ## For production we recommend at least 2 replicas
   replicas: 2
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -413,6 +422,10 @@ data:
 ## cluster, and deciding which shards to allocate to which nodes. It is
 ## important for cluster health to have a stable master node.
 master:
+  roles:
+    - master
+    - remote_cluster_client
+
   ## For production we recommend at least 3 replicas. Number must be odd.
   replicas: 3
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
@@ -436,6 +449,66 @@ master:
       memory: 1500Mi
     requests:
       cpu: 100m
+      memory: 1500Mi
+
+  # tolerations:
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoSchedule"
+  #  - key: "key1"
+  #    operator: "Equal"
+  #    value: "value1"
+  #    effect: "NoExecute"
+
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: kubernetes.io/os
+  #           operator: In
+  #           values:
+  #           - linux
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #         - key: label-1
+  #           operator: In
+  #           values:
+  #           - key-1
+
+
+# The datacontent node is a part of content tier with  long data retention.
+# Enabling datacontent will create dedicated statefulset in the cluster
+datacontent:
+  enabled: false
+  roles:
+    - data_content
+    - remote_cluster_client
+
+  ## For production we recommend at least 3 replicas. Number must be odd.
+  replicas: 2
+  ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node.
+  ## 'soft' will do this "best effort"
+  ## For production we recommend setting this to 'hard'
+  antiAffinity: "soft"
+  storage: 2Gi
+  ## Set storageClass if non-default storage is used.
+  # storageClass: "gp2"
+
+  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  heapSize: 1g
+  ## More info on what this setting does is in the config map. Only change this
+  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  labels: {}
+  annotations: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 1500Mi
+    requests:
+      cpu: 800m
       memory: 1500Mi
 
   # tolerations:

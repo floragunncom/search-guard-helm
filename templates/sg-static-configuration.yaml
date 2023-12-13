@@ -36,22 +36,15 @@ data:
     xpack.monitoring.collection.enabled: true
 {{ end }}
     network.host: "0.0.0.0"
-
     cluster.name: {{ .Values.common.cluster_name }}
     node.name: ${NODE_NAME}
-    
-    {{- if eq (include "searchguard.elk-version" .) "7" }}
+    node.roles: ${NODE_ROLES}
+{{- if eq (include "searchguard.elk-version" .) "7" }}
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS}
-    node.master: ${NODE_MASTER:true}
-    node.data: ${NODE_DATA:true}
-    node.ingest: ${NODE_INGEST:true}
-    {{- else }}
-    node.roles: ${NODE_ROLES}
-    {{- end }}
+{{ end }}
 
 
-    
     discovery.seed_hosts: ${DISCOVERY_SERVICE}
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}

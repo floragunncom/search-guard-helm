@@ -15,7 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
-{{- if and (not (eq (include "searchguard.elk-version" .) "7")) .Values.datacontent.enabled }}
+{{- if .Values.datacontent.enabled }}
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -182,8 +182,10 @@ spec:
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.datacontent.heapSize }} -Xmx{{ .Values.datacontent.heapSize }}"
         - name: NODE_ROLES
           value: "{{ join "," .Values.datacontent.roles }}"
+{{- if eq (include "searchguard.elk-version" .) "7" }}
         - name: PROCESSORS
           value: "{{ .Values.datacontent.processors }}"
+{{ end }}  
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}

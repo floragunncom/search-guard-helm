@@ -8,6 +8,7 @@ INITIAL="$SCRIPT_DIR/../examples/common/setup_custom_ca/values.yaml"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/update_static_config/values.yaml" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/update_sg_config/values.yaml" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/scale_cluster/values.yaml" "8"
-"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/setup_field_anonymization/values.yaml" "8"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/setup_field_anonymization/values.yaml" "8"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/enable_data_content_node/values.yaml" "10"
 echo "Finished"
 

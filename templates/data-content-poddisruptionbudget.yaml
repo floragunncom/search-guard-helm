@@ -15,7 +15,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
-{{- if and (not (eq (include "searchguard.elk-version" .) "7")) .Values.datacontent.enabled }}
+{{- if .Values.datacontent.enabled }}
 {{ if .Values.common.pod_disruption_budget_enable }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget

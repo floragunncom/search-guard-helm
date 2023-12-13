@@ -142,19 +142,12 @@ spec:
           value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.client.heapSize }} -Xmx{{ .Values.client.heapSize }}"
-{{- if eq (include "searchguard.elk-version" .) "7" }}
-        - name: NODE_DATA
-          value: "false"
-        - name: NODE_MASTER
-          value: "false"
-        - name: NODE_INGEST
-          value: "true"
-{{- else }}
         - name: NODE_ROLES
           value: "{{ join "," .Values.client.roles }}"
-{{- end }}
+{{- if eq (include "searchguard.elk-version" .) "7" }}
         - name: PROCESSORS
           value: "{{ .Values.client.processors }}"
+{{ end }}
         {{- range $key, $value :=  .Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
