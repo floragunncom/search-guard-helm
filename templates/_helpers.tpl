@@ -61,6 +61,25 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end }}  
 {{- end -}}
 
+
+{{- define "searchguard.config-external-files-volumes" -}}
+{{- if .Values.common.sg_configuration_values_from_external_files.enabled }}
+- name: sg-config-external-files-secret
+- secret:
+    name: {{ template "searchguard.fullname" . }}-external-files
+  name: sg-config-external-files
+{{- end }}    
+{{- end -}}
+
+{{- define "searchguard.config-external-files-volume-mounts" -}}
+{{- if .Values.common.sg_configuration_values_from_external_files.enabled }}
+- name: sg-config-external-files-secret
+  readOnly: true
+  mountPath: "/usr/share/elasticsearch/config/sg_config_external_files"
+{{- end }}    
+{{- end -}}
+
+
 {{- define "searchguard.lifecycle-cleanup-certs" -}}
 exec:
   command:

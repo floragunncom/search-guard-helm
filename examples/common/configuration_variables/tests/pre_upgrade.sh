@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 #$1 - namespace
 #$2 - yaml files folder
 

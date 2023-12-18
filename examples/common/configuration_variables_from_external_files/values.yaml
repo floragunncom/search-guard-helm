@@ -1,0 +1,12 @@
+common:
+  sg_configuration_values_from_external_files:
+    enabled: true
+  # authc:
+  #   debug: true
+  #   auth_domains:
+  #   - type: basic/internal_users_db
+  #   - type: jwt  
+  #     jwt.signing.jwks: "#{file:/usr/share/elasticsearch/config/sg_config_external_files/jwks-secret}"
+  #     user_mapping.roles.from_comma_separated_string: jwt.roles      
+  # license: "'#{file:/usr/share/elasticsearch/config/sg_config_external_files/license-secret}'" 
+  # 

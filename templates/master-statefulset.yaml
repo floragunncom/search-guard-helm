@@ -202,6 +202,7 @@ spec:
         resources:
 {{ toYaml .Values.master.resources | indent 10 }}
         volumeMounts:
+{{- include "searchguard.config-external-files-volume-mounts" . | nindent 8 }}          
 {{- include "searchguard.config-volume-mount" . | nindent 8 }}          
         - mountPath: /usr/share/elasticsearch/data
           name: storage
@@ -226,6 +227,7 @@ spec:
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
 {{ end }}
       volumes:
+{{- include "searchguard.config-external-files-volumes" . | nindent 8 }}          
 {{- include "searchguard.config-volumes" . | nindent 8 }}    
         - name: secret-volume
           secret:
