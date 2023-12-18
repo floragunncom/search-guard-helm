@@ -127,7 +127,7 @@ common:
     
 
   sg_configuration_values_from_external_files:
-    enabled: true
+    enabled: false
     secret_name: "sg-config-external-files-secret"        
   
   tls:
