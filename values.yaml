@@ -126,6 +126,10 @@ common:
     secret_name: "sg-dynamic-configuration-secret"
     
     
+  sg_configuration_values_from_external_files:
+    enabled: true
+    secret_name: "sg-config-external-files-secret"    
+    
   tls:
     ## root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
     root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
