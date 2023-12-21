@@ -1,4 +1,14 @@
 common:
+  images:
+    repository: "quay.io"
+    provider: "helmeltest"
+  sgversion: "json_file-flx"  
+  sgctl_version: 1.1.0
+  elkversion: "7.17.16"
+  sgkibanaversion: "1.4.0-flx"
+
+
+
   sg_configuration_values_from_external_files:
     enabled: true
     secret_name: "sg-config-external-files-secret" 
@@ -7,6 +17,6 @@ common:
     auth_domains:
     - type: basic/internal_users_db
     - type: jwt  
-      jwt.signing.jwks: "#{file:/usr/share/elasticsearch/config/sg_config_external_files/jwks-secret}"
+      jwt.signing.jwks: "#{json_file:/usr/share/elasticsearch/config/sg_config_external_files/jwks-secret}"
       user_mapping.roles.from_comma_separated_string: jwt.roles      
-  license: "'#{file:/usr/share/elasticsearch/config/sg_config_external_files/license-secret}'"     
+license: "'#{file:/usr/share/elasticsearch/config/sg_config_external_files/license-secret}'"     
