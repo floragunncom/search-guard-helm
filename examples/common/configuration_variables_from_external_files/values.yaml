@@ -3,11 +3,9 @@ common:
     repository: "quay.io"
     provider: "helmeltest"
   sgversion: "json_file-flx"  
-  sgctl_version: 1.1.0
+  sgctl_version: 1.4.0
   elkversion: "7.17.16"
   sgkibanaversion: "1.4.0-flx"
-
-
 
   sg_configuration_values_from_external_files:
     enabled: true
