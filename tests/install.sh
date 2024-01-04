@@ -2,6 +2,8 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 NSP="$1"
+CUSTOM_HELM_VALUES=${5:-}
+
 
 CONTEXT="$(kubectl config current-context)"
 
@@ -33,9 +35,14 @@ kubectl delete pvc -n ${NSP} -l component=sg-elk-search-guard-flx -o name
 echo ""
 echo ""
 echo ""
-echo "---------------------- Installing via helm $2 $3... --------------------------------------------------------------------------------------------------"
 #--debug 
-helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE"
+if [ -n "$CUSTOM_HELM_VALUES" ]; then
+  echo "---------------------- Installing via helm $2 $3 and using custom helm values $CUSTOM_HELM_VALUES  ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" --set $CUSTOM_HELM_VALUES
+else
+  echo "---------------------- Installing via helm $2 $3 ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" 
+fi
 retVal=$?
 
 if [ $retVal -ne 0 ]; then
@@ -51,7 +58,7 @@ if [ "$KIBANA_REPLICAS" != "0" ];then
 
   echo "Waiting for kibana ($(date)) ..."
   sleep 20
-  kubectl wait --for=condition=Ready pod/sg-elk-search-guard-flx-kibana-0 --timeout=300s -n ${NSP}
+  kubectl wait --for=condition=Ready pod/sg-elk-search-guard-flx-kibana-0 --timeout=600s -n ${NSP}
   retVal=$?
   echo ""
   if [ $retVal -ne 0 ]; then

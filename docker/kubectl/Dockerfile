@@ -15,14 +15,18 @@ RUN ln -s /usr/bin/dpkg-deb /usr/sbin/
 RUN ln -s /bin/rm /usr/sbin/
 RUN ln -s /bin/tar /usr/sbin/
 RUN apt-get -y -qq install netcat ca-certificates curl gzip jq procps tar wget apt-transport-https gnupg
-RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://dl.k8s.io/apt/doc/apt-key.gpg
-#RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
-RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
 
 ARG KUBECTL_VERSION
 
-RUN until apt-get -y -qq update && \
-    apt-get -y -qq install kubectl=${KUBECTL_VERSION}-00; do sleep 1; done
+
+ARG TARGETPLATFORM
+
+RUN ARCH=$(echo ${TARGETPLATFORM} | cut -f2 -d '/') && \
+    curl -LO "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/bin/kubectl && \
+    kubectl version --client
+
 
 RUN apt-get --purge -y -qq remove apt-transport-https gnupg ca-certificates && \
     apt-get clean && \
