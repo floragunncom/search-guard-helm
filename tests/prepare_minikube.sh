@@ -1,16 +1,18 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
+VERSION=${1:-"v1.27.6"}
 killall -9 minikube
 killall -9 kubectl
 killall -9 helm
+
+echo "****** Preparing minikube version $VERSION *****"
 
 PROFILE=multinode
 minikube config set memory 8192 -p "$PROFILE"
 minikube config set cpus 4 -p "$PROFILE"
 minikube delete -p "$PROFILE"
 set -e
-minikube start --kubernetes-version "v1.27.6" --nodes 3 -p "$PROFILE" --wait=true
+minikube start --kubernetes-version "$VERSION" --nodes 3 -p "$PROFILE" --wait=true
 
 #fix minikube issues with hostpath permissions on multicluster nodes
 #https://github.com/kubernetes/minikube/issues/12165
@@ -20,5 +22,7 @@ kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storagecla
 kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 minikube -p "$PROFILE" addons enable metrics-server
 minikube dashboard -p "$PROFILE" &
+
+echo "******* Created minikube version $VERSION ******"
 
 

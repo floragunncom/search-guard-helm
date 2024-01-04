@@ -3,7 +3,7 @@ name: search-guard-flx
 type: application
 home: https://search-guard.com/
 version: 2.5.0
-kubeVersion: ">= 1.23.0-0 < 1.28.0-0"
+kubeVersion: ">= 1.23.0-0 < 1.30.0-0"
 description: The Search Guard FLX protected Elasticsearch cluster
 sources:
   - https://git.floragunn.com/search-guard/search-guard-helm
