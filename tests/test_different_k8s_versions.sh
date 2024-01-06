@@ -62,9 +62,9 @@ do
   echo ""
   echo ""
   echo ""
-  # echo "############################################" 
-  # echo "$0 Running the test for ELK 8 for kubernetes $version"
-  # echo "############################################"
+  echo "############################################" 
+  echo "$0 Running the test for ELK 8 for kubernetes $version"
+  echo "############################################"
 ./run_tests.sh  common.elkversion="8.7.1",common.sgversion="1.4.0-flx",common.sgkibanaversion="1.4.0-flx",common.sgctl_version="1.4.0"  false
 ./run_tests.sh  common.elkversion="8.6.1",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false  
 ./run_tests.sh  common.elkversion="8.6.0",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false 
