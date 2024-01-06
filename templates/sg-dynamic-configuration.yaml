@@ -90,6 +90,8 @@ data:
     enabled: false 
 {{ end }}
 
+
+{{ if ne .Values.common.sgversion "1.5.0-flx" }}
 ######## sg_frontend_multi_tenancy.yml ########
   sg_frontend_multi_tenancy.yml: |-
     ---
@@ -100,6 +102,7 @@ data:
       enabled: true
       index: .kibana
       server_user: kibanaserver
+{{ end }}
 {{ end }}
 
 ######## sg_roles.yml ########
