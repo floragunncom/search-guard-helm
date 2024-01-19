@@ -1,31 +1,113 @@
+
+.common-config: &common-config
+ - |
+   git config --global user.name "${GITLAB_USER_NAME}"
+   git config --global user.email "${GITLAB_USER_EMAIL}"  
+   chart_file="Chart.yaml"
+   helm_user="helm"
+   helm_repo_name="search-guard-flx-helm-charts"
+
+   if [[ -z "${CI_PROJECT_ID}" ]]; then
+     helm_project_id=261
+   else
+     helm_project_id="${CI_PROJECT_ID}"
+   fi
+      
+   if [[ -z "${CI_SERVER_HOST}" ]]; then
+    server_host=git.floragunn.com
+   else
+    server_host="${CI_SERVER_HOST}"
+   fi
+            
+   helm_channel=stable
+   helm_repo_url=https://${server_host}/api/v4/projects/$helm_project_id/packages/helm/$helm_channel 
+   git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
+   chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
+   if [ ! -f "$chart_file" ]; then
+    echo "[ERROR] Chart file $chart_file not exist"
+    exit 1
+   fi 
+   if helm repo list | grep -q "$helm_repo_name"; then
+     helm repo remove $helm_repo_name
+   fi    
+          
+   helm repo add --username $helm_user --password $access_token $helm_repo_name  $helm_repo_url
+   helm repo update
+           
+      
+image: 
+  name: alpine/helm:latest
+  entrypoint: [""]   
+
 variables:
-  BUILDX_VERSION: "0.9.1"
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_CLI_EXPERIMENTAL: "enabled"
-  DEBIAN_FRONTEND: noninteractive
-
+  GIT_STRATEGY: clone   
+  
 stages:
-  - build
+  - Validate
+  - Publish
 
-build_and_push_docker_images:
-  allow_failure: false
-  stage: build
-  image: docker:latest
-  services:
-  - docker:dind
+validate_helm:
   tags:
-    - test-large
-    #needs to run on amd64 because multiarch/qemu-user-static is not
-    #available for arm64
-  when: manual
+    - build    
+  stage: Validate
   script:
-    - apk update
-    - apk add bash
-    - echo "$DOCKER_PASSWORD" | docker login --username floragunncom --password-stdin docker.io
-    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    - BUILDX_FULL_URL="https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-amd64"
-    - mkdir -p $HOME/.docker/cli-plugins/
-    - wget -O $HOME/.docker/cli-plugins/docker-buildx ${BUILDX_FULL_URL} 
-    - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
-    - ./docker/build_multiarch.sh
+
+    - |
+      set -e
+      if ! helm template . > /dev/null 2>&1; then
+          echo "[ERROR] Helm template cannot be rendered for default values"
+          exit 1      
+      fi
+      for custom_value in $(find examples -name values.yaml) ; do
+        if ! helm template . -f $custom_value > /dev/null 2>&1; then
+          echo "[ERROR] Helm template cannot be rendered with $custom_value values"
+          exit 1
+        fi
+      done
+      echo "[INFO] Validation completed successfully"
+
+validate_release:
+  tags:
+    - build  
+  stage: Validate
+  script:
+    - *common-config  
+    - |
+      set -e
+      if git tag -l | grep -q "^$chart_version$"; then
+        echo "[ERROR] Tag for version $chart_version already exist"
+        exit 1
+      fi
+      
+      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version) 
+      if [ ! "$chart_exist" == "[]" ]; then
+       echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+      fi
+      
+      echo "[INFO] Validation completed successfully"
+publish_helm:
+  needs:
+    - validate_helm  
+    - validate_release
+  only:
+    - main  
+  tags:
+    - build  
+  stage: Publish
+  script:
+    - *common-config  
+    - |
+      set -e
+      if ! helm plugin list | grep -q "cm-push"; then
+        helm plugin install https://github.com/chartmuseum/helm-push
+      fi
+      helm package .  
+      helm cm-push  $helm_repo_name-$chart_version.tgz $helm_repo_name
+      echo "[INFO] Published $chart_version version for $helm_repo_name"
+              
+      git tag "$chart_version"
+      git push origin $chart_version     
+      echo "[INFO] Published tags"
+      echo "[INFO] Completed successfully"
+
+
