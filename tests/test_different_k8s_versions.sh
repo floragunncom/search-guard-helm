@@ -65,13 +65,13 @@ do
   echo "############################################" 
   echo "$0 Running the test for ELK 8 for kubernetes $version"
   echo "############################################"
-./run_tests.sh  common.elkversion="8.7.1",common.sgversion="1.4.0-flx",common.sgkibanaversion="1.4.0-flx",common.sgctl_version="1.4.0"  false
-./run_tests.sh  common.elkversion="8.6.1",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false  
-./run_tests.sh  common.elkversion="8.6.0",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false 
-./run_tests.sh  common.elkversion="8.5.3",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false   
-./run_tests.sh  common.elkversion="8.5.2",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false
-./run_tests.sh  common.elkversion="8.5.1",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false
-./run_tests.sh  common.elkversion="8.5.0",common.sgversion="1.1.1-flx",common.sgkibanaversion="1.1.0-flx",common.sgctl_version="1.1.0"  false           
+  ./run_tests.sh  common.elkversion="8.11.4",common.sgversion="1.5.0-flx",common.sgkibanaversion="1.5.0-flx",common.sgctl_version="1.5.0"  false
+  ./run_tests.sh  common.elkversion="8.10.4",common.sgversion="1.5.0-flx",common.sgkibanaversion="1.5.0-flx",common.sgctl_version="1.5.0"  false
+  ./run_tests.sh  common.elkversion="8.9.2",common.sgversion="1.5.0-flx",common.sgkibanaversion="1.5.0-flx",common.sgctl_version="1.5.0"  false
+  ./run_tests.sh  common.elkversion="8.8.2",common.sgversion="1.5.0-flx",common.sgkibanaversion="1.5.0-flx",common.sgctl_version="1.5.0"  false
+  ./run_tests.sh  common.elkversion="8.8.0",common.sgversion="1.5.0-flx",common.sgkibanaversion="1.5.0-flx",common.sgctl_version="1.5.0"  false
+  ./run_tests.sh  common.elkversion="8.7.1",common.sgversion="1.4.0-flx",common.sgkibanaversion="1.4.0-flx",common.sgctl_version="1.4.0"  false
+      
   echo ""
   echo ""
   echo ""

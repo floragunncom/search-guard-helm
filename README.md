@@ -32,6 +32,16 @@ This is repo is considered GA status and supports Search Guard FLX for Elasticse
 
 Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
 
+## Important Notes for Search Guard FLX 1.5.0 release
+
+Due to technical constraints, Multi Tenancy is not available in this version of Search Guard. We are working on this issue and will reintroduce Multi Tenancy in the next release of Search Guard. <br>
+In case of using Helm charts for this version, the value:
+ ```
+ searchguard.multitenancy.enabled: false
+ ``` 
+will be set in the Kibana configuration file, and the `sg_frontend_multi_tenancy.yml` file will be disabled. More details about this change can be found at https://docs.search-guard.com/latest/changelog-searchguard-flx-1_5_0
+
+
 ## Requirements
 
 * Kubernetes 1.23 or later (Minikube and kops managed AWS Kubernetes cluster  are tested)
