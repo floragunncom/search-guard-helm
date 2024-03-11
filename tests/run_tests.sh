@@ -18,7 +18,7 @@ fi
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/configuration_from_secret" "" "7" "tests/pre_upgrade.sh" "tests/post_upgrade.sh"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/disable_sgctl_cli_configuration_from_secret" "" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/scale_cluster" "" "8"
-"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/setup_field_anonymization" "" "8"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/setup_field_anonymization" "" "8"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/enable_data_content_node" "" "10"
 echo "Finished $(date '+%Y-%m-%d %H:%M:%S')"
 
