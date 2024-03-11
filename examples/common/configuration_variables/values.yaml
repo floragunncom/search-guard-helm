@@ -1,0 +1,11 @@
+common:  
+  sgctl_cli: true
+  authc:
+    debug: true
+    auth_domains:
+    - type: basic/internal_users_db
+    - type: jwt  
+      jwt.signing.jwks: "#{var:jwks}"
+      user_mapping.roles.from_comma_separated_string: jwt.roles      
+  license: "'#{var:license}'"
+  

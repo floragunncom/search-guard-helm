@@ -116,6 +116,16 @@ common:
   ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
   
+
+  # Create pods with installed sgctl.sh tool 
+  sgctl_cli: false
+
+  #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
+  sg_dynamic_configuration_from_secret:
+    enabled: false
+    secret_name: "sg-dynamic-configuration-secret"
+    
+    
   tls:
     ## root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
     root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
@@ -483,7 +493,7 @@ datacontent:
       memory: 1500Mi
     requests:
       cpu: 800m
-      memory: 1500Mi
+      memory: 1500Mi   
 
   # tolerations:
   #  - key: "key1"

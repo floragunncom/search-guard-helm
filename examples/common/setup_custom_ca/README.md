@@ -1,7 +1,7 @@
 
 # Setup with custom CA certificate
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/examples/setup_custom_ca/values.yaml) sets up protected 4-nodes Elasticsearch cluster by providing custom CA certificate to the Kubernetes cluster. 
+This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/common/examples/setup_custom_ca/values.yaml) sets up protected 4-nodes Elasticsearch cluster by providing custom CA certificate to the Kubernetes cluster. 
 
 Please, note, that you are expected to provide your own CA certificate with the `crt.pem` and `key.pem` files in `secrets/ca` folder.
 This CA certificate will be used to generate all Elasticsearch nodes certificates for transport communication and certificates for HTTPS service for Elasticsearch and Kibana.
