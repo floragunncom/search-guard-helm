@@ -108,12 +108,10 @@ spec:
             mountPath: /usr/local/bin/kubectl
             readOnly: true
       volumes:
+{{- include "searchguard.config-volumes" . | nindent 8 }}        
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
-        - configMap:
-            name: {{ template "searchguard.fullname" . }}-sg-dynamic-configuration
-          name: searchguard-config
         - name: kubectl
           emptyDir: {}
 {{ end }}

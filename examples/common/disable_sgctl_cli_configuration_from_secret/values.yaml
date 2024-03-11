@@ -1,0 +1,8 @@
+common:
+  sgctl_cli: false
+  sg_dynamic_configuration_from_secret:
+    enabled: false      
+  authc:
+    debug: false
+    auth_domains:
+    - type: basic/internal_users_db
