@@ -120,7 +120,7 @@ common:
   # Create pods with installed sgctl.sh tool 
   sgctl_cli: false
 
-  #Use configuration stored in kubernetes secret
+  #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
   sg_dynamic_configuration_from_secret:
     enabled: false
     secret_name: "sg-dynamic-configuration-secret"

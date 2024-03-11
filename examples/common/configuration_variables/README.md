@@ -65,6 +65,10 @@ Created
 * Update the helm charts using the configuration [ configuration ](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/configuration_variables/values.yaml)
 
 
+```
+helm upgrade  -f examples/configuration_variables/values.yaml sg-elk ./ 
+```
+
 * To disable the POD containing access to sgctl.sh, update the helm charts using the following configuration:
 
 ```

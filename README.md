@@ -130,6 +130,17 @@ Example usage for AWS EBS:
 helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk search-guard-flx
 ```
 
+## Examples
+
+The repository contains various examples of different configurations that can be utilized. The configurations are located in the `examples` directory and the following subdirectories:
+- `common` - examples of configurations that work for both ELK7 and ELK8
+- `elk_7` - examples of configurations that work only for ELK7
+- `elk_8` - examples of configurations that work only for ELK8
+
+In each of the subdirectories, there is a README.md file that provides a detailed description of the configurations, and a values.yaml file that can be used during the installation of helm charts or their updates.
+
+
+
 
 ## Usage Tips
 

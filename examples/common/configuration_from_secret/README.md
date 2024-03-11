@@ -19,6 +19,11 @@ kubectl -n <namespace>  create  secret generic sg-elk-search-guard-flx-sg-dynami
 
 After creating the secret, it is necessary to change the configuration parameters found in the configuration file [configuration] (https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/examples/common/configuration_from_secret/values.yaml) 
 
+and update the Helm Charts
+
+```
+helm upgrade  -f examples/configuration_from_secret/values.yaml sg-elk ./ 
+```
 
 After completing the installation or update of a helm chart, ``*.yml` files located in the` secret `sg-elk-search-guard-flx-sg-dynamic-configuration-secret` will add, or in the case of these files already existing in the configuration, replace their content.
 

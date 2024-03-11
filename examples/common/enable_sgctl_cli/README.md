@@ -16,6 +16,12 @@ common:
 
 ```
 
+and update helm charts
+
+```
+helm upgrade  -f examples/enable_sgctl_cli/values.yaml sg-elk ./ 
+```
+
 
 After upgrading helm charts following command can be use to connect to sgctl.sh Pod
 
