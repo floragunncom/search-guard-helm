@@ -1,11 +1,12 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 TEST_UPDATE_ES_KB_VERSION=${2:-true}
+CUSTOM_HELM_VALUES=${1:-}
 set -e
 NSP="integtests"
 INITIAL="$SCRIPT_DIR/../examples/common/setup_custom_ca/values.yaml"
 echo "Started $(date '+%Y-%m-%d %H:%M:%S')"
-"$SCRIPT_DIR/install.sh" "$NSP" "$INITIAL" "$SCRIPT_DIR/initial_values.yaml"
+"$SCRIPT_DIR/install.sh" "$NSP" "$INITIAL" "$SCRIPT_DIR/initial_values.yaml"  "" "$CUSTOM_HELM_VALUES"
 if $TEST_UPDATE_ES_KB_VERSION; then
     "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/update_es_kb_version" "" "7"
 else

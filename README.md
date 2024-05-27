@@ -32,6 +32,15 @@ This is repo is considered GA status and supports Search Guard FLX for Elasticse
 
 Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
 
+## Change in Versioning Method for Helm Charts
+
+With the release of Search Guard Plugin version 2.0.0, the versioning for Helm charts has been updated by adding the suffix `-flx` to the version number of the Helm charts. This change ensures compatibility between the Helm chart versions and the versions published by Search Guard Plugin.
+
+## Important Notes for Search Guard FLX 2.0.0 release
+
+Search Guard 2.0.0 is not backwards compatible with previous versions. If you want to upgrade from version 1.x.x to 2.0.0, you will need to follow some additional steps described [here](docs/sg-200-upgrade.md)
+
+
 ## Important Notes for Search Guard FLX 1.5.0 release
 
 Due to technical constraints, Multi Tenancy is not available in this version of Search Guard. We are working on this issue and will reintroduce Multi Tenancy in the next release of Search Guard. <br>
