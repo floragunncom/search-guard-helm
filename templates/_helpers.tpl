@@ -38,6 +38,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{-  .Values.common.elkversion | substr 0 1 }}
 {{- end }}
 
+{{- define "searchguard.sg-major-version" -}}
+{{-  .Values.common.sgversion | substr 0 1 }}
+{{- end }}
+
 {{- define "searchguard.config-volume-mount" -}}
 - mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
   name: searchguard-config

@@ -6,7 +6,8 @@ CUSTOM_HELM_VALUES=${1:-}
 set -e
 NSP="integtests"
 INITIAL="$SCRIPT_DIR/../examples/common/setup_custom_ca/values.yaml"
-"$SCRIPT_DIR/install.sh" "$NSP" "$INITIAL" "$SCRIPT_DIR/initial_values_elk_7.yaml"  "" "$CUSTOM_HELM_VALUES"
+echo "Started $(date '+%Y-%m-%d %H:%M:%S')"
+"$SCRIPT_DIR/install.sh" "$NSP" "$INITIAL" "$SCRIPT_DIR/initial_values.yaml"  "" "$CUSTOM_HELM_VALUES"
 if $TEST_UPDATE_ES_KB_VERSION; then
     "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_7/update_es_kb_version" "" "7"
 else
@@ -20,5 +21,6 @@ fi
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/disable_sgctl_cli_configuration_from_secret" "" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/scale_cluster" "" "8"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/setup_field_anonymization" "" "8"
-echo "Finished"
+echo "Finished $(date '+%Y-%m-%d %H:%M:%S')"
+
 
