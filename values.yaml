@@ -33,16 +33,16 @@ common:
 
   ## Elasticsearch and Kibana version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "8.7.1"
+  elkversion: "8.12.2"
 
   ## Search Guard plugin version
-  sgversion: "1.6.0-flx"
+  sgversion: "2.0.0-flx"
 
   ## Search Guard Kibana plugin version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "1.6.0-flx"
+  sgkibanaversion: "2.0.0-flx"
 
-  sgctl_version: 1.6.0
+  sgctl_version: 2.0.0
 
   ## If true then install also all free and basic x-pack features
   ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -240,12 +240,12 @@ common:
   #     verdict: "disallow"
   #     value: ["172.16.0.254", "172.16.0.230"]
   #     description: "Demo IP blocked, i.e. this specific IP gets blocked"
+  # 
 
-  frontend_multi_tenancy:
-    default:
-      enabled: true
-      index: .kibana
-      server_user: kibanaserver
+  # frontend_multi_tenancy:
+  #   enabled: true
+  #   server_user: kibanaserver
+  #   global_tenant_enabled : true 
 
 
   action_groups:
@@ -397,10 +397,10 @@ data:
   resources:
     limits:
       cpu: 1
-      memory: 1500Mi
+      memory: 2000Mi
     requests:
       cpu: 800m
-      memory: 1500Mi
+      memory: 2000Mi
 
   # tolerations:
   #  - key: "key1"
