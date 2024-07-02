@@ -101,10 +101,12 @@ publish_helm:
       if ! helm plugin list | grep -q "cm-push"; then
         helm plugin install https://github.com/chartmuseum/helm-push
       fi
+      echo "[INFO] Executing helm package"
       helm package .  
+      echo "[INFO] Executing helm cm-push"
       helm cm-push  $helm_repo_name-$chart_version.tgz $helm_repo_name
       echo "[INFO] Published $chart_version version for $helm_repo_name"
-              
+                      
       git tag "$chart_version"
       git push origin $chart_version     
       echo "[INFO] Published tags"
