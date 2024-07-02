@@ -4,6 +4,7 @@
    git config --global user.name "${GITLAB_USER_NAME}"
    git config --global user.email "${GITLAB_USER_EMAIL}"  
    chart_file="Chart.yaml"
+   chart_name=$(grep '^name:' Chart.yaml | awk '{print $2}')
    helm_user="helm"
    helm_repo_name="search-guard-flx-helm-charts"
 
@@ -103,9 +104,8 @@ publish_helm:
       fi
       echo "[INFO] Executing helm package"
       helm package .  
-      pwd
       echo "[INFO] Executing helm cm-push"
-      helm cm-push  $helm_repo_name-$chart_version.tgz $helm_repo_name
+      helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
       echo "[INFO] Published $chart_version version for $helm_repo_name"
                       
       git tag "$chart_version"
