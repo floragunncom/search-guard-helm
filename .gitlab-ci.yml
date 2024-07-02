@@ -103,6 +103,7 @@ publish_helm:
       fi
       echo "[INFO] Executing helm package"
       helm package .  
+      pwd
       echo "[INFO] Executing helm cm-push"
       helm cm-push  $helm_repo_name-$chart_version.tgz $helm_repo_name
       echo "[INFO] Published $chart_version version for $helm_repo_name"
