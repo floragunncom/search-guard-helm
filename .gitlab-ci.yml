@@ -1,4 +1,9 @@
-
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always 
+    - when: never
+    
 .common-config: &common-config
  - |
    git config --global user.name "${GITLAB_USER_NAME}"
