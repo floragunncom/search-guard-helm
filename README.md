@@ -78,9 +78,9 @@ Please, be aware that such Elasticsearch cluster configuration could be used onl
 ### Deploy via repository
 
 ```
-helm repo add search-guard https://git.eliatra.com/api/v4/floragunn/261/packages/helm/stable 
+helm repo add search-guard https://git.floragunn.com/api/v4/projects/261/packages/helm/stable 
 helm repo update
-helm search "search guard"
+helm search "search-guard"
 helm install sg-elk search-guard/search-guard-flx
 ```
 
