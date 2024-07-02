@@ -114,7 +114,7 @@ publish_helm:
       echo "[INFO] Published $chart_version version for $helm_repo_name"
                       
       git tag "$chart_version"
-      git push origin $chart_version     
+      git push origin $chart_version-flx    
       echo "[INFO] Published tags"
       echo "[INFO] Completed successfully"
 
