@@ -89,8 +89,8 @@ publish_helm:
   needs:
     - validate_helm  
     - validate_release
-  only:
-    - main  
+  # only:
+  #   - main  
   tags:
     - build  
   stage: Publish
