@@ -19,7 +19,13 @@ Roles can be customized by editing the ```.Values.common.rolesmapping``` value i
 > Before starting Search Guard's upgrade from version 1.x.x to a newer version along with Search Guard 2.0.0, you need to back up your whole cluster. Furthermore, it is strongly advised that the upgrade procedure is tested first in a test environment containing a copy of the production cluster. If everything goes well, repeat the same procedure for the production cluster. The upgrade procedure can only be performed when an upgraded environment works with installed Search Guard 1.4.0 or 1.6.0 for Elasticsearch 8.7.x.
 > ### Troubleshooting
 > In case of any issues, if the cluster encounters problems, the administrator should consider reverting to the previously backed-up version.
-> ### Cluster Restoration
+> ### Disable automatic sgctl confguration update
+> During the update, sgctl should be turned off. Make sure the parameter `.Values.common.update_sgconfig_on_change` is set to false.
+> ```
+> common:
+>  update_sgconfig_on_change: false
+> ```
+> ### Cluster Restoration 
 > If needed, the administrator should restore the cluster to the version from which the upgrade was initiated. A full backup is necessary before the upgrade due to the impossibility of downgrading Elasticsearch.
 
 ### Multi-Tenancy feature
@@ -45,15 +51,7 @@ The upgrade procedure should first be carried out in the test environment, which
 
 
 3. Adjust Multi-Tenancy configuration.\
-   Multi-Tenancy configuration in Search Guard versions before 2.0.0 was present in the `kibana.yml` file, e.g.
-   
-    ```yml
-    searchguard.multitenancy.enabled: true
-    searchguard.multitenancy.show_roles: true
-    searchguard.multitenancy.enable_filter: true
-    searchguard.multitenancy.tenants.enable_global: true
-    searchguard.multitenancy.tenants.enable_private: true
-    ```
+
     Search Guard 2.0.0 does not use the `kibana.yml` file to store the Multi-Tenancy configuration. Instead, the configuration file `sg_frontend_multi_tenancy.yml` is used. Therefore, proper configuration needs to be transferred to the `sg_frontend_multi_tenancy.yml` and **removed from the `kibana.yml` file**. The file's `sg_frontend_multi_tenancy.yml` syntax is covered in the [Multi-Tenancy configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration) section. You will need the updated file version `sg_frontend_multi_tenancy.yml` later if the default configuration introduced in the Search Guard 2.0.0 is inappropriate for you. Example configuration which can be placed in the file `sg_frontend_multi_tenancy.yml`
     
     ```yml
@@ -85,8 +83,8 @@ The upgrade procedure should first be carried out in the test environment, which
     kibana:
       replicas: 0  
     common:
-      sgctl_cli: true    
-        
+      sgctl_cli: true
+      update_sgconfig_on_change: false
     ```
 
 5. Upgrade Search Guard and the Elasticsearch\
@@ -100,6 +98,7 @@ The upgrade procedure should first be carried out in the test environment, which
      sgkibanaversion: "2.0.0-flx"
      sgversion: "2.0.0-flx"
      sgctl_cli: true
+     update_sgconfig_on_change: false
    kibana:
      replicas: 0
    ```   
