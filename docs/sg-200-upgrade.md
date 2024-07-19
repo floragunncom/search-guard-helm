@@ -50,25 +50,9 @@ The upgrade procedure should first be carried out in the test environment, which
     ```
 
 
-3. Adjust Multi-Tenancy configuration.\
 
-    Search Guard 2.0.0 does not use the `kibana.yml` file to store the Multi-Tenancy configuration. Instead, the configuration file `sg_frontend_multi_tenancy.yml` is used. Therefore, proper configuration needs to be transferred to the `sg_frontend_multi_tenancy.yml` and **removed from the `kibana.yml` file**. The file's `sg_frontend_multi_tenancy.yml` syntax is covered in the [Multi-Tenancy configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration) section. You will need the updated file version `sg_frontend_multi_tenancy.yml` later if the default configuration introduced in the Search Guard 2.0.0 is inappropriate for you. Example configuration which can be placed in the file `sg_frontend_multi_tenancy.yml`
     
-    ```yml
-    enabled: true
-    server_user: kibanaserver
-    global_tenant_enabled : true
-    ```
-    
-    For Helm charts, verify the content of `.Values.kibana.config` and remove the `searchguard.multitenancy attributes` and adjust the value of ` .Values.common.frontend_multi_tenancy`. 
-    If the ` .Values.common.frontend_multi_tenancy` is not set the following default value will be used: 
-    ```yml
-      enabled: true
-      server_user: kibanaserver
-      global_tenant_enabled : true 
-    ```    
-    
-4. Stop Kibana\
+3. Stop Kibana\
     The Kibana should not work during further steps related to the upgrade.
 
     Use the following command to stop the Kibana pod(s)
@@ -77,7 +61,7 @@ The upgrade procedure should first be carried out in the test environment, which
     ```
     and verify if the kibana pod was removed.
 
-    Edit helm charts values yaml and set the number of replicas to `0` and activate `sgctl` pod and execute helm upgrade
+    Edit helm charts values yaml and set the number of replicas to `0` and activate `sgctl` pod and execute `helm upgrade`
 
     ```yml
     kibana:
@@ -87,9 +71,50 @@ The upgrade procedure should first be carried out in the test environment, which
       update_sgconfig_on_change: false
     ```
 
+4. Adjust Multi-Tenancy configuration
+
+  The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
+  Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
+
+  If the ``.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
+
+  However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
+  Make sure that the following values are still set in the `helm values`:
+  
+  ```yml
+  kibana:
+    replicas: 0  
+  common:
+    sgctl_cli: true
+    update_sgconfig_on_change: false
+  ```
+    
+  Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
+  
+
+  ```
+  kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
+  ```
+  After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
+  
+  ```
+  /usr/share/sg/sgctl/sgctl.sh update-config \
+    -h $DISCOVERY_SERVICE  \
+    --key /sgcerts/key.pem \
+    --cert /sgcerts/crt.pem \
+    --ca-cert /sgcerts/root-ca.pem \
+    /sgconfig/sg_frontend_multi_tenancy.yml
+  ```
+  
+
 5. Upgrade Search Guard and the Elasticsearch\
    Before performing the current step, you must review the Elasticsearch documentation for the proper version and check which additional steps and measures are required to upgrade Elasticsearch. Then, you can upgrade Elasticsearch and Search Guard on your cluster node. The upgrade procedure is described in the [Search Guard upgrade guide](https://docs.search-guard.com/latest/upgrading#upgrading-elasticsearch-and-search-guard).
-   For the helm charts edit the `.Values.common` attributes.
+   
+   For the helm charts edit the `.Values.common` attributes. The following parameters needs to be set up during the upgrade:
+    `.Values.common.kibana.replicas` with value `0`
+    `.Values.common.sgctl_cli`  with `true`
+    `.Values.common.update_sgconfig_on_change` with `false`
+    
    The example below shows values for Elasticsearch 8.12.2 and Search Guard 2.0.0 FLX. Other available versions can be checked [here] (https://docs.search-guard.com/latest/search-guard-versions)
    ```yml
    common:
@@ -121,8 +146,6 @@ The upgrade procedure should first be carried out in the test environment, which
      --ca-cert /sgcerts/root-ca.pem 
    ```
 
-7. Restore Multi-Tenancy configuration\
-   If the default Multi-Tenancy configuration is inappropriate for you, you can introduce customization by using `sg_frontend_multi_tenancy.yml`, a Multi-Tenancy configuration file. Available configuration options are described in the [Multi-Tenancy configuration](kibana-multi-tenancy#elasticsearch-configuration) section. You can apply a new configuration using the attribute `.Values.common.frontend_multi_tenancy` in Helm Charts values
 8. Read-only access to tenants\
     When you grant read-only access to some tenants for some users, these users may encounter an error popup when they start accessing the tenant without the write privilege. In such a case, please evaluate whether using the Kibana telemetry is appropriate for your company. If you decide to turn off telemetry, you can do so by adding the configuration below to the `kibana.yml` file and setting the value of attribute `.Values.kibana.config` in Helm Charts
     ```yml
