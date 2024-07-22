@@ -73,37 +73,37 @@ The upgrade procedure should first be carried out in the test environment, which
 
 4. Adjust Multi-Tenancy configuration
 
-  The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
-  Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
+    The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
+    Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
 
-  If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
+    If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
 
-  However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
-  Make sure that the following values are still set in the `helm values`:
-  
-  ```yml
-  kibana:
-    replicas: 0  
-  common:
-    sgctl_cli: true
-    update_sgconfig_on_change: false
-  ```
+    However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
+    Make sure that the following values are still set in the `helm values`:
     
-  Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
-  ```
-  kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
-  ```
-  
-  After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
-  
-  ```
-  /usr/share/sg/sgctl/sgctl.sh update-config \
-    -h $DISCOVERY_SERVICE  \
-    --key /sgcerts/key.pem \
-    --cert /sgcerts/crt.pem \
-    --ca-cert /sgcerts/root-ca.pem \
-    /sgconfig/sg_frontend_multi_tenancy.yml
-  ```
+    ```yml
+    kibana:
+      replicas: 0  
+    common:
+      sgctl_cli: true
+      update_sgconfig_on_change: false
+    ```
+      
+    Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
+    ```
+    kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
+    ```
+    
+    After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
+    
+    ```
+    /usr/share/sg/sgctl/sgctl.sh update-config \
+      -h $DISCOVERY_SERVICE  \
+      --key /sgcerts/key.pem \
+      --cert /sgcerts/crt.pem \
+      --ca-cert /sgcerts/root-ca.pem \
+      /sgconfig/sg_frontend_multi_tenancy.yml
+    ```
   
 
 5. Upgrade Search Guard and the Elasticsearch\
