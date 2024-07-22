@@ -76,7 +76,7 @@ The upgrade procedure should first be carried out in the test environment, which
   The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
   Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
 
-  If the ``.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
+  If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
 
   However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
   Make sure that the following values are still set in the `helm values`:
@@ -90,11 +90,10 @@ The upgrade procedure should first be carried out in the test environment, which
   ```
     
   Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
-  
-
   ```
   kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
   ```
+  
   After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
   
   ```
@@ -146,17 +145,19 @@ The upgrade procedure should first be carried out in the test environment, which
      --ca-cert /sgcerts/root-ca.pem 
    ```
 
-8. Read-only access to tenants\
-    When you grant read-only access to some tenants for some users, these users may encounter an error popup when they start accessing the tenant without the write privilege. In such a case, please evaluate whether using the Kibana telemetry is appropriate for your company. If you decide to turn off telemetry, you can do so by adding the configuration below to the `kibana.yml` file and setting the value of attribute `.Values.kibana.config` in Helm Charts
+7. Read-only access to tenants\
+    When you grant read-only access to some tenants for some users, these users may encounter an error popup when they start accessing the tenant without the write privilege. In such a case, please evaluate whether using the Kibana telemetry is appropriate for your company. If you decide to turn off telemetry, you can do so by setting the value of attribute `.Values.kibana.config` in Helm Charts
     ```yml
     telemetry:
       enabled: false
       optIn: false
       allowChangingOptInStatus: false
     ```
-9. Verify Kibana users' role assignment\
+    
+8. Verify Kibana users' role assignment\
     The role names intended for use in a Multi-Tenancy-enabled environment have not been modified between the 1.x.x and 2.0.0 versions of Search Guard. However, the role definitions were changed. Therefore, if you are using custom roles that allow users to access Kibana, you should upgrade your role definitions. Each user needs access to at least one tenant. Otherwise, the user lacking any tenant access cannot log into Kibana. This is especially important in the context of private tenant removal or when you deprive users of global tenant access. The privilege of accessing the global tenant can be revoked by disabling the global tenant in the Multi-Tenancy configuration file (`sg_frontend_multi_tenancy.yml`) or when you do not assign to your users a role, which grants access to the global tenant. The build-in role `SGS_KIBANA_USER` allows the global tenant access, whereas the role `SGS_KIBANA_USER_NO_GLOBAL_TENANT` does not.
-10. Start Kibana
+
+9. Start Kibana
 
     When the new Kibana version is started, the Kibana carries out data migration of its saved objects.
     
@@ -169,7 +170,7 @@ The upgrade procedure should first be carried out in the test environment, which
       replicas: <number of replicas>   
     ```    
     
-11. Upgrade verification\
+10. Upgrade verification\
     The upgrade procedure is almost complete. Please verify if your environment behaves correctly and all required features are available, check if other plugins work correctly, and integrate with external systems. You should also confirm that all required Kibana Saved Objects have been migrated correctly and that the Kibana user interface contains all required tenants, spaces, dashboards, etc. The test should be executed with users' accounts with various permission levels to access tenants.
 
 ***
