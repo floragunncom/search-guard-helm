@@ -39,6 +39,8 @@ The upgrade procedure should first be carried out in the test environment, which
    Preparing a backup is crucial due to Elasticsearch's inability to downgrade the cluster node. Therefore, if the upgrade procedure is not accomplished, you will need backups to restore the cluster to its previous version. Please use the following [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/snapshots-take-snapshot.html) to create the cluster backup. Additionally, the system administrator should follow [Search Guard backup and restore guidance](https://docs.search-guard.com/latest/search-guard-index-maintenance#backup-and-restore) to perform the backup of the Search Guard configuration. It is also worth testing if the created backups can be restored.
 
 2. Upgrade Search Guard to version 1.4.0 or 1.6.0 and Elasticsearch to version 8.7.1 using helm upgrade
+   For the helm upgrade command,add the parameter `--timeout=1h`  
+   In the case of higher environments, the value of the `--timeout` parameter should be appropriately increased
 
     The example Helm charts values for Search Guard 1.6.0 and Elasticsearch 8.7.1 
     ```yml
@@ -62,7 +64,7 @@ The upgrade procedure should first be carried out in the test environment, which
     and verify if the kibana pod was removed.
 
     Edit helm charts values yaml and set the number of replicas to `0` and activate `sgctl` pod and execute `helm upgrade`
-
+    
     ```yml
     kibana:
       replicas: 0  
@@ -110,7 +112,8 @@ The upgrade procedure should first be carried out in the test environment, which
      update_sgconfig_on_change: false
    ```
      
-   Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
+   Run the helm upgrade command and wait for the upgrade process to complete. For the helm upgrade command,add the parameter `--timeout=1h`  
+   In the case of higher environments, the value of the `--timeout` parameter should be appropriately increased. Then execute the following command to access the POD that will provide access to sgctl.sh:
    ```
    kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
    ```
