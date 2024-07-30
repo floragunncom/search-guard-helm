@@ -57,7 +57,7 @@ The upgrade procedure should first be carried out in the test environment, which
 
     Use the following command to stop the Kibana pod(s)
     ```
-    kubectl -n <namespace> get sts -l role=kibana --replicas=0
+    kubectl -n <namespace> scale sts -l role=kibana --replicas=0
     ```
     and verify if the kibana pod was removed.
 
