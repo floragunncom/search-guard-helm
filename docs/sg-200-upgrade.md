@@ -96,6 +96,15 @@ The upgrade procedure should first be carried out in the test environment, which
 
    The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
    Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
+   
+   Example configuration:
+   ```
+   common:  
+    frontend_multi_tenancy:
+      enabled: true
+      server_user: kibanaserver
+      global_tenant_enabled : true   
+   ``` 
 
    If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
 
