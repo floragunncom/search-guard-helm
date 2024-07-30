@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-VERSION=${1:-"v1.27.6"}
+VERSION=${1:-"v1.29.5"}
 killall -9 minikube
 killall -9 kubectl
 killall -9 helm

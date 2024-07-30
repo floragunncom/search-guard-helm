@@ -110,7 +110,7 @@ spec:
 {{ include "searchguard.init-containers" . | indent 6 }}
       {{ if .Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: docker-auth
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
       - name: elasticsearch
