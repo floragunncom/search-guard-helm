@@ -70,43 +70,8 @@ The upgrade procedure should first be carried out in the test environment, which
       sgctl_cli: true
       update_sgconfig_on_change: false
     ```
-
-4. Adjust Multi-Tenancy configuration
-
-    The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
-    Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
-
-    If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
-
-    However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
-    Make sure that the following values are still set in the `helm values`:
-    
-    ```yml
-    kibana:
-      replicas: 0  
-    common:
-      sgctl_cli: true
-      update_sgconfig_on_change: false
-    ```
-      
-    Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
-    ```
-    kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
-    ```
-    
-    After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
-    
-    ```
-    /usr/share/sg/sgctl/sgctl.sh update-config \
-      -h $DISCOVERY_SERVICE  \
-      --key /sgcerts/key.pem \
-      --cert /sgcerts/crt.pem \
-      --ca-cert /sgcerts/root-ca.pem \
-      /sgconfig/sg_frontend_multi_tenancy.yml
-    ```
   
-
-5. Upgrade Search Guard and the Elasticsearch\
+4. Upgrade Search Guard and the Elasticsearch\
    Before performing the current step, you must review the Elasticsearch documentation for the proper version and check which additional steps and measures are required to upgrade Elasticsearch. Then, you can upgrade Elasticsearch and Search Guard on your cluster node. The upgrade procedure is described in the [Search Guard upgrade guide](https://docs.search-guard.com/latest/upgrading#upgrading-elasticsearch-and-search-guard).
    
    For the helm charts edit the `.Values.common` attributes. The following parameters needs to be set up during the upgrade:
@@ -127,6 +92,39 @@ The upgrade procedure should first be carried out in the test environment, which
      replicas: 0
    ```   
    
+5. Adjust Multi-Tenancy configuration
+
+   The Multi-Tenancy configuration for version 2.0.0 includes changes regarding how the configuration is stored. 
+   Instead of using the `kibana.yml` file, the configuration has been moved to the `sg_frontend_multi_tenancy.yml` file.
+
+   If the `.Values.common.frontend_multi_tenancy` parameter was not set in the Helm charts, the setup process will be handled by the Helm charts.
+
+   However, if the `.Values.common.frontend_multi_tenancy` value was set, it is necessary to modify it according to the definition described on the page: [https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration](https://docs.search-guard.com/latest/kibana-multi-tenancy#multi-tenancy-configuration).
+   Make sure that the following values are still set in the `helm values`:
+   
+   ```yml
+   kibana:
+     replicas: 0  
+   common:
+     sgctl_cli: true
+     update_sgconfig_on_change: false
+   ```
+     
+   Run the helm upgrade command and wait for the upgrade process to complete. Then execute the following command to access the POD that will provide access to sgctl.sh:
+   ```
+   kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
+   ```
+   
+   After gaining access to the POD, run the following command to update only the contents of the sg_frontend_multi_tenancy.yml file:
+   
+   ```
+   /usr/share/sg/sgctl/sgctl.sh update-config \
+     -h $DISCOVERY_SERVICE  \
+     --key /sgcerts/key.pem \
+     --cert /sgcerts/crt.pem \
+     --ca-cert /sgcerts/root-ca.pem \
+     /sgconfig/sg_frontend_multi_tenancy.yml
+   ```   
 6. Migrate frontend data\
    The data structures used by the Multi-Tenancy implementation in SearchGuard 1.x.x and 2.0.0 are distinct. Therefore, running a data migration process is necessary to move Kibana Saved Objects (entities like data views and dashboards stored by Kibana in Elasticsearch). To conduct the data migration process, you need an up-to-date version of the `sgctl` tool. To carry out the data migration process, execute the command `sgctl special start-mt-data-migration-from-8.7`. The command execution should be above a few minutes, depending on the number of tenants defined in your environment and the volume of data stored in the Kibana indices. You can check the status of the data migration process using the command `sgctl special get-mt-data-migration-state-from-8.7`. The administrator must successfully execute data migration before proceeding with further upgrade steps. It is important to note that the system administrator should not run the data migration process in parallel, and the Kibana should be shut down during this process. Please note that Multi-Tenancy is disabled by default in the Search Guard 2.0.0 or newer. The command used for data migration will enable the Multi-Tenancy if needed.
    
