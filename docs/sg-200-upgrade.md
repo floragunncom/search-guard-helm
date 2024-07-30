@@ -130,8 +130,7 @@ The upgrade procedure should first be carried out in the test environment, which
      update_sgconfig_on_change: false
    ```
      
-   Run the helm upgrade command and wait for the upgrade process to complete. For the helm upgrade command,add the parameter `--timeout=1h`  
-   In the case of highly distributed, the value of the `--timeout` parameter should be appropriately increased. Then execute the following command to access the POD that will provide access to sgctl.sh:
+   Execute the following command to access the POD that will provide access to sgctl.sh:
    ```
    kubectl -n <namespace> exec  $(kubectl -n <namespace> get pod -l role=sgctl-cli  -o jsonpath='{.items[0].metadata.name}') -it bash
    ```
