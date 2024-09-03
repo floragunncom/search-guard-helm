@@ -14,65 +14,75 @@
    limitations under the License.
 */}}
 
+
+{{- $kibanaValues := .Values.kibana }} 
+{{- if not (kindIs "slice" .Values.kibana) }}
+{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- end }}
+
+
+{{- range $kibanaValues  }}
+
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" . }}-kibana
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "kibana" }}kibana{{ else }}kibana-{{ .name }}{{ end }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ template "searchguard.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}-kibana
+    app: {{ template "searchguard.fullname" $ }}
+    chart: "{{ $.Chart.Name }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    component: {{ template "searchguard.fullname" $ }}-kibana
     role: kibana
 spec:
-  serviceName: {{ template "searchguard.fullname" . }}-kibana
-  replicas: {{ .Values.kibana.replicas }}
+  serviceName: {{ template "searchguard.fullname" $ }}-kibana
+  replicas: {{ .replicas }}
   updateStrategy:
     type: OnDelete
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      component: {{ template "searchguard.fullname" . }}
+      component: {{ template "searchguard.fullname" $ }}
       role: kibana
   template:
     metadata:
       labels:
-        release: "{{ .Release.Name }}"
-        app: {{ template "searchguard.fullname" . }}
-        component: {{ template "searchguard.fullname" . }}
+        release: "{{ $.Release.Name }}"
+        app: {{ template "searchguard.fullname" $ }}
+        component: {{ template "searchguard.fullname" $ }}
         role: kibana
         estype: kibana
-        {{- if .Values.kibana.labels }}
-{{ toYaml .Values.kibana.labels | indent 8 }}
+        {{- if .labels }}
+{{ toYaml .labels | indent 8 }}
         {{- end }}
       annotations:
-        {{ if .Values.common.restart_pods_on_config_change }}
-        checksum/config: {{ include (print $.Template.BasePath "/kibana-configmap.yaml") . | sha256sum }}
+        {{ if $.Values.common.restart_pods_on_config_change }}
+        checksum/config: {{ include (print $.Template.BasePath "/kibana-configmap.yaml") $ | sha256sum }}
         {{ end }}
-      {{- if .Values.kibana.annotations }}
-{{ toYaml .Values.kibana.annotations | indent 8 }}
+      {{- if .annotations }}
+{{ toYaml .annotations | indent 8 }}
       {{- end }}
     spec:
-      subdomain: {{ template "searchguard.fullname" . }}
-      serviceAccountName: {{ template "searchguard.fullname" . }}
+      subdomain: {{ template "searchguard.fullname" $ }}
+      serviceAccountName: {{ template "searchguard.fullname" $ }}
       securityContext:
         fsGroup: 1000
-      {{ if or .Values.kibana.nodeAffinity .Values.kibana.antiAffinity }}
+      {{ if or .nodeAffinity .antiAffinity }}
       affinity:
-      {{ if .Values.kibana.nodeAffinity }}
+      {{ if .nodeAffinity }}
         nodeAffinity:
-{{ toYaml .Values.kibana.nodeAffinity | indent 10 }}
+{{ toYaml .nodeAffinity | indent 10 }}
       {{ end }}     
       {{ end }}
-      {{- if eq .Values.kibana.antiAffinity "hard" }}
+      {{- if eq .antiAffinity "hard" }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "searchguard.fullname" . }}
+                  component: {{ template "searchguard.fullname" $ }}
                   role: kibana
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -80,9 +90,9 @@ spec:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "searchguard.fullname" . }}
+                  component: {{ template "searchguard.fullname" $ }}
                   role: kibana
-      {{- else if eq .Values.kibana.antiAffinity "soft" }}
+      {{- else if eq .antiAffinity "soft" }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
@@ -90,31 +100,31 @@ spec:
               topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
-                  component: {{ template "searchguard.fullname" . }}
+                  component: {{ template "searchguard.fullname" $ }}
                   role: kibana
           - weight: 2
             podAffinityTerm:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
-                  component: {{ template "searchguard.fullname" . }}
+                  component: {{ template "searchguard.fullname" $ }}
                   role: kibana
       {{- end }}
-      {{ if .Values.kibana.tolerations }}
+      {{ if .tolerations }}
       tolerations:
-{{ toYaml .Values.kibana.tolerations | indent 6 }}
+{{ toYaml .tolerations | indent 6 }}
       {{ end }}
       initContainers:
         - name: init-kubectl-0 #doubled, we need a better solution
-        {{ include "searchguard.kubectl-image" . | indent 2 }}
-          imagePullPolicy: {{ .Values.common.pullPolicy }}
+        {{ include "searchguard.kubectl-image" $ | indent 2 }}
+          imagePullPolicy: {{ $.Values.common.pullPolicy }}
           volumeMounts:
           - name: kubectl
             mountPath: /data
           command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
         - name: kibana-init
-          image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
-          imagePullPolicy: {{ .Values.common.pullPolicy }}
+          image: {{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.sgctl_base_image }}:{{ $.Values.common.sgctl_version }}
+          imagePullPolicy: {{ $.Values.common.pullPolicy }}
           volumeMounts:
             - name: kubectl
               subPath: kubectl
@@ -128,12 +138,12 @@ spec:
                 if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
                 id -u
                 set -e
-                until kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret; do
-                  echo 'Wait for {{ template "searchguard.fullname" . }}-passwd-secret';
+                until kubectl --namespace {{ $.Release.Namespace }} get secrets {{ template "searchguard.fullname" $ }}-passwd-secret; do
+                  echo 'Wait for {{ template "searchguard.fullname" $ }}-passwd-secret';
                   sleep 10 ;
                 done
 
-                echo "OK, {{ template "searchguard.fullname" . }}-passwd-secret exists now"
+                echo "OK, {{ template "searchguard.fullname" $ }}-passwd-secret exists now"
 
           resources:
             limits:
@@ -142,20 +152,20 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
-{{ include "searchguard.generate-certificates-init-container" . | indent 8 }}
-      {{ if .Values.common.docker_registry.enabled }}
+{{ include "searchguard.generate-certificates-init-container" $ | indent 8 }}
+      {{ if $.Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      - name: {{ $.Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
       - name: kibana
 {{ include "searchguard.security-context.least" . | indent 8 }}
-      {{ if .Values.common.xpack_basic }}
-        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-{{ .Values.common.sgkibanaversion }}"
+      {{ if $.Values.common.xpack_basic }}
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-{{ $.Values.common.sgkibanaversion }}"
       {{ else }}
-        image: "{{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.kibana_base_image }}:{{ .Values.common.elkversion }}-oss-{{ .Values.common.sgkibanaversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgkibanaversion }}"
       {{ end }}
-        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        imagePullPolicy: {{ $.Values.common.pullPolicy }}
         lifecycle:
           postStart:
             exec:
@@ -163,12 +173,12 @@ spec:
                 - bash
                 - -c
                 - |             
-{{ include "searchguard.recreate-node-certificates" . | indent 20 }}
+{{ include "searchguard.recreate-node-certificates" $ | indent 20 }}
           preStop:
-{{ include "searchguard.lifecycle-cleanup-certs" . | indent 12 }}
+{{ include "searchguard.lifecycle-cleanup-certs" $ | indent 12 }}
         envFrom:
         - secretRef:
-            name: {{ template "searchguard.fullname" . }}-passwd-secret
+            name: {{ template "searchguard.fullname" $ }}-passwd-secret
         env:
         - name: NAMESPACE
           valueFrom:
@@ -179,12 +189,12 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
-          value: {{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc
-        {{- range $key, $value :=  .Values.common.env }}
+          value: {{ template "searchguard.fullname" $ }}-clients.{{ $.Release.Namespace }}.svc
+        {{- range $key, $value :=  $.Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
-        {{- range $key, $value :=  .Values.kibana.env }}
+        {{- range $key, $value :=  .env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
@@ -200,9 +210,9 @@ spec:
           initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
-{{ toYaml .Values.kibana.readinessProbe | indent 10 }}
+{{ toYaml .readinessProbe | indent 10 }}
         resources:
-{{ toYaml .Values.kibana.resources | indent 10 }}
+{{ toYaml .resources | indent 10 }}
         volumeMounts:
         #- mountPath: /storage/
         #  name: storage
@@ -222,10 +232,10 @@ spec:
       volumes:
         - name: certificates-secrets-volume
           secret:
-            secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
+            secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
             defaultMode: 0644
         - configMap:
-            name: {{ template "searchguard.fullname" . }}-kibana-config
+            name: {{ template "searchguard.fullname" $ }}-kibana-config
           name: config
         - name: kubectl
           emptyDir: {}
@@ -236,7 +246,9 @@ spec:
   #       name: storage
   #     spec:
   #       accessModes: [ "ReadWriteOnce" ]
-  #       storageClassName: {{ .Values.kibana.storageClass }}
+  #       storageClassName: {{ .storageClass }}
   #       resources:
   #         requests:
-  #           storage: {{ .Values.kibana.storage }}
+  #           storage: {{ .storage }}
+  
+  {{- end }}
