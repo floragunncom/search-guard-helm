@@ -17,7 +17,6 @@
 */}}
 
 
-
 {{- $dataValues := .Values.data }} 
 {{- if not (kindIs "slice" .Values.data) }}
 {{- $dataValues = list (merge (dict "name" "data") .Values.data) }}
@@ -188,17 +187,8 @@ spec:
           value: {{ template "searchguard.fullname" $ }}-discovery.{{ $.Release.Namespace }}.svc
         - name: ES_JAVA_OPTS
           value: "-Djava.net.preferIPv4Stack=true -Xms{{ .heapSize }} -Xmx{{ .heapSize }}"
-{{- if eq (include "searchguard.elk-version" $) "7" }}
-        - name: NODE_DATA
-          value: "true"
-        - name: NODE_MASTER
-          value: "false"
-        - name: NODE_INGEST
-          value: "false"
-{{- else }}
         - name: NODE_ROLES
           value: "{{ join "," .roles }}"
-{{- end }}
         - name: PROCESSORS
           value: "{{ .processors }}"
         {{- range $key, $value :=  $.Values.common.env }}

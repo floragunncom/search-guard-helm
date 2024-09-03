@@ -33,6 +33,27 @@
 {{- range $masterValues  }}
 {{ $masterReplicas = add $masterReplicas .replicas }}
 {{- end }}
+
+
+{{- $signalsValues := .Values.signals | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
+{{- end }}
+{{- $signalsReplicas:=0 }}
+{{- range $signalsValues  }}
+{{ $signalsReplicas = add $signalsReplicas .replicas }}
+{{- end }}
+
+
+{{- $dataContentValues := .Values.dataContent | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.dataContent)) (hasKey .Values "dataContent") }}
+{{- $dataContentValues = list (merge (dict "name" "dataContent") .Values.dataContent) }}
+{{- end }}
+{{- $dataContentReplicas:=0 }}
+{{- range $dataContentValues  }}
+{{ $dataContentReplicas = add $dataContentReplicas .replicas }}
+{{- end }}
+
 ---
 apiVersion: batch/v1
 kind: Job
@@ -114,23 +135,23 @@ spec:
             - /bin/bash
             - -c
             - |
-
+                set -e
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
-                {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas  }}
+                {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas $signalsReplicas  }}
                 {{- if .Values.datacontent.enabled }}
                   {{- $totalReplicas = add $totalReplicas .Values.datacontent.replicas }}
                 {{- end }}
-             
+            
+        
                 echo "Wait until {{ $totalReplicas }} node are up and the cluster is at least yellow"
 
                 curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
-
 
                 function waitForStatefulSet() {
                   STS_NAME="$1"
                   
                   STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
-                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                   REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                   CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
                   UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
@@ -139,7 +160,7 @@ spec:
                     echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, wait ... ($CR/$UR)"
                     sleep 3
                     STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
-                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                     REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                     CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
                     UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
@@ -188,7 +209,7 @@ spec:
                         echo "$STATUS_JSON"
                         
                         if [ "$SETNAME" == "kibana" ]; then
-                          KIBANA_REPLICAS=(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
+                          KIBANA_REPLICAS=$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
                           echo "Current number of replicas for ${SETNAME}/${STS_NAME} = $KIBANA_REPLICAS"
                           kubectl scale --replicas=1 statefulset/${STS_NAME} -n {{ .Release.Namespace }}
                         fi
@@ -209,15 +230,18 @@ spec:
                 }
                 
                 updateIfRequired "client"
+                {{- if gt $signalsReplicas 0 }}
+                updateIfRequired "signals"
+                {{- end }}
                 updateIfRequired "data"
                 {{- if .Values.datacontent.enabled }}
                 updateIfRequired "data-content"
-                {{- end  }}
+                {{- end  }}                     
                 updateIfRequired "master"
-                if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
+                {{- if gt $kibanaReplicas 0 }}
                 updateIfRequired "kibana"
-                fi
-  
+                {{- end }}
+
                 echo "Cluster ugrade finished"
                 exit 0
       volumes:

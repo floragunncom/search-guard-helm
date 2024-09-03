@@ -1,0 +1,171 @@
+  {{- /*
+      Copyright 2021 floragunn GmbH
+
+      Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+  */}}
+
+
+{{- $signalsValues := .Values.signals | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
+{{- end }}
+{{- $signalsReplicas:=0 }}
+{{- range $signalsValues  }}
+{{ $signalsReplicas = add $signalsReplicas .replicas }}
+{{- end }}
+{{- if gt $signalsReplicas 0 }}
+
+{{- if not (hasKey .Values "signals_configuration") }}
+     {{ fail "[ERROR] The \".Values.signals_configuration\" attribute is missing" }}
+{{- end }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-signals-configure"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}-signals-configure
+    role: sgctl
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation 
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      namespace: {{ .Release.Namespace }}
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: signals-configure        
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      containers:
+      - name: signals-configure
+        env:
+          - name: DISCOVERY_SERVICE
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+      {{ include "searchguard.kubectl-image" . | indent 2 }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        command:
+          - sh
+          - -c
+          - |
+              #!/usr/bin/env bash
+              set -e
+              GLOBALRET=0 
+              
+              get_datetime() {
+               date '+%Y-%m-%d %H:%M:%S'
+              }
+              {{- if or (eq .Values.signals_configuration.tenant_filter_update_type "automatic") (eq .Values.signals_configuration.tenant_filter_update_type "predefined") }}
+              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master,app={{ template "searchguard.fullname" . }} -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                echo '[INFO] Wait for $DISCOVERY_SERVICE service to be ready';
+                sleep 10 ;
+              done
+                
+              {{- $templateName:= include "searchguard.fullname" . }}
+              {{- $namespace:=.Release.Namespace  }}      
+                
+              echo "$(get_datetime) [INFO] Execute request for signals"    
+
+              {{ if .Release.IsInstall }}
+              echo "$(get_datetime) [INFO] Wait for job {{ template "searchguard.fullname" . }}-sgctl-initialize to be completed" 
+              kubectl wait --namespace {{ .Release.Namespace }}  --for=condition=complete  job {{ template "searchguard.fullname" . }}-sgctl-initialize --timeout=3600s 
+              {{ end }}
+              
+              echo "$(get_datetime) [INFO] Wait for the signals replica(s) to be Ready"
+              kubectl --namespace {{ .Release.Namespace }} wait --for=condition=Ready pod -l role=signals,app={{ template "searchguard.fullname" . }}  --timeout=3600s 
+              echo "$(get_datetime) [INFO] Signals replica(s) as Ready"
+
+              echo "$(get_datetime) [INFO] Wait until the cluster is at green state"  
+              curl -Ss  --fail  --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem  -X GET  "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_status=green&timeout=300s&pretty"  
+              echo "$(get_datetime) [INFO] Cluster is at green state"  
+
+
+              echo "$(get_datetime) [INFO] Execute the update Request(s)" 
+              echo "$(get_datetime) [INFO] .Values.signals_configuration.tenant_filter_update_type is set to {{.Values.signals_configuration.tenant_filter_update_type}}"
+              {{- if eq .Values.signals_configuration.tenant_filter_update_type "predefined" }}
+              {{- if empty .Values.signals_configuration.tenant_name_filter_for_update }}
+              echo "$(get_datetime) [ERROR] .Values.signals_configuration.tenant_name_filter_for_update is empty, cannot execute the update"
+              exit 1
+              {{ else }}
+              {{- range $tenant := .Values.signals_configuration.tenant_name_filter_for_update }}
+                echo "$(get_datetime) [INFO] Executing the predefined update from list update for tenant {{ $tenant }}"
+                curl  -Ss -w "\n" --fail --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem  -H "Content-Type: application/json" -XPUT "https://$DISCOVERY_SERVICE:9200/_signals/settings/tenant.{{- $tenant -}}.node_filter" -d'"signals_node:signals_only"'
+                RET=$?      
+                echo "Result $RET"  
+                if [ "$GLOBALRET" -eq 0 ]; then
+                  GLOBALRET=$RET
+                fi
+              {{ end }}
+              {{ end }}
+              {{ else }}
+              echo "$(get_datetime) [INFO] Executing automatic update based on reponse from tenants endpoint"
+              tenants=$(curl -Ss  --fail   --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem  -H "Content-Type: application/json" -XGET "https://$DISCOVERY_SERVICE:9200/_searchguard/api/tenants/")
+              tenants_list=$(echo "$tenants" | grep -oP '"\K[^"]+(?=":{)')
+              echo "$(get_datetime) [INFO] $tenants_list"
+              for tenant_name in $tenants_list; do
+              if [ "$tenant_name" = "SGS_GLOBAL_TENANT" ]; then
+               echo "tenant_name is SGS_GLOBAL_TENANT, replacing to _main"
+               tenant_name=_main
+              fi         
+              echo "$(get_datetime) [INFO] Executing the update for tenant $tenant_name"
+                curl -Ss  -w "\n"  --fail  --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem  -H "Content-Type: application/json" -XPUT "https://$DISCOVERY_SERVICE:9200/_signals/settings/tenant.$tenant_name.node_filter" -d'"signals_node:signals_only"'
+                RET=$?      
+                echo "Result $RET"  
+                if [ "$GLOBALRET" -eq 0 ]; then
+                   GLOBALRET=$RET
+                fi              
+              done          
+              {{ end }}
+              echo "$(get_datetime) [INFO] Display signals settings"  
+              curl -w "\n"  -Ss --fail --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem  -X GET "https://$DISCOVERY_SERVICE:9200/_signals/settings"  
+              
+              {{- else }}
+              echo "$(get_datetime) [ERROR] Incorrect value '{{.Values.signals_configuration.tenant_filter_update_type }}' for .Values.signals_configuration.tenant_filter_update_type, cannot execute the update"
+              exit 1
+              {{ end }}
+              echo "exit with code $GLOBALRET"        
+              exit $GLOBALRET 
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: /sgcerts/
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+        - name: kubectl
+          emptyDir: {}               
+
+{{- end }}               

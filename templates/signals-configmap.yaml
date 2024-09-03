@@ -1,0 +1,44 @@
+{{- /*
+    Includes code from the following Apache 2 licensed projects:
+
+      - https://github.com/lalamove/helm-elasticsearch
+
+        Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/}}
+
+{{- $signalsValues := .Values.signals | default (list)   }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals ) }}
+{{- end }}
+
+{{- range $signalsValues  }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}-config
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" $ }}
+    chart: "{{ $.Chart.Name }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+data:
+  elasticsearch.yml: |-
+{{ include "searchguard.configmap" $ | indent 2 }}
+  
+      #Custom attribute for signal only nodes
+      node.attr.signals_node: signals_only
+      signals.worker_threads.pool.max_size: {{ .worker_threads_pool_max_size }}
+
+{{- end }}    
