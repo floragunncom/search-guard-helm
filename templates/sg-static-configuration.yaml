@@ -28,47 +28,4 @@ metadata:
     heritage: "{{ .Release.Service }}"
 data:
   elasticsearch.yml: |-
-{{ if .Values.common.xpack_basic }}
-    # When xpack is installed we need to disable xpack security
-    xpack.security.enabled: false
-    xpack.ml.enabled: false
-    xpack.watcher.enabled: false
-    xpack.monitoring.collection.enabled: true
-{{ end }}
-    network.host: "0.0.0.0"
-
-    cluster.name: {{ .Values.common.cluster_name }}
-    node.name: ${NODE_NAME}
-    
-    {{- if eq (include "searchguard.elk-version" .) "7" }}
-    # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
-    processors: ${PROCESSORS}
-    node.master: ${NODE_MASTER:true}
-    node.data: ${NODE_DATA:true}
-    node.ingest: ${NODE_INGEST:true}
-    {{- else }}
-    node.roles: ${NODE_ROLES}
-    {{- end }}
-
-
-    
-    discovery.seed_hosts: ${DISCOVERY_SERVICE}
-    # Search Guard
-    searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}
-    searchguard.authcz.admin_dn:
-{{ toYaml .Values.common.admin_dn | indent 6 }}
-    searchguard.nodes_dn:
-{{ toYaml .Values.common.nodes_dn | indent 6 }}  
-    searchguard.allow_unsafe_democertificates: false
-    searchguard.allow_default_init_sgindex: false
-    searchguard.ssl.http.enabled: true
-    searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
-    searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
-    searchguard.ssl.http.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
-    searchguard.ssl.transport.enforce_hostname_verification: false
-    searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
-    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
-    searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
-{{ if .Values.common.config }}
-{{ toYaml .Values.common.config | indent 4 }}
-{{ end }}
+{{ include "searchguard.configmap" . | indent 2 }}

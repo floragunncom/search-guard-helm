@@ -85,6 +85,33 @@ common:
   remove_initial_master_nodes_after_install: true
 
   init_sysctl: true
+  
+  ingress:
+    enabled: false
+    className: ""
+    annotations: 
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    labels: {}
+    # hosts: 
+    #   - host: kibana.local
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         serviceNamePostfix: ""
+    #         servicePort: 5601
+    #   - host: clients.local
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         serviceNamePostfix: "clients"
+    #         servicePort: 9200
+    tls: []
+     # - secretName: kibana-tls
+     #   hosts:
+     #     - kibana.local
+     # - secretName: clients-tls
+     #   hosts:
+     #     - clients.local  
 
   ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.

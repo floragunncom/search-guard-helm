@@ -1,0 +1,66 @@
+{{- /*
+    Copyright 2021 floragunn GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/}}
+
+
+{{- if .Values.common.ingress.enabled  -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "searchguard.fullname" . }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    {{- with .Values.common.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }} 
+  {{- with .Values.common.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.common.ingress.className }}
+  {{- if .Values.common.ingress.tls }}
+  tls:
+    {{- range .Values.common.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ tpl . $ | quote }}
+        {{- end }}
+      # This secret must exist beforehand
+      # The cert must also contain the subj-name foo.bar.com
+      # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates        
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}  
+  rules:
+    {{- range .Values.common.ingress.hosts }}
+    - host: {{ tpl .host $ | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ template "searchguard.fullname" $ }}{{ if ne .serviceNamePostfix "" }}-{{ end }}{{ .serviceNamePostfix }}
+                port:
+                  number: {{ .servicePort }}
+          {{- end }}
+    {{- end }}
+{{- end }}
