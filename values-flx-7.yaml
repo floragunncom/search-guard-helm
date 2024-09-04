@@ -1,3 +1,4 @@
+nameOverride: prod
 common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"

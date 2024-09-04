@@ -1,3 +1,4 @@
+nameOverride: prod
 common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
@@ -51,7 +52,7 @@ common:
   ## DN of the admin certificate
   ## See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
   admin_dn:
-    - "CN=admin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
+    - 'CN=sgadmin,OU=Data Platform,O=NVIDIA,L=Santa Clara,ST=California,C=US'
 
   ## Search Guard needs to securely and reliably identify internal communication between 
   ## Elasticsearch nodes (inter-node traffic). This communication happens for example if 
@@ -368,7 +369,7 @@ data:
     - remote_cluster_client
 
   ## For production we recommend at least 2 replicas
-  replicas: 2
+  replicas: 3
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   ## 'soft' will do this "best effort"
   ## For production we recommend setting this to 'hard'

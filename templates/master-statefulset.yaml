@@ -208,6 +208,9 @@ spec:
         - mountPath: /usr/share/elasticsearch/logs
           name: storage
           subPath: logs
+        - mountPath: /usr/share/elasticsearch/config/log4j2.properties
+          name: log4j
+          subPath: log4j2.properties       
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: config
           subPath: elasticsearch.yml
@@ -231,6 +234,9 @@ spec:
           secret:
             secretName: {{ template "searchguard.fullname" . }}-nodes-cert-secret
             defaultMode: 0644
+        - configMap:
+            name: {{ template "searchguard.fullname" . }}-log4j
+          name: log4j           
         - configMap:
             name: {{ template "searchguard.fullname" . }}-config
           name: config

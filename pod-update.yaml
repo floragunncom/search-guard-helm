@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sg-prod-debug
+  namespace: sg
+spec:
+  containers:
+  - command: [ "/bin/bash", "-c", "--" ]
+    args: [ "while true; do sleep 30; done;" ]
+    env:
+    - name: DISCOVERY_SERVICE
+      value: sg-prod-discovery.sg.svc
+    image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+    imagePullPolicy: IfNotPresent
+    name: sgctl-complete
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /sgconfig/
+      name: searchguard-config
+    - mountPath: /sgcerts/
+      name: secret-volume
+      readOnly: true
+    - mountPath: /usr/local/bin/kubectl
+      name: kubectl
+      readOnly: true
+      subPath: kubectl
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-fb7pl
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  initContainers:
+  - command:
+    - bash
+    - -c
+    - |
+      set -e
+
+      id -u
+      if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+      cp -v /usr/bin/kubectl /data/kubectl
+    image: docker.io/floragunncom/sg-kubectl-h4:1.27.6
+    imagePullPolicy: IfNotPresent
+    name: init-kubectl
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: false
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /data
+      name: kubectl
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-fb7pl
+      readOnly: true
+  preemptionPolicy: PreemptLowerPriority
+  securityContext: {}
+  serviceAccount: sg-prod
+  serviceAccountName: sg-prod
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: secret-volume
+    secret:
+      defaultMode: 420
+      secretName: sg-prod-admin-cert-secret
+  - configMap:
+      defaultMode: 420
+      name: sg-prod-sg-dynamic-configuration
+    name: searchguard-config
+  - emptyDir: {}
+    name: kubectl
+  - name: kube-api-access-fb7pl
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+

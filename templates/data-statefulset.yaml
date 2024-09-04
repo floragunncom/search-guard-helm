@@ -19,7 +19,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" . }}-data
+  name: {{ template "searchguard.fullname" . }}-data-watcher-ebs-zoneb
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}

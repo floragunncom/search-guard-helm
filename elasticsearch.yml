@@ -1,0 +1,43 @@
+
+# When xpack is installed we need to disable xpack security
+xpack.security.enabled: false
+xpack.ml.enabled: false
+xpack.watcher.enabled: false
+xpack.monitoring.collection.enabled: true
+
+network.host: "0.0.0.0"
+
+cluster.name: searchguard
+node.name: ${NODE_NAME}
+node.roles: ${NODE_ROLES}
+
+
+
+discovery.seed_hosts: ${DISCOVERY_SERVICE}
+# Search Guard
+searchguard.enterprise_modules_enabled: true
+searchguard.authcz.admin_dn:
+  - CN=sgadmin,OU=Data Platform,O=NVIDIA,L=Santa Clara,ST=California,C=US
+searchguard.nodes_dn:
+  - CN=Elastic Search*
+  - CN=Elastic Kibana*
+  - CN=Elastic,OU=Data Platform,*
+  - CN=*-esnode,OU=Data Platform,O=NVIDIA,L=Santa Clara,ST=California,C=US  
+searchguard.allow_unsafe_democertificates: false
+searchguard.allow_default_init_sgindex: false
+searchguard.ssl.http.enabled: true
+searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+searchguard.ssl.http.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+searchguard.ssl.transport.enforce_hostname_verification: false
+searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+
+ingest.geoip.downloader.enabled: false
+logger.org.elasticsearch: ERROR
+searchguard.audit.type: internal_elasticsearch
+searchguard.check_snapshot_restore_write_privileges: true
+searchguard.restapi.roles_enabled:
+- SGS_ALL_ACCESS
+- sg_all_access

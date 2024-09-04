@@ -1,0 +1,2866 @@
+---
+# Source: search-guard-flx/templates/client-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sg-prod-client
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    #role: client
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sg-prod
+      role: client
+      estype: node
+---
+# Source: search-guard-flx/templates/data-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sg-prod-data
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    #role: data
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sg-prod
+      role: data
+      estype: node
+---
+# Source: search-guard-flx/templates/kibana-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sg-prod-kibana
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    #role: kibana
+spec:
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app: sg-prod
+      role: kibana
+      estype: kibana
+---
+# Source: search-guard-flx/templates/master-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sg-prod-master
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    # master
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sg-prod
+      estype: node
+      role: master
+---
+# Source: search-guard-flx/templates/empty-nodes-cert-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: sg-prod
+    component: sginit
+    chart: "search-guard-flx"
+    heritage: "Helm"
+    release: "sg"
+    sgnodecert: "true"
+  annotations:
+    "helm.sh/hook-weight": "-5"
+    #"helm.sh/hook-delete-policy": hook-failed
+  name: sg-prod-nodes-cert-secret
+  namespace: sg
+type: Opaque
+data:
+---
+# Source: search-guard-flx/templates/kibana-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sg-prod-kibana-config
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+data:
+  kibana.yml: |-
+
+
+
+    server.name: kibana
+    server.host: "0.0.0.0"
+
+    elasticsearch.hosts: ["https://${DISCOVERY_SERVICE}:9200"]
+
+    elasticsearch.username: "kibanaserver"
+    elasticsearch.password: "${SG_KIBANASERVER_PWD}"
+
+    # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
+    server.ssl.enabled: true
+    server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.pem
+    server.ssl.key: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.key
+    # If you need to provide a CA certificate for your Elasticsearch instance, put
+    # the path of the pem file here.
+    elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/config/certificates-secrets/root-ca.pem"]
+
+    # Set to false to have a complete disregard for the validity of the SSL
+    # certificate.
+    elasticsearch.ssl.verificationMode: "full"
+    
+    #### Search Guard specific config ####
+
+    searchguard.multitenancy.enabled: true
+
+    # Allow cookies only via HTTPS. Cookies transmitted via HTTP will be discarded silently, i.e. a login is not possible.
+    searchguard.cookie.secure: true
+    # Password used to encrypt the session cookie. Must be at least 32 characters.
+    searchguard.cookie.password: "${KIBANA_COOKIE_PWD}"
+
+    #### Additional config ####
+
+    elasticsearch.requestHeadersWhitelist:
+    - sgtenant
+    - authorization
+    searchguard.auth.type: default
+    searchguard.basicauth.forbidden_usernames:
+    - kibanaserver
+---
+# Source: search-guard-flx/templates/sg-dynamic-configuration.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sg-prod-sg-dynamic-configuration
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+data:
+######## license_key.yml ########
+
+
+######## sg_auth_token_service.yml ########
+  # sg_auth_token_service.yml : |-
+  #   enabled: false
+  #   jwt_signing_key_hs512: "..."
+  #   jwt_encryption_key_a256kw: "..."   # Omit this to have unencrypted keys
+  #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
+  #   max_tokens_per_user: 100 
+
+######## sg_authc.yml ########
+  sg_authc.yml: |-
+    ---
+
+    auth_domains:
+    - type: basic/internal_users_db
+    debug: false
+
+
+######## sg_authz.yml ########
+  sg_authz.yml: |-
+    ---
+
+    debug: false
+    ignore_unauthorized_indices.enabled: true
+
+
+######## sg_blocks.yml ########
+  sg_blocks.yml: |-
+    ---
+
+    {}
+
+
+######## sg_frontend_authc.yml ########
+  sg_frontend_authc.yml: |-
+    ---
+
+    default:
+      auth_domains:
+      - type: basic
+      - enabled: false
+        label: SAML Login
+        saml.idp.entity_id: urn:saml-metadata-entity-id
+        saml.idp.metadata_url: https://your.idp.example.com/saml-metadata.xml
+        saml.sp.entity_id: service-provider-id
+        type: saml
+        user_mapping.roles.from: saml_response.roles
+      - enabled: false
+        label: OIDC Login
+        oidc.client_id: your-oidc-client-id
+        oidc.client_secret: your-oidc-client-secret
+        oidc.idp.openid_configuration_url: https://your.idp.example.com/auth/realms/master/.well-known/openid-configuration
+        type: oidc
+        user_mapping.roles.from: oidc_id_token.roles
+      debug: false
+
+
+######## sg_auth_token_service.yml ########
+  sg_auth_token_service.yml: |-
+    ---
+
+    enabled: false 
+
+
+
+
+######## sg_frontend_multi_tenancy.yml ########
+  sg_frontend_multi_tenancy.yml: |-
+    ---
+
+    default:
+      enabled: true
+      index: .kibana
+      server_user: kibanaserver
+
+
+
+######## sg_roles.yml ########
+  sg_roles.yml: |-
+    ---
+    # Define your own search guard roles here
+    # or use the built-in search guard roles
+    # See https://docs.search-guard.com/latest/roles-permissions
+
+    {}
+
+
+######## sg_roles_mapping.yml ########
+  sg_roles_mapping.yml: |-
+    ---
+    # Define your roles mapping here
+    # See https://docs.search-guard.com/latest/mapping-users-roles
+
+
+    SGS_ALL_ACCESS:
+      backend_roles:
+      - admin
+      description: Maps admin to SGS_ALL_ACCESS
+      reserved: true
+    SGS_KIBANA_SERVER:
+      reserved: true
+      users:
+      - kibanaserver
+    SGS_KIBANA_USER:
+      backend_roles:
+      - kibanauser
+      description: Maps kibanauser to SGS_KIBANA_USER
+      reserved: false
+    SGS_READALL:
+      backend_roles:
+      - readall
+      reserved: true
+
+
+######## sg_internal_users.yml ########
+  sg_internal_users.yml: |-
+    ---
+    # This is the internal user database
+
+    admin:
+      reserved: true
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: ${envbc.SG_ADMIN_PWD}
+      backend_roles:
+        - admin
+ 
+    kibanaserver:
+      reserved: true
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: ${envbc.SG_KIBANASERVER_PWD}
+
+    kibanaro: 
+      reserved: true
+      # Do not change the hash here!
+      # It will be automatically replaced by auto generated password
+      hash: ${envbc.SG_KIBANARO_PWD}
+      backend_roles:
+        - kibanauser
+        - readall
+
+
+######## sg_action_groups.yml ########
+  sg_action_groups.yml: |-
+    ---
+
+    MY_ACTION_GROUP:
+      allowed_actions:
+      - indices:data/read/search*
+      - indices:data/read/msearch*
+
+
+######## sg_tenants.yml ########
+  sg_tenants.yml: |-
+    ---
+
+    description: The human resources tenant
+
+
+######## sg_authz_dlsfls.yml ########
+  sg_authz_dlsfls.yml: |-
+    ---
+
+    {}
+---
+# Source: search-guard-flx/templates/sg-static-configuration.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sg-prod-config
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+data:
+  elasticsearch.yml: |-
+
+    # When xpack is installed we need to disable xpack security
+    xpack.security.enabled: false
+    xpack.ml.enabled: false
+    xpack.watcher.enabled: false
+    xpack.monitoring.collection.enabled: true
+
+    network.host: "0.0.0.0"
+
+    cluster.name: searchguard
+    node.name: ${NODE_NAME}
+    node.roles: ${NODE_ROLES}
+
+
+    
+    discovery.seed_hosts: ${DISCOVERY_SERVICE}
+    # Search Guard
+    searchguard.enterprise_modules_enabled: true
+    searchguard.authcz.admin_dn:
+      - CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+    searchguard.nodes_dn:
+      - CN=*-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com  
+    searchguard.allow_unsafe_democertificates: false
+    searchguard.allow_default_init_sgindex: false
+    searchguard.ssl.http.enabled: true
+    searchguard.ssl.http.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+    searchguard.ssl.http.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+    searchguard.ssl.http.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+    searchguard.ssl.transport.enforce_hostname_verification: false
+    searchguard.ssl.transport.pemcert_filepath: certificates-secrets/${NODE_NAME}.pem
+    searchguard.ssl.transport.pemkey_filepath: certificates-secrets/${NODE_NAME}.key
+    searchguard.ssl.transport.pemtrustedcas_filepath: certificates-secrets/root-ca.pem
+
+    ingest.geoip.downloader.enabled: false
+    logger.org.elasticsearch: ERROR
+    searchguard.audit.type: internal_elasticsearch
+    searchguard.check_snapshot_restore_write_privileges: true
+    searchguard.restapi.roles_enabled:
+    - SGS_ALL_ACCESS
+    - sg_all_access
+---
+# Source: search-guard-flx/templates/client-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sg-prod-clients
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    role: client
+  
+spec:
+  type: ClusterIP
+ 
+  selector:
+    component: sg-prod
+    role: client
+  ports:
+  - name: http
+    port: 9200
+    targetPort: 9200
+    protocol: TCP
+    
+  - name: transport
+    port: 9300
+    targetPort: 9300
+    protocol: TCP
+---
+# Source: search-guard-flx/templates/kibana-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sg-prod
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    role: kibana
+  
+
+spec:
+  type: ClusterIP
+ 
+  selector:
+    component: sg-prod
+    role: kibana
+  ports:
+  - name: http
+    port: 5601
+    targetPort: 5601
+    protocol: TCP
+---
+# Source: search-guard-flx/templates/master-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sg-prod-discovery
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    role: master
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    component: sg-prod
+    role: master
+  ports:
+  - name: transport
+    port: 9300
+    protocol: TCP
+  - name: http
+    port: 9200
+    protocol: TCP
+---
+# Source: search-guard-flx/templates/client-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sg-prod-client
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod-client
+    role: client
+spec:
+  serviceName: sg-prod-client
+  replicas: 2
+  updateStrategy:
+    type: OnDelete
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      component: sg-prod
+      role: client
+  template:
+    metadata:
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: client
+        estype: node
+      annotations:
+        
+        checksum/config: 9569776abe10da1511dec5a9f485631cf96294f6685fe2f399d61d4f46e27718
+        
+    spec:
+      subdomain: sg-prod
+      serviceAccountName: sg-prod
+      securityContext:
+        fsGroup: 1000
+      
+      affinity:
+      
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: label-1
+                operator: In
+                values:
+                - key-1
+            weight: 1
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+           
+      
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: client
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: client
+      
+      tolerations:
+      - effect: NoSchedule
+        key: key1
+        operator: Equal
+        value: value1
+      - effect: NoExecute
+        key: key1
+        operator: Equal
+        value: value1
+      
+
+      initContainers:
+      
+      - name: init-sysctl
+        image: docker.io/floragunncom/busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          privileged: true
+      
+      - name: init-kubectl
+        image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - name: kubectl
+          mountPath: /data
+        command: 
+        - bash
+        - -c
+        - | 
+            set -e
+      
+            id -u
+            if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+            cp -v /usr/bin/kubectl /data/kubectl
+      - name: searchguard-generate-certificates
+        image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL   
+        volumeMounts:
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+          - name: nodes-cert
+            mountPath: /sg-nodes-certs
+            readOnly: false           
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - bash
+          - -c
+          - |
+      
+      
+              #sed -i 's/appender.rolling.layout.type = ESJsonLayout/appender.rolling.layout.type = PatternLayout/g' /usr/share/elasticsearch/config/log4j2.properties
+              #sed -i '/appender.rolling.layout.type_name = server/d' /usr/share/elasticsearch/config/log4j2.properties
+              #echo "" >> /usr/share/elasticsearch/config/log4j2.properties
+              #echo 'appender.rolling.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %.-10000m%n' >> /usr/share/elasticsearch/config/log4j2.properties
+              
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+              set -e
+      
+              until kubectl get secrets sg-prod-admin-cert-secret; do
+                  echo 'Wait for Admin certificate secrets to be generated or uploaded';
+                  sleep 10 ;
+              done
+      
+              echo "OK, sg-prod-admin-cert-secret exists now"
+      
+              until kubectl get secrets sg-prod-passwd-secret; do
+                echo 'Wait for sg-prod-passwd-secret';
+                sleep 10 ; 
+              done
+      
+              echo "OK, sg-prod-passwd-secret exists now"
+      
+      
+      
+              KIBANA_ELB="$(kubectl get svc sg-prod -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+              ES_ELB="$(kubectl get svc sg-prod-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+      
+              if [ -z "$KIBANA_ELB" ]; then
+                    KIBANA_ELB=""
+              else
+                    KIBANA_ELB="- $KIBANA_ELB"
+              fi
+      
+              if [ -z "$ES_ELB" ]; then
+                    ES_ELB=""
+              else
+                    ES_ELB="- $ES_ELB"
+              fi
+      
+              cat >"sg-prod-$NODE_NAME-node-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+                    
+              
+              defaults:
+                validityDays: 365
+                keysize: 2048
+                pkPassword: none
+                httpsEnabled: true
+                reuseTransportCertificatesForHttp: true
+              
+              nodes:
+                - name: $NODE_NAME
+                  dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                  dns:
+                    - $NODE_NAME
+                    - sg-prod-discovery.sg.svc
+                    - sg-prod-clients.sg.svc
+                    $KIBANA_ELB
+                    $ES_ELB
+                  ip: $POD_IP
+              EOL
+      
+              cat sg-prod-$NODE_NAME-node-cert.yml
+      
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+      
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-$NODE_NAME-node-cert.yml" -t /tmp/
+      
+              for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+              do
+                 cp -rf /tmp/$sgfile /sg-nodes-certs/
+              done    
+                  
+              kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5        
+      
+      
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      
+      
+      containers:
+      - name: elasticsearch
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL        
+      
+        image: "docker.io/floragunncom/sg-elasticsearch-h4:8.7.1-1.6.0-flx"
+      
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - bash
+                - -c
+                - | 
+                    shopt -s dotglob
+                    rm -f /usr/share/elasticsearch/config/*.pem
+                    kubectl get secret sg-prod-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+                    nodes_certs_status=$?
+                    if [ $nodes_certs_status -ne 0 ]; then
+                      echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+                      kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5  
+                    fi
+          preStop:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - secretRef:
+            name: sg-prod-passwd-secret
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: sg-prod-discovery.sg.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms1g -Xmx1g"
+        - name: NODE_ROLES
+          value: "transform,remote_cluster_client,ingest"
+        - name: PROCESSORS
+          value: "1"
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 120
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_searchguard/health
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
+        resources:
+          limits:
+            cpu: 1
+            memory: 1500Mi
+          requests:
+            cpu: 800m
+            memory: 1500Mi
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: storage
+          subPath: data
+        - mountPath: /usr/share/elasticsearch/logs
+          name: storage
+          subPath: logs
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
+          readOnly: true
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
+
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: sg-prod-nodes-cert-secret
+            defaultMode: 0644
+        - configMap:
+            name: sg-prod-config
+          name: config
+        - configMap:
+            name: sg-prod-sg-dynamic-configuration
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
+        - name: nodes-cert
+          emptyDir: {}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: 
+        resources:
+          requests:
+            storage: 2Gi
+---
+# Source: search-guard-flx/templates/data-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sg-prod-data
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+    role: data
+spec:
+  serviceName: sg-prod-data
+  replicas: 2
+  updateStrategy:
+    type: OnDelete
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      component: sg-prod
+      role: data
+  template:
+    metadata:
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: data
+        estype: node
+      annotations:
+        
+        checksum/config: 9569776abe10da1511dec5a9f485631cf96294f6685fe2f399d61d4f46e27718
+        
+    spec:
+      subdomain: sg-prod
+      serviceAccountName: sg-prod
+      securityContext:
+        fsGroup: 1000
+      
+      affinity:
+           
+      
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: data
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: data
+      
+      initContainers:
+      
+      - name: init-sysctl
+        image: docker.io/floragunncom/busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          privileged: true
+      
+      - name: init-kubectl
+        image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - name: kubectl
+          mountPath: /data
+        command: 
+        - bash
+        - -c
+        - | 
+            set -e
+      
+            id -u
+            if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+            cp -v /usr/bin/kubectl /data/kubectl
+      - name: searchguard-generate-certificates
+        image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL   
+        volumeMounts:
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+          - name: nodes-cert
+            mountPath: /sg-nodes-certs
+            readOnly: false           
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - bash
+          - -c
+          - |
+      
+      
+              #sed -i 's/appender.rolling.layout.type = ESJsonLayout/appender.rolling.layout.type = PatternLayout/g' /usr/share/elasticsearch/config/log4j2.properties
+              #sed -i '/appender.rolling.layout.type_name = server/d' /usr/share/elasticsearch/config/log4j2.properties
+              #echo "" >> /usr/share/elasticsearch/config/log4j2.properties
+              #echo 'appender.rolling.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %.-10000m%n' >> /usr/share/elasticsearch/config/log4j2.properties
+              
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+              set -e
+      
+              until kubectl get secrets sg-prod-admin-cert-secret; do
+                  echo 'Wait for Admin certificate secrets to be generated or uploaded';
+                  sleep 10 ;
+              done
+      
+              echo "OK, sg-prod-admin-cert-secret exists now"
+      
+              until kubectl get secrets sg-prod-passwd-secret; do
+                echo 'Wait for sg-prod-passwd-secret';
+                sleep 10 ; 
+              done
+      
+              echo "OK, sg-prod-passwd-secret exists now"
+      
+      
+      
+              KIBANA_ELB="$(kubectl get svc sg-prod -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+              ES_ELB="$(kubectl get svc sg-prod-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+      
+              if [ -z "$KIBANA_ELB" ]; then
+                    KIBANA_ELB=""
+              else
+                    KIBANA_ELB="- $KIBANA_ELB"
+              fi
+      
+              if [ -z "$ES_ELB" ]; then
+                    ES_ELB=""
+              else
+                    ES_ELB="- $ES_ELB"
+              fi
+      
+              cat >"sg-prod-$NODE_NAME-node-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+                    
+              
+              defaults:
+                validityDays: 365
+                keysize: 2048
+                pkPassword: none
+                httpsEnabled: true
+                reuseTransportCertificatesForHttp: true
+              
+              nodes:
+                - name: $NODE_NAME
+                  dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                  dns:
+                    - $NODE_NAME
+                    - sg-prod-discovery.sg.svc
+                    - sg-prod-clients.sg.svc
+                    $KIBANA_ELB
+                    $ES_ELB
+                  ip: $POD_IP
+              EOL
+      
+              cat sg-prod-$NODE_NAME-node-cert.yml
+      
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+      
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-$NODE_NAME-node-cert.yml" -t /tmp/
+      
+              for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+              do
+                 cp -rf /tmp/$sgfile /sg-nodes-certs/
+              done    
+                  
+              kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5        
+      
+      
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      
+      
+      containers:
+      - name: elasticsearch
+      
+        image: "docker.io/floragunncom/sg-elasticsearch-h4:8.7.1-1.6.0-flx"
+      
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - bash
+                - -c
+                - | 
+                    shopt -s dotglob
+                    rm -f /usr/share/elasticsearch/config/*.pem
+                    kubectl get secret sg-prod-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+                    nodes_certs_status=$?
+                    if [ $nodes_certs_status -ne 0 ]; then
+                      echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+                      kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5  
+                    fi
+
+                    function try_loop {
+                        for (( c=1; c<=100; c++ )); do \
+                            eval $@ && exit_code=0 && break || exit_code=$? && echo "Retry $c in 5s" && \
+                            sleep 5; \
+                            done; \
+                            (exit $exit_code)
+                    }
+
+                    
+                    try_loop nc -z $DISCOVERY_SERVICE 9300
+                    try_loop nc -z $DISCOVERY_SERVICE 9200
+                    
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_status=yellow&timeout=300s&pretty" > /tmp/poststart 2>&1 || true
+
+                    try_loop nc -z $HOSTNAME 9200
+
+                    curl --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": null
+                      }
+                    }
+                    ' >> /tmp/poststart 2>&1 || true
+
+          preStop:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X PUT "https://$HOSTNAME:9200/_cluster/settings?pretty" -H 'Content-Type: application/json' -d'
+                    {
+                      "persistent": {
+                        "cluster.routing.allocation.enable": "primaries"
+                      }
+                    }
+                    ' #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -X POST "https://$HOSTNAME:9200/_flush/synced?pretty" #>> "/storage/prestop/$HOSTNAME" 2>&1 || true
+
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        envFrom:
+        - secretRef:
+            name: sg-prod-passwd-secret
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: sg-prod-discovery.sg.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms1g -Xmx1g"
+        - name: NODE_ROLES
+          value: "data,remote_cluster_client"
+        - name: PROCESSORS
+          value: "1"
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /_searchguard/health
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 30
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 120
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 1
+            memory: 1500Mi
+          requests:
+            cpu: 800m
+            memory: 1500Mi
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: storage
+          subPath: data
+        - mountPath: /usr/share/elasticsearch/logs
+          name: storage
+          subPath: logs
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
+          readOnly: true
+        - name: secret-volume-admin-cert
+          readOnly: true
+          mountPath: /sgcerts/
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
+
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: sg-prod-nodes-cert-secret
+            defaultMode: 0644
+        - configMap:
+            name: sg-prod-config
+          name: config
+        - configMap:
+            name: sg-prod-sg-dynamic-configuration
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
+        - name: secret-volume-admin-cert
+          secret:
+            secretName: sg-prod-admin-cert-secret
+        - name: nodes-cert
+          emptyDir: {}
+
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: 
+      resources:
+        requests:
+          storage: 4Gi
+---
+# Source: search-guard-flx/templates/kibana-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sg-prod-kibana
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod-kibana
+    role: kibana
+spec:
+  serviceName: sg-prod-kibana
+  replicas: 1
+  updateStrategy:
+    type: OnDelete
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      component: sg-prod
+      role: kibana
+  template:
+    metadata:
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: kibana
+        estype: kibana
+      annotations:
+        
+        checksum/config: b68c68631f2f3adc1ec8c5b8c286662b0d742d3ee02ec7fc0a26738bb392609f
+        
+    spec:
+      subdomain: sg-prod
+      serviceAccountName: sg-prod
+      securityContext:
+        fsGroup: 1000
+      
+      affinity:
+           
+      
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: kibana
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: kibana
+      
+      initContainers:
+        - name: init-kubectl-0 #doubled, we need a better solution
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: kubectl
+            mountPath: /data
+          command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
+        - name: kibana-init
+          image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: kubectl
+              subPath: kubectl
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
+          command:
+            - bash
+            - -c
+            - |
+                
+                if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+                id -u
+                set -e
+                until kubectl --namespace sg get secrets sg-prod-passwd-secret; do
+                  echo 'Wait for sg-prod-passwd-secret';
+                  sleep 10 ;
+                done
+
+                echo "OK, sg-prod-passwd-secret exists now"
+
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+        - name: init-kubectl
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+          - name: kubectl
+            mountPath: /data
+          command: 
+          - bash
+          - -c
+          - | 
+              set -e
+        
+              id -u
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+              cp -v /usr/bin/kubectl /data/kubectl
+        - name: searchguard-generate-certificates
+          image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL   
+          volumeMounts:
+            - name: kubectl
+              subPath: kubectl
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
+            - name: nodes-cert
+              mountPath: /sg-nodes-certs
+              readOnly: false           
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          command:
+            - bash
+            - -c
+            - |
+        
+        
+                #sed -i 's/appender.rolling.layout.type = ESJsonLayout/appender.rolling.layout.type = PatternLayout/g' /usr/share/elasticsearch/config/log4j2.properties
+                #sed -i '/appender.rolling.layout.type_name = server/d' /usr/share/elasticsearch/config/log4j2.properties
+                #echo "" >> /usr/share/elasticsearch/config/log4j2.properties
+                #echo 'appender.rolling.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %.-10000m%n' >> /usr/share/elasticsearch/config/log4j2.properties
+                
+                if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+                id -u
+                set -e
+        
+                until kubectl get secrets sg-prod-admin-cert-secret; do
+                    echo 'Wait for Admin certificate secrets to be generated or uploaded';
+                    sleep 10 ;
+                done
+        
+                echo "OK, sg-prod-admin-cert-secret exists now"
+        
+                until kubectl get secrets sg-prod-passwd-secret; do
+                  echo 'Wait for sg-prod-passwd-secret';
+                  sleep 10 ; 
+                done
+        
+                echo "OK, sg-prod-passwd-secret exists now"
+        
+        
+        
+                KIBANA_ELB="$(kubectl get svc sg-prod -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+                ES_ELB="$(kubectl get svc sg-prod-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+        
+                if [ -z "$KIBANA_ELB" ]; then
+                      KIBANA_ELB=""
+                else
+                      KIBANA_ELB="- $KIBANA_ELB"
+                fi
+        
+                if [ -z "$ES_ELB" ]; then
+                      ES_ELB=""
+                else
+                      ES_ELB="- $ES_ELB"
+                fi
+        
+                cat >"sg-prod-$NODE_NAME-node-cert.yml" <<EOL
+                ca:
+                  root:
+                      file: root-ca.pem
+                      
+                
+                defaults:
+                  validityDays: 365
+                  keysize: 2048
+                  pkPassword: none
+                  httpsEnabled: true
+                  reuseTransportCertificatesForHttp: true
+                
+                nodes:
+                  - name: $NODE_NAME
+                    dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                    dns:
+                      - $NODE_NAME
+                      - sg-prod-discovery.sg.svc
+                      - sg-prod-clients.sg.svc
+                      $KIBANA_ELB
+                      $ES_ELB
+                    ip: $POD_IP
+                EOL
+        
+                cat sg-prod-$NODE_NAME-node-cert.yml
+        
+                kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+                kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+        
+                /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-$NODE_NAME-node-cert.yml" -t /tmp/
+        
+                for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+                do
+                   cp -rf /tmp/$sgfile /sg-nodes-certs/
+                done    
+                    
+                kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5        
+        
+        
+          resources:
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      
+      containers:
+      - name: kibana
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      
+        image: "docker.io/floragunncom/sg-kibana-h4:8.7.1-1.6.0-flx"
+      
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - bash
+                - -c
+                - |             
+                    kubectl get secret sg-prod-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+                    nodes_certs_status=$?
+                    if [ $nodes_certs_status -ne 0 ]; then
+                      echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+                      kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5  
+                    fi
+          preStop:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+        envFrom:
+        - secretRef:
+            name: sg-prod-passwd-secret
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: sg-prod-clients.sg.svc
+        ports:
+        - containerPort: 5601
+          name: http
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+              - pgrep
+              - node
+          initialDelaySeconds: 120
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: api/status
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 1
+            memory: 2500Mi
+          requests:
+            cpu: 800m
+            memory: 2500Mi
+        volumeMounts:
+        #- mountPath: /storage/
+        #  name: storage
+        - mountPath: /usr/share/kibana/config/kibana.yml
+          name: config
+          subPath: kibana.yml
+        - name: certificates-secrets-volume
+          readOnly: true
+          mountPath: "/usr/share/kibana/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
+          readOnly: true
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true             
+      volumes:
+        - name: certificates-secrets-volume
+          secret:
+            secretName: sg-prod-nodes-cert-secret
+            defaultMode: 0644
+        - configMap:
+            name: sg-prod-kibana-config
+          name: config
+        - name: kubectl
+          emptyDir: {}
+        - name: nodes-cert
+          emptyDir: {}   
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: storage
+  #     spec:
+  #       accessModes: [ "ReadWriteOnce" ]
+  #       storageClassName: 
+  #       resources:
+  #         requests:
+  #           storage: 2Gi
+---
+# Source: search-guard-flx/templates/master-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sg-prod-master
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod-master
+    role: master
+spec:
+  serviceName: sg-prod-master
+  replicas: 3
+  updateStrategy:
+    type: OnDelete
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      component: sg-prod
+      role: master
+  template:
+    metadata:
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: master
+        estype: node
+      annotations:
+        
+        checksum/config: 9569776abe10da1511dec5a9f485631cf96294f6685fe2f399d61d4f46e27718
+        
+    spec:
+      subdomain: sg-prod
+      serviceAccountName: sg-prod
+      securityContext:
+        fsGroup: 1000
+      
+      affinity:
+           
+      
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "topology.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: master
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: sg-prod
+                  role: master
+      
+      initContainers:
+      
+      - name: init-sysctl
+        image: docker.io/floragunncom/busybox
+        imagePullPolicy: IfNotPresent
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          privileged: true
+      
+      - name: init-kubectl
+        image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - name: kubectl
+          mountPath: /data
+        command: 
+        - bash
+        - -c
+        - | 
+            set -e
+      
+            id -u
+            if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+            cp -v /usr/bin/kubectl /data/kubectl
+      - name: searchguard-generate-certificates
+        image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL   
+        volumeMounts:
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+          - name: nodes-cert
+            mountPath: /sg-nodes-certs
+            readOnly: false           
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - bash
+          - -c
+          - |
+      
+      
+              #sed -i 's/appender.rolling.layout.type = ESJsonLayout/appender.rolling.layout.type = PatternLayout/g' /usr/share/elasticsearch/config/log4j2.properties
+              #sed -i '/appender.rolling.layout.type_name = server/d' /usr/share/elasticsearch/config/log4j2.properties
+              #echo "" >> /usr/share/elasticsearch/config/log4j2.properties
+              #echo 'appender.rolling.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] [%node_name]%marker %.-10000m%n' >> /usr/share/elasticsearch/config/log4j2.properties
+              
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+              set -e
+      
+              until kubectl get secrets sg-prod-admin-cert-secret; do
+                  echo 'Wait for Admin certificate secrets to be generated or uploaded';
+                  sleep 10 ;
+              done
+      
+              echo "OK, sg-prod-admin-cert-secret exists now"
+      
+              until kubectl get secrets sg-prod-passwd-secret; do
+                echo 'Wait for sg-prod-passwd-secret';
+                sleep 10 ; 
+              done
+      
+              echo "OK, sg-prod-passwd-secret exists now"
+      
+      
+      
+              KIBANA_ELB="$(kubectl get svc sg-prod -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+              ES_ELB="$(kubectl get svc sg-prod-clients -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+      
+              if [ -z "$KIBANA_ELB" ]; then
+                    KIBANA_ELB=""
+              else
+                    KIBANA_ELB="- $KIBANA_ELB"
+              fi
+      
+              if [ -z "$ES_ELB" ]; then
+                    ES_ELB=""
+              else
+                    ES_ELB="- $ES_ELB"
+              fi
+      
+              cat >"sg-prod-$NODE_NAME-node-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+                    
+              
+              defaults:
+                validityDays: 365
+                keysize: 2048
+                pkPassword: none
+                httpsEnabled: true
+                reuseTransportCertificatesForHttp: true
+              
+              nodes:
+                - name: $NODE_NAME
+                  dn: CN=$NODE_NAME-esnode,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+                  dns:
+                    - $NODE_NAME
+                    - sg-prod-discovery.sg.svc
+                    - sg-prod-clients.sg.svc
+                    $KIBANA_ELB
+                    $ES_ELB
+                  ip: $POD_IP
+              EOL
+      
+              cat sg-prod-$NODE_NAME-node-cert.yml
+      
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl get secrets sg-prod-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+      
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-$NODE_NAME-node-cert.yml" -t /tmp/
+      
+              for sgfile in root-ca.pem  $NODE_NAME.key $NODE_NAME.pem 
+              do
+                 cp -rf /tmp/$sgfile /sg-nodes-certs/
+              done    
+                  
+              kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5        
+      
+      
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      
+      
+      containers:
+      - name: elasticsearch
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      
+        image: "docker.io/floragunncom/sg-elasticsearch-h4:8.7.1-1.6.0-flx"
+      
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - bash
+                - -c
+                - | 
+                    shopt -s dotglob
+                    rm -f /usr/share/elasticsearch/config/*.pem
+                    kubectl get secret sg-prod-secret -o jsonpath='{.data}' | grep -qE '($NODE_NAME\.pem|$NODE_NAME\.key)'
+                    nodes_certs_status=$?
+                    if [ $nodes_certs_status -ne 0 ]; then
+                      echo "Restoring missing files $NODE_NAME.pem and $NODE_NAME.pem after container restart"
+                      kubectl patch secret sg-prod-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5  
+                    fi
+          preStop:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.pem\"}]" -v=5 --type json || true
+                    kubectl --namespace sg patch secret sg-prod-nodes-cert-secret -p="[{\"op\": \"remove\", \"path\": \"/data/$NODE_NAME.key\"}]" -v=5 --type json || true
+        envFrom:
+        - secretRef:
+            name: sg-prod-passwd-secret
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_SERVICE
+          value: sg-prod-discovery.sg.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms1g -Xmx1g"
+        - name: NODE_ROLES
+          value: "master,remote_cluster_client"
+
+        - name: PROCESSORS
+          value: "1"
+
+        - name: "cluster.initial_master_nodes"
+          value: "sg-search-guard-flx-master-0,sg-search-guard-flx-master-1,sg-search-guard-flx-master-2"
+
+        
+        ports:
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /_searchguard/health?mode=nonstrict
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
+        livenessProbe:
+          tcpSocket:
+            port: transport
+          initialDelaySeconds: 120
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 1
+            memory: 1500Mi
+          requests:
+            cpu: 800m
+            memory: 1500Mi
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: storage
+          subPath: data
+        - mountPath: /usr/share/elasticsearch/logs
+          name: storage
+          subPath: logs
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: config
+          subPath: elasticsearch.yml
+        - mountPath: /usr/share/elasticsearch/plugins/search-guard-flx/sgconfig/
+          name: searchguard-config
+        - name: secret-volume
+          readOnly: true
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
+        - name: kubectl
+          subPath: kubectl
+          mountPath: /usr/local/bin/kubectl
+          readOnly: true
+        - name: nodes-cert
+          mountPath: /sg-nodes-certs
+          readOnly: true
+
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: sg-prod-nodes-cert-secret
+            defaultMode: 0644
+        - configMap:
+            name: sg-prod-config
+          name: config
+        - configMap:
+            name: sg-prod-sg-dynamic-configuration
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
+        - name: nodes-cert
+          emptyDir: {}
+
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: 
+      resources:
+        requests:
+          storage: 2Gi
+---
+# Source: search-guard-flx/templates/sgctl-generate-certs.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "sg-prod-sgctl-preinstall"
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod-sgctl
+    role: sgctl
+spec:
+  template:
+    metadata:
+      name: "sg"
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: sgctl
+    spec:
+      restartPolicy: Never
+      serviceAccountName: sg-prod
+      
+      
+      
+      initContainers:
+        - name: init-kubectl
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+          - name: kubectl
+            mountPath: /data
+          command: 
+          - bash
+          - -c
+          - | 
+              set -e
+        
+              id -u
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+              cp -v /usr/bin/kubectl /data/kubectl
+      volumes:
+        - name: kubectl
+          emptyDir: {}
+      containers:
+      - name: sgctl-init
+        image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+        command:
+          - bash
+          - -c
+          - |
+          
+              set -x
+
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+
+              kubectl --namespace sg get secrets | grep sg-prod-passwd-secret 
+              RET="$?"
+
+              set -euo pipefail
+
+              if [ "$RET" == "1" ]; then
+
+              if [ "false"  == "true" ] && [ -z "" ]; then
+              kubectl --namespace sg create secret docker-registry docker-auth  --docker-server= --docker-username= --docker-password= --docker-email=
+              fi
+
+              if [ "true" == "true" ]; then
+
+              cat >"sg-prod-root-ca.yml" <<EOL
+              ca:
+                root:
+                    dn: CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com
+                    validityDays: 365
+                    keysize: 2048
+                    pkPassword: none
+                    file: root-ca.pem
+              EOL
+
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -ca -v -c "sg-prod-root-ca.yml" -t /tmp/
+
+              cat >"sg-prod-root-ca-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: sg-prod
+                  component: sginit
+                  chart: "search-guard-flx"
+                  heritage: "Helm"
+                  release: "sg"
+                  sgrootcacert: "true"
+                name: sg-prod-root-ca-secret
+                namespace: sg
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+                key.pem: $(cat /tmp/root-ca.key | base64 -w0)
+              EOL
+
+              cat "sg-prod-root-ca-sec.yaml"
+
+              kubectl --namespace sg apply -f "sg-prod-root-ca-sec.yaml"
+
+              cat >"sg-prod-admin-cert.yml" <<EOL
+              ca:
+                root:
+                    file: root-ca.pem
+                    
+              defaults:
+                pkPassword: none
+                validityDays: 365
+                keysize: 2048
+              clients:
+                - name: admin
+                  admin: true
+                  dn: CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-admin-cert.yml" -t /tmp/
+
+              cat >"sg-prod-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: sg-prod
+                  component: sginit
+                  chart: "search-guard-flx"
+                  heritage: "Helm"
+                  release: "sg"
+                name: sg-prod-admin-cert-secret
+                namespace: sg
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/admin.pem | base64 -w0)
+                key.pem: $(cat /tmp/admin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              echo "Creating Admin Secrets in k8s"
+              kubectl apply -f "sg-prod-admin-cert-sec.yaml"
+              echo "Will generate sg-prod-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"sg-prod-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: sg-prod
+                  component: sginit
+                  chart: "search-guard-flx"
+                  heritage: "Helm"
+                  release: "sg"
+                  sgpwdsecret: "true"
+                name: sg-prod-passwd-secret
+                namespace: sg
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                
+              EOL
+
+              kubectl apply -f "sg-prod-passwd-secret.yaml"
+
+              fi
+              if [ "false" == "true" ]; then
+
+              kubectl --namespace sg get secrets sg-prod-root-ca-secret -o jsonpath="{.data.crt\.pem}" | base64 -d > /tmp/root-ca.pem
+              kubectl --namespace sg get secrets sg-prod-root-ca-secret -o jsonpath="{.data.key\.pem}" | base64 -d > /tmp/root-ca.key
+
+              cat /tmp/root-ca.pem
+              cat /tmp/root-ca.key
+
+              cat >"sg-prod-admin-cert.yml" <<EOL
+              ca:
+                root:
+                  file: root-ca.pem
+                  
+              defaults:
+                pkPassword: none
+                validityDays: 365
+                keysize: 2048 
+              clients:
+              - name: admin
+                admin: true
+                dn: CN=admin,OU=Ops,O=Example Com\, Inc.,DC=example,DC=com
+              EOL
+
+              /usr/share/sg/tlstool/tools/sgtlstool.sh -crt -v -c "sg-prod-admin-cert.yml" -t /tmp/
+
+              cat >"sg-prod-admin-cert-sec.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: sg-prod
+                  component: sginit
+                  chart: "search-guard-flx"
+                  heritage: "Helm"
+                  release: "sg"
+                name: sg-prod-admin-cert-secret
+                namespace: sg
+              type: Opaque
+              data:
+                crt.pem: $(cat /tmp/admin.pem | base64 -w0)
+                key.pem: $(cat /tmp/admin.key | base64 -w0)
+                root-ca.pem: $(cat /tmp/root-ca.pem | base64 -w0)
+              EOL
+
+              echo "Creating Admin Secrets in k8s"
+              cat sg-prod-admin-cert-sec.yaml
+
+              kubectl apply -f "sg-prod-admin-cert-sec.yaml"
+              echo "Will generate sg-prod-passwd-secret"
+
+              kibana_cookie_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              admin_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibanaro_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+              kibana_server_pwd="$(openssl rand 512 | md5sum | awk '{print $1}')"
+
+              cat >"sg-prod-passwd-secret.yaml" <<EOL
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                labels:
+                  app: sg-prod
+                  component: sginit
+                  chart: "search-guard-flx"
+                  heritage: "Helm"
+                  release: "sg"
+                  sgpwdsecret: "true"
+                name: sg-prod-passwd-secret
+                namespace: sg
+              type: Opaque
+              data:
+                KIBANA_COOKIE_PWD: $(echo -n $kibana_cookie_pwd | base64 -w0)
+                SG_KIBANASERVER_PWD: $(echo -n $kibana_server_pwd | base64 -w0)
+                SG_ADMIN_PWD: $(echo -n $admin_pwd | base64 -w0)
+                SG_KIBANARO_PWD: $(echo -n $kibanaro_pwd | base64 -w0)
+                
+              EOL
+
+              kubectl apply -f "sg-prod-passwd-secret.yaml"
+
+              fi
+              else
+              echo "Passwd secrets already exists"
+              :
+              fi
+---
+# Source: search-guard-flx/templates/sgctl-initialize-cluster.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "sg-prod-sgctl-initialize"
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod-sgctl
+    role: sgctl
+spec:
+  template:
+    metadata:
+      name: "sg"
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: sgctl
+    spec:
+      restartPolicy: Never
+      serviceAccountName: sg-prod
+      
+      
+      
+      initContainers:
+      - name: init-kubectl
+        image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+        - name: kubectl
+          mountPath: /data
+        command: 
+        - bash
+        - -c
+        - | 
+            set -e
+      
+            id -u
+            if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+            cp -v /usr/bin/kubectl /data/kubectl
+      containers:
+      - name: sgctl-complete
+        env:
+          - name: DISCOVERY_SERVICE
+            value: sg-prod-discovery.sg.svc
+        image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+        imagePullPolicy: IfNotPresent
+        command:
+          - bash
+          - -c
+          - |
+              
+              set -x
+
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
+              id -u
+
+              while kubectl --namespace sg get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                echo "Wait for $DISCOVERY_SERVICE service to be ready";
+                sleep 10 ;
+              done
+
+              function try_loop {
+                for (( c=1; c<=100; c++ )); do \
+                    eval $@ && exit_code=0 && break || exit_code=$? && echo "Retry $c in 5s" && \
+                    sleep 5; \
+                    done; \
+                    (exit $exit_code)
+              }
+                    
+              try_loop nc -z $DISCOVERY_SERVICE 9300
+              try_loop nc -z $DISCOVERY_SERVICE 9200
+
+              mkdir /tmp/sgconfig
+              cp -v /sgconfig/*.yml /tmp/sgconfig/
+
+              echo "Executing sgctl to update the configs ..."
+              /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /tmp/sgconfig
+
+              RET=$?
+
+              if [ $RET -ne 0 ];
+              then
+                echo "sgctl failed with exit code $RET"
+                exit -1
+              else
+                echo "sgctl successful"
+              fi
+
+              while kubectl --namespace sg get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                
+                
+                echo "Wait for all data nodes to be ready";
+
+                # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                # and can be removed if the issue is fixed.
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": "ERROR"
+                  }
+                }'
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": null
+                  }
+                }'
+                echo ""
+                # end workaround
+
+                sleep 10 ;
+              
+              
+              done
+
+
+              while kubectl --namespace sg get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+                echo "Wait for all client nodes to be ready";
+
+                # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                # and can be removed if the issue is fixed.
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": "ERROR"
+                  }
+                }'
+                echo ""
+                curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                {
+                  "transient": {
+                    "logger.dummy.dummy": null
+                  }
+                }'
+                echo ""
+                # end workaround
+
+                sleep 10 ;
+              done
+
+              echo "Cluster initialization finished"
+
+              exit $RET
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+          - mountPath: /sgconfig/
+            name: searchguard-config
+          - name: secret-volume
+            readOnly: true
+            mountPath: /sgcerts/
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: sg-prod-admin-cert-secret
+        - configMap:
+            name: sg-prod-sg-dynamic-configuration
+          name: searchguard-config
+        - name: kubectl
+          emptyDir: {}
+---
+# Source: search-guard-flx/templates/cleanup-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "sg-prod-cleanup-job"
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: sg-prod
+          
+          
+
+          
+
+          containers:
+            - name: "sg-prod-cleanup-job"
+              image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1000
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                limits:
+                  cpu: 25m
+                  memory: 64Mi
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+
+                    set -e
+
+                    if [ "false" = "true" ]; then
+                      echo "Debug mode is on, will not delete any jobs"
+                    else
+
+                      echo "Debug mode is off, will delete succeeded jobs"
+
+                      SUCCEEDED_JOBS=$(kubectl get job -n sg -o=jsonpath='{.items[?(@.status.succeeded==1)].metadata.name}')
+
+                      if [ "$SUCCEEDED_JOBS" != "" ]; then
+                        kubectl delete job $SUCCEEDED_JOBS -n sg
+                      fi
+                    fi
+          restartPolicy: Never
+      backoffLimit: 1
+---
+# Source: search-guard-flx/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    heritage: Helm
+    release: sg
+  name: sg-prod
+  namespace: sg
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-6"
+---
+# Source: search-guard-flx/templates/sg-role.yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: sg-prod-sg-role
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    heritage: Helm
+    release: sg
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-6"
+rules:
+    #"get","list", "watch"
+  - apiGroups: ["","apps","batch"]
+    resources: ["pods","persistentvolumes","persistentvolumeclaims","configmaps","services","secrets","statefulsets","controllerrevisions","jobs","statefulsets/scale"]
+    verbs: ["get","list", "watch"]
+    
+    #"delete"
+  - apiGroups: ["","batch"]
+    resources: ["pods","persistentvolumeclaims","secrets","jobs"]
+    verbs: ["delete"]
+
+    #create, patch
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create","patch"]
+
+    #patch (scaling)
+  - apiGroups: ["apps"]
+    resources: ["statefulsets","statefulsets/scale"]
+    verbs: ["patch"]
+---
+# Source: search-guard-flx/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    heritage: Helm
+    release: sg
+  name: sgctl
+  namespace: sg
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+subjects:
+  - kind: ServiceAccount
+    name: sg-prod
+    namespace: sg
+roleRef:
+  kind: Role
+  name: sg-prod-sg-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: search-guard-flx/templates/cluster-upgrade.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "sg-prod-cluster-upgrade"
+  namespace: sg
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    role: sgctl
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      name: "sg-prod-cluster-upgrade"
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+        role: sgctl
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: sg-prod
+      securityContext:
+        fsGroup: 1000
+      
+      
+      
+      initContainers:
+        - name: init-kubectl
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+          - name: kubectl
+            mountPath: /data
+          command: 
+          - bash
+          - -c
+          - | 
+              set -e
+        
+              id -u
+              if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+              cp -v /usr/bin/kubectl /data/kubectl
+      containers:
+        - name: cluster-upgrade
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+          - name: DISCOVERY_SERVICE
+            value: sg-prod-discovery.sg.svc
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: secret-volume
+              readOnly: true
+              mountPath: /sgcerts/
+            - name: kubectl
+              subPath: kubectl
+              mountPath: /usr/local/bin/kubectl
+              readOnly: true
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - |
+                echo "Upgrade to Helm Release Version 1"
+                echo "Wait until 7 node are up and the cluster is at least yellow"
+
+                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes=7&wait_for_status=yellow&timeout=300s&pretty"
+
+
+                function waitForStatefulSet() {
+                  SETNAME="$1"
+                  
+                  STATUS_JSON="$(kubectl rollout history statefulset/sg-prod-$SETNAME -n sg -o=jsonpath='{.status}' --revision=1)"
+                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                  REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+                  while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
+                    echo "$RR out of $REPLICAS replicas are ready for $SETNAME, wait ... ($CR/$UR)"
+                    sleep 3
+                    STATUS_JSON="$(kubectl rollout history statefulset/sg-prod-$SETNAME -n sg -o=jsonpath='{.status}' --revision=1)"
+                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                    REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+                    CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                    UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+                    
+
+                    # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
+                    # and can be removed if the issue is fixed.
+
+                    echo ""
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                    {
+                      "transient": {
+                        "logger.dummy.dummy": "ERROR"
+                      }
+                    }'
+                    echo ""
+                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
+                    {
+                      "transient": {
+                        "logger.dummy.dummy": null
+                      }
+                    }'
+                    echo ""
+                    # end workaround
+
+                  done
+
+                  echo "$RR out of $REPLICAS replicas are ready for $SETNAME, proceed ..."
+
+                
+                }
+
+                function updateIfRequired() {
+
+                  SETNAME="$1"
+
+                  # check if we need to update the stateful set
+                  # this is the case when .status.currentRevision != .status.updateRevision
+                  STATUS_JSON="$(kubectl rollout history statefulset/sg-prod-$SETNAME -n sg -o=jsonpath='{.status}' --revision=1)"
+                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+                  if [ "$CR" != "$UR" ]; then
+                    echo "Update needed for $SETNAME because currentRevision $CR does not match updateRevision $UR"
+                    echo "$STATUS_JSON"
+                    if [ "$SETNAME" == "kibana" ]; then
+                      kubectl scale --replicas=1 statefulset/sg-prod-kibana -n sg 
+                    fi
+
+                    kubectl patch statefulset/sg-prod-$SETNAME -n sg -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
+                    waitForStatefulSet "$SETNAME"
+                    
+                    if [ "$SETNAME" == "kibana" ]; then
+                      kubectl scale --replicas=1 statefulset/sg-prod-kibana -n sg
+                    fi
+                    
+                    kubectl patch statefulset/sg-prod-$SETNAME -n sg -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
+                  else
+                    echo "No Update needed for $SETNAME"
+                  fi
+
+                }
+
+                updateIfRequired "client"
+                updateIfRequired "data"
+                updateIfRequired "master"
+                if [ 1 -gt 0 ]; then
+                updateIfRequired "kibana"
+                fi
+                
+                echo "Cluster ugrade finished"
+                exit 0
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: sg-prod-admin-cert-secret
+        - name: kubectl
+          emptyDir: {}
+---
+# Source: search-guard-flx/templates/remove-secrets-on-delete-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "sg-prod-remove-secrets"
+  labels:
+    app: sg-prod
+    chart: "search-guard-flx"
+    release: "sg"
+    heritage: "Helm"
+    component: sg-prod
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "sg-prod-cleanup-sg-data"
+      labels:
+        release: "sg"
+        app: sg-prod
+        component: sg-prod
+    spec:
+      restartPolicy: Never
+      serviceAccountName: sg-prod
+      
+      
+      
+      containers:
+        - name: remove-secrets
+          image: docker.io/floragunncom/sg-kubectl-h4:1.30.0
+          resources:
+                limits:
+                  cpu: "500m"
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -c
+            - |
+                set -e
+                SECRETS="$(kubectl --namespace sg get secrets -l app=sg-prod -o name)"
+                
+                if ! [ -z "$SECRETS" ]; then
+                   echo "Delete $SECRETS"
+                   kubectl --namespace sg delete $SECRETS
+                else
+                   echo "No secrets found $SECRETS"
+                fi

@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2024-08-28T18:57:03Z"
+  generateName: sg-prod-sgctl-initialize-
+  labels:
+    app: sg-prod
+    batch.kubernetes.io/controller-uid: 9d814309-434b-4de0-abec-3302060627b1
+    batch.kubernetes.io/job-name: sg-prod-sgctl-initialize
+    component: sg-prod
+    controller-uid: 9d814309-434b-4de0-abec-3302060627b1
+    job-name: sg-prod-sgctl-initialize
+    release: sg
+    role: sgctl
+  name: sg-prod-sgctl-initialize-4xj4l
+  namespace: sg
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: sg-prod-sgctl-initialize
+    uid: 9d814309-434b-4de0-abec-3302060627b1
+  resourceVersion: "40325"
+  uid: 76bf6b62-d0c7-4d7c-806c-9e7434d7c4e2
+spec:
+  containers:
+  - command:
+    - bash
+    - -c
+    - "\nset -x\n\nif [ \"$(id -u)\" == \"0\" ]; then echo Should be run as root user;
+      exit -1; fi \nid -u\n\nwhile kubectl --namespace sg get pods --selector=role=master
+      -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{\"\\n\"}{end}'|sed
+      's/\"//g'|grep 'ready:false'; do\n  echo \"Wait for $DISCOVERY_SERVICE service
+      to be ready\";\n  sleep 10 ;\ndone\n\nfunction try_loop {\n  for (( c=1; c<=100;
+      c++ )); do \\\n      eval $@ && exit_code=0 && break || exit_code=$? && echo
+      \"Retry $c in 5s\" && \\\n      sleep 5; \\\n      done; \\\n      (exit $exit_code)\n}\n
+      \     \ntry_loop nc -z $DISCOVERY_SERVICE 9300\ntry_loop nc -z $DISCOVERY_SERVICE
+      9200\n\nmkdir /tmp/sgconfig\ncp -v /sgconfig/*.yml /tmp/sgconfig/\n\necho \"Executing
+      sgctl to update the configs ...\"\n/usr/share/sg/sgctl/sgctl.sh update-config
+      -h \"$DISCOVERY_SERVICE\" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert
+      /sgcerts/root-ca.pem /tmp/sgconfig\n\nRET=$?\n\nif [ $RET -ne 0 ];\nthen\n  echo
+      \"sgctl failed with exit code $RET\"\n  exit -1\nelse\n  echo \"sgctl successful\"\nfi\n\nwhile
+      kubectl --namespace sg get pods --selector=role=data -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{\"\\n\"}{end}'|sed
+      's/\"//g'|grep 'ready:false'; do\n  \n  \n  echo \"Wait for all data nodes to
+      be ready\";\n\n  # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148\n
+      \ # and can be removed if the issue is fixed.\n  echo \"\"\n  curl -Ss --cert
+      /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT
+      \"https://$DISCOVERY_SERVICE:9200/_cluster/settings\" -H 'content-type: application/json'
+      -d '\n  {\n    \"transient\": {\n      \"logger.dummy.dummy\": \"ERROR\"\n    }\n
+      \ }'\n  echo \"\"\n  curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem
+      --cacert /sgcerts/root-ca.pem -XPUT \"https://$DISCOVERY_SERVICE:9200/_cluster/settings\"
+      -H 'content-type: application/json' -d '\n  {\n    \"transient\": {\n      \"logger.dummy.dummy\":
+      null\n    }\n  }'\n  echo \"\"\n  # end workaround\n\n  sleep 10 ;\n\n\ndone\n\n\nwhile
+      kubectl --namespace sg get pods --selector=role=client -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{\"\\n\"}{end}'|sed
+      's/\"//g'|grep 'ready:false'; do\n  echo \"Wait for all client nodes to be ready\";\n\n
+      \ # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148\n
+      \ # and can be removed if the issue is fixed.\n  echo \"\"\n  curl -Ss --cert
+      /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT
+      \"https://$DISCOVERY_SERVICE:9200/_cluster/settings\" -H 'content-type: application/json'
+      -d '\n  {\n    \"transient\": {\n      \"logger.dummy.dummy\": \"ERROR\"\n    }\n
+      \ }'\n  echo \"\"\n  curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem
+      --cacert /sgcerts/root-ca.pem -XPUT \"https://$DISCOVERY_SERVICE:9200/_cluster/settings\"
+      -H 'content-type: application/json' -d '\n  {\n    \"transient\": {\n      \"logger.dummy.dummy\":
+      null\n    }\n  }'\n  echo \"\"\n  # end workaround\n\n  sleep 10 ;\ndone\n\necho
+      \"Cluster initialization finished\"\n\nexit $RET\n"
+    env:
+    - name: DISCOVERY_SERVICE
+      value: sg-prod-discovery.sg.svc
+    image: docker.io/floragunncom/sg-sgctl-h4:1.6.0
+    imagePullPolicy: IfNotPresent
+    name: sgctl-complete
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /sgconfig/
+      name: searchguard-config
+    - mountPath: /sgcerts/
+      name: secret-volume
+      readOnly: true
+    - mountPath: /usr/local/bin/kubectl
+      name: kubectl
+      readOnly: true
+      subPath: kubectl
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-v8585
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  initContainers:
+  - command:
+    - bash
+    - -c
+    - |
+      set -e
+
+      id -u
+      if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi
+      cp -v /usr/bin/kubectl /data/kubectl
+    image: docker.io/floragunncom/sg-kubectl-h4:1.27.6
+    imagePullPolicy: IfNotPresent
+    name: init-kubectl
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: false
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /data
+      name: kubectl
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-v8585
+      readOnly: true
+  nodeName: multinode-m04
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: sg-prod
+  serviceAccountName: sg-prod
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: secret-volume
+    secret:
+      defaultMode: 420
+      secretName: sg-prod-admin-cert-secret
+  - configMap:
+      defaultMode: 420
+      name: sg-prod-sg-dynamic-configuration
+    name: searchguard-config
+  - emptyDir: {}
+    name: kubectl
+  - name: kube-api-access-v8585
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-28T18:57:05Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-28T18:57:10Z"
+    reason: PodFailed
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-28T18:57:10Z"
+    reason: PodFailed
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2024-08-28T18:57:03Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://eecc9e2765bc9e5760e6b3a2570884ae5780020659adfa9639419308c5c31764
+    image: floragunncom/sg-sgctl-h4:1.6.0
+    imageID: docker-pullable://floragunncom/sg-sgctl-h4@sha256:0cea7bc6994fa6b8d8d0d55f84960b26ca3ec1979d28ca732a73d4236a6f6514
+    lastState: {}
+    name: sgctl-complete
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: docker://eecc9e2765bc9e5760e6b3a2570884ae5780020659adfa9639419308c5c31764
+        exitCode: 255
+        finishedAt: "2024-08-28T18:57:09Z"
+        reason: Error
+        startedAt: "2024-08-28T18:57:05Z"
+  hostIP: 192.168.49.5
+  initContainerStatuses:
+  - containerID: docker://7ad700a1b62ead5e95dd59fc90804b991e5d17af6ad77c49119227fc6b1a7855
+    image: floragunncom/sg-kubectl-h4:1.27.6
+    imageID: docker-pullable://floragunncom/sg-kubectl-h4@sha256:5244548200b03aaec6e6baf34dedb1a5a74385f3d913edb8806fa99a48790b48
+    lastState: {}
+    name: init-kubectl
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://7ad700a1b62ead5e95dd59fc90804b991e5d17af6ad77c49119227fc6b1a7855
+        exitCode: 0
+        finishedAt: "2024-08-28T18:57:04Z"
+        reason: Completed
+        startedAt: "2024-08-28T18:57:04Z"
+  phase: Failed
+  podIP: 10.244.3.65
+  podIPs:
+  - ip: 10.244.3.65
+  qosClass: Burstable
+  startTime: "2024-08-28T18:57:03Z"
