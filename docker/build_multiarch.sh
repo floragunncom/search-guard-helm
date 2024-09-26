@@ -17,9 +17,9 @@ versions=(
     # "SG_FLAVOUR=flx ELK_VERSION=7.10.2 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0 KIBANA_PLATFORMS=linux/amd64"
     # "SG_FLAVOUR=flx ELK_VERSION=7.10.2 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0 KIBANA_PLATFORMS=linux/amd64 ELK_FLAVOUR=-oss"
     # "SG_FLAVOUR=flx ELK_VERSION=7.17.7 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0"
-    # "SG_FLAVOUR=flx ELK_VERSION=7.17.8 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0"
+    "SG_FLAVOUR=flx ELK_VERSION=7.17.8 SG_VERSION=1.1.0 SG_KIBANA_VERSION=1.1.0"
     # version 8
-    "SG_FLAVOUR=flx ELK_VERSION=8.15.1 SG_VERSION=2.0.0 SG_KIBANA_VERSION=2.0.0"
+    "SG_FLAVOUR=flx ELK_VERSION=8.6.2 SG_VERSION=1.1.1 SG_KIBANA_VERSION=1.1.0"
 )
 
 sgctl_versions=(
@@ -95,32 +95,32 @@ build() {
 }
 
 
-# PREFIX= POSTFIX= PLATFORMS="$DEFAULT_PLATFORMS" build busybox latest
+PREFIX= POSTFIX= PLATFORMS="$DEFAULT_PLATFORMS" build busybox latest
 
-# for versionstring in "${kubectl_versions[@]}"
-# do
-#     eval "$versionstring"
+for versionstring in "${kubectl_versions[@]}"
+do
+    eval "$versionstring"
 
-#     if [ -z "$PLATFORMS" ]; then
-#         PLATFORMS="$DEFAULT_PLATFORMS"
-#     fi
+    if [ -z "$PLATFORMS" ]; then
+        PLATFORMS="$DEFAULT_PLATFORMS"
+    fi
 
-#     build kubectl "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
-#     PLATFORMS=
-# done
+    build kubectl "$KUBECTL_VERSION" --build-arg KUBECTL_VERSION="$KUBECTL_VERSION"
+    PLATFORMS=
+done
 
-# for versionstring in "${sgctl_versions[@]}"
-# do
-#     eval "$versionstring"
+for versionstring in "${sgctl_versions[@]}"
+do
+    eval "$versionstring"
 
-#     if [ -z "$PLATFORMS" ]; then
-#         PLATFORMS="$DEFAULT_PLATFORMS"
-#     fi
+    if [ -z "$PLATFORMS" ]; then
+        PLATFORMS="$DEFAULT_PLATFORMS"
+    fi
 
-#     build sgctl "$SGCTL_VERSION" --build-arg SGCTL_VERSION="$SGCTL_VERSION" --build-arg JAVA_VERSION="$JAVA_VERSION"
-#     PLATFORMS=
-#     JAVA_VERSION=
-# done
+    build sgctl "$SGCTL_VERSION" --build-arg SGCTL_VERSION="$SGCTL_VERSION" --build-arg JAVA_VERSION="$JAVA_VERSION"
+    PLATFORMS=
+    JAVA_VERSION=
+done
 
 for versionstring in "${versions[@]}"
 do
@@ -138,7 +138,7 @@ do
 
     
 
-    #build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" --build-arg INSTALL_DEFAULT_PLUGINS="$INSTALL_DEFAULT_PLUGINS"
+    build elasticsearch "$ELK_VERSION$ELK_FLAVOUR-$SG_VERSION$SG_FLAVOUR_COMPAT" --target "$SG_FLAVOUR" --build-arg ELK_VERSION="$ELK_VERSION" --build-arg SG_FLAVOUR="$SG_FLAVOUR" --build-arg ELK_FLAVOUR="$ELK_FLAVOUR" --build-arg SG_VERSION="$SG_VERSION" --build-arg INSTALL_DEFAULT_PLUGINS="$INSTALL_DEFAULT_PLUGINS"
     
     if [ -z "$KIBANA_PLATFORMS" ]; then
         PLATFORMS="$DEFAULT_PLATFORMS"
