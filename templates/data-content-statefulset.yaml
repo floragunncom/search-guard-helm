@@ -238,6 +238,9 @@ spec:
         - name: nodes-cert
           mountPath: /sg-nodes-certs
           readOnly: true
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
+{{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
+{{ end }}
       volumes:
 {{- include "searchguard.config-volumes" . | nindent 8 }}             
         - name: secret-volume
@@ -253,7 +256,11 @@ spec:
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - name: nodes-cert
-          emptyDir: {}    
+          emptyDir: {}
+{{ if .Values.common.custom_elasticsearch_keystore.enabled }}
+        - name: elasticsearch-keystore
+          emptyDir: {}
+{{ end }}
   volumeClaimTemplates:
   - metadata:
       name: storage
