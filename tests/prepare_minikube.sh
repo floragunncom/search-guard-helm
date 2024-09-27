@@ -14,7 +14,7 @@ minikube delete -p "$PROFILE"
 set -e
 minikube start --kubernetes-version "$VERSION" --nodes 3 -p "$PROFILE" --wait=true
 
-minikube  -p "$PROFILE" addons enable storage-provisioner-rancher
+minikube -p "$PROFILE" addons enable storage-provisioner-rancher
 minikube -p "$PROFILE" addons enable metrics-server
 minikube dashboard -p "$PROFILE" &
 
