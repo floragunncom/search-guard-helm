@@ -33,6 +33,27 @@
 {{- range $masterValues  }}
 {{ $masterReplicas = add $masterReplicas .replicas }}
 {{- end }}
+
+
+{{- $signalsValues := .Values.signals | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
+{{- end }}
+{{- $signalsReplicas:=0 }}
+{{- range $signalsValues  }}
+{{ $signalsReplicas = add $signalsReplicas .replicas }}
+{{- end }}
+
+
+{{- $dataContentValues := .Values.dataContent | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.dataContent)) (hasKey .Values "dataContent") }}
+{{- $dataContentValues = list (merge (dict "name" "dataContent") .Values.dataContent) }}
+{{- end }}
+{{- $dataContentReplicas:=0 }}
+{{- range $dataContentValues  }}
+{{ $dataContentReplicas = add $dataContentReplicas .replicas }}
+{{- end }}
+
 ---
 apiVersion: batch/v1
 kind: Job
@@ -205,14 +226,22 @@ spec:
                 
                 updateIfRequired "client"
                 updateIfRequired "data"
-                {{- if .Values.datacontent.enabled }}
+                
+
+                
+                if [ {{ $dataContentReplicas }} -gt 0 ]; then        
                 updateIfRequired "data-content"
-                {{- end  }}
+                fi   
+                
+                if [ {{ $signalsReplicas }} -gt 0 ]; then        
+                updateIfRequired "signals"
+                fi 
+                     
                 updateIfRequired "master"
-                if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
+                if [ {{ $kibanaReplicas }} -gt 0 ]; then
                 updateIfRequired "kibana"
                 fi
-  
+                
                 echo "Cluster ugrade finished"
                 exit 0
       volumes:
