@@ -80,9 +80,12 @@ spec:
             - -c
             - |
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
-                echo "Wait until {{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }} node are up and the cluster is at least yellow"
-
-                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}&wait_for_status=yellow&timeout=300s&pretty"
+                {{- $totalReplicas := add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}
+                {{- if .Values.datacontent.enabled }}
+                  {{- $totalReplicas = add $totalReplicas .Values.datacontent.replicas }}
+                {{- end }}
+                echo "Wait until {{ $totalReplicas }} node are up and the cluster is at least yellow"
+                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
 
 
                 function waitForStatefulSet() {
@@ -164,10 +167,10 @@ spec:
 
                 updateIfRequired "client"
                 updateIfRequired "data"
-                updateIfRequired "master"
                 {{- if .Values.datacontent.enabled }}
                 updateIfRequired "data-content"
-                {{- end  }}
+                {{- end  }}                
+                updateIfRequired "master"
                 if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
                 updateIfRequired "kibana"
                 fi
