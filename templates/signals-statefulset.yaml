@@ -21,6 +21,9 @@
 
 {{- range $signalsValues  }}
 
+{{- if not (hasKey $.Values "signals_configuration") }}
+     {{ fail "[ERROR] The \".Values.signals_configuration\" attribute is missing" }}
+{{- end }}
 
 apiVersion: apps/v1
 kind: StatefulSet

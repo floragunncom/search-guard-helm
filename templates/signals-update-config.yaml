@@ -15,7 +15,6 @@
   */}}
 
 
-##TOOO  - edit master, wait signals,change svc
 {{- $signalsValues := .Values.signals | default (list) }} 
 {{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
 {{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
@@ -25,6 +24,10 @@
 {{ $signalsReplicas = add $signalsReplicas .replicas }}
 {{- end }}
 {{- if gt $signalsReplicas 0 }}
+
+{{- if not (hasKey .Values "signals_configuration") }}
+     {{ fail "[ERROR] The \".Values.signals_configuration\" attribute is missing" }}
+{{- end }}
 
 apiVersion: batch/v1
 kind: Job
@@ -38,10 +41,10 @@ metadata:
     heritage: "{{ .Release.Service }}"
     component: {{ template "searchguard.fullname" . }}-signals-update
     role: sgctl
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "1"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
+  #annotations:
+    #"helm.sh/hook": post-install,post-upgrade
+    #"helm.sh/hook-weight": "1"
+    #"helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
 spec:
   template:
     metadata:
@@ -56,7 +59,7 @@ spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
-      - name: sgctl-complete
+      - name: signals-update
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
@@ -66,8 +69,8 @@ spec:
           - sh
           - -c
           - |
-              #!/usr/bin/env bash -e
-              
+              #!/usr/bin/env bash
+              set -e
               GLOBALRET=0 
               
               get_datetime() {
@@ -89,18 +92,18 @@ spec:
               echo "$(get_datetime) [INFO] Getting password for admin user"
               export ADMIN_PWD=$(kubectl --namespace {{ .Release.Namespace }} get secrets {{ template "searchguard.fullname" . }}-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)
               echo "$(get_datetime) [INFO] Wait until the cluster is at green state"  
-              curl -Ss  --fail --insecure -X GET -u admin:$ADMIN_PWD "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_cluster/health?wait_for_status=green&timeout=300s&pretty"  
+              curl -Ss  --fail --insecure -X GET -u admin:$ADMIN_PWD "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_status=green&timeout=300s&pretty"  
               echo "$(get_datetime) [INFO] Cluster is at green state"  
               echo "$(get_datetime) [INFO] Execute the update Request(s)" 
               echo "$(get_datetime) [INFO] .Values.signals_configuration.tenant_filter_update_type is set to {{.Values.signals_configuration.tenant_filter_update_type}}"
               {{- if eq .Values.signals_configuration.tenant_filter_update_type "predefined" }}
               {{- if empty .Values.signals_configuration.tenant_name_filter_for_update }}
-              echo "$(get_datetime) [ERROR] .Values.signals_configuration.tenant_name_filter_for_update  is empty, cannot execute the update"
+              echo "$(get_datetime) [ERROR] .Values.signals_configuration.tenant_name_filter_for_update is empty, cannot execute the update"
               exit 1
               {{ else }}
               {{- range $tenant := .Values.signals_configuration.tenant_name_filter_for_update }}
                 echo "$(get_datetime) [INFO] Executing the predefined update from list update for tenant {{ $tenant }}"
-                curl  -Ss -w "\n" --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XPUT "https://{{ $templateName }}-clients.{{ $namespace }}.svc:9200/_signals/settings/tenant.{{- $tenant -}}.node_filter" -d'"signals_node:signals_only"'
+                curl  -Ss -w "\n" --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XPUT "https://$DISCOVERY_SERVICE:9200/_signals/settings/tenant.{{- $tenant -}}.node_filter" -d'"signals_node:signals_only"'
                 RET=$?      
                 echo "Result $RET"  
                 if [ "$GLOBALRET" -eq 0 ]; then
@@ -110,7 +113,7 @@ spec:
               {{ end }}
               {{ else }}
               echo "$(get_datetime) [INFO] Executing automatic update based on reponse from tenants endpoint"
-              tenants=$(curl -Ss  --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XGET "https://{{ $templateName }}-clients.{{ $namespace }}.svc:9200/_searchguard/api/tenants/")
+              tenants=$(curl -Ss  --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XGET "https://$DISCOVERY_SERVICE:9200/_searchguard/api/tenants/")
               tenants_list=$(echo "$tenants" | grep -oP '"\K[^"]+(?=":{)')
               echo "$(get_datetime) [INFO] $tenants_list"
               for tenant_name in $tenants_list; do
@@ -119,7 +122,7 @@ spec:
                tenant_name=_main
               fi         
               echo "$(get_datetime) [INFO] Executing the update for tenant $tenant_name"
-                curl -Ss  -w "\n"  --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XPUT "https://{{ $templateName }}-clients.{{ $namespace }}.svc:9200/_signals/settings/tenant.$tenant_name.node_filter" -d'"signals_node:signals_only"'
+                curl -Ss  -w "\n"  --fail -k -uadmin:$ADMIN_PWD -H "Content-Type: application/json" -XPUT "https://$DISCOVERY_SERVICE:9200/_signals/settings/tenant.$tenant_name.node_filter" -d'"signals_node:signals_only"'
                 RET=$?      
                 echo "Result $RET"  
                 if [ "$GLOBALRET" -eq 0 ]; then
@@ -128,10 +131,10 @@ spec:
               done          
               {{ end }}
               echo "$(get_datetime) [INFO] Display signals settings"  
-              curl -w "\n"  -Ss --fail --insecure -X GET -u admin:$ADMIN_PWD "https://{{ template "searchguard.fullname" . }}-clients.{{ .Release.Namespace }}.svc:9200/_signals/settings"  
+              curl -w "\n"  -Ss --fail --insecure -X GET -u admin:$ADMIN_PWD "https://$DISCOVERY_SERVICE:9200/_signals/settings"  
               
               {{- else }}
-              echo "$(get_datetime) [ERROR] Incorrect value '{{.Values.signals.tenant_filter_update_type }}' for .Values.signals.tenant_filter_update_type, cannot execute the update"
+              echo "$(get_datetime) [ERROR] Incorrect value '{{.Values.signals_configuration.tenant_filter_update_type }}' for .Values.signals_configuration.tenant_filter_update_type, cannot execute the update"
               exit 1
               {{ end }}
               echo "exit with code $GLOBALRET"        
@@ -144,8 +147,6 @@ spec:
             cpu: 100m
             memory: 256Mi
         volumeMounts:
-          - mountPath: /sgconfig/
-            name: searchguard-config
           - name: secret-volume
             readOnly: true
             mountPath: /sgcerts/
@@ -154,7 +155,6 @@ spec:
             mountPath: /usr/local/bin/kubectl
             readOnly: true
       volumes:
-{{- include "searchguard.config-volumes" . | nindent 8 }}        
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
