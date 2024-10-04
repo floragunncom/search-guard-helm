@@ -116,9 +116,14 @@ spec:
             - |
 
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
-                echo "Wait until {{ add $masterReplicas $dataReplicas $clientReplicas }} node are up and the cluster is at least yellow"
+                {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas  }}
+                {{- if .Values.datacontent.enabled }}
+                  {{- $totalReplicas = add $totalReplicas .Values.datacontent.replicas }}
+                {{- end }}
+             
+                echo "Wait until {{ $totalReplicas }} node are up and the cluster is at least yellow"
 
-                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ add $masterReplicas $dataReplicas $clientReplicas  }}&wait_for_status=yellow&timeout=300s&pretty"
+                curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
 
 
                 function waitForStatefulSet() {
