@@ -190,9 +190,6 @@ spec:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:
 {{- include "searchguard.config-volume-mount" . | nindent 8 }}
-        - mountPath: /usr/share/elasticsearch/logs
-          name: storage
-          subPath: logs
         - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           name: signals-config
           subPath: elasticsearch.yml
