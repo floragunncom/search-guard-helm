@@ -60,7 +60,7 @@ spec:
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
-        image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
+      {{ include "searchguard.kubectl-image" . | indent 2 }}
         imagePullPolicy: {{ .Values.common.pullPolicy }}
         command:
           - sh
