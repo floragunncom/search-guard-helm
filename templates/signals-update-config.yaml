@@ -15,7 +15,7 @@
   */}}
 
 
-##TOOO  - eait master, wait signals,change svc
+##TOOO  - edit master, wait signals,change svc
 {{- $signalsValues := .Values.signals | default (list) }} 
 {{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
 {{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
@@ -39,7 +39,7 @@ metadata:
     component: {{ template "searchguard.fullname" . }}-signals-update
     role: sgctl
   annotations:
-    "helm.sh/hook": post-upgrade
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
 spec:
