@@ -132,10 +132,11 @@ spec:
               readOnly: true
           imagePullPolicy: {{ .Values.common.pullPolicy }}
           command:
-            - /bin/bash
+            - sh
             - -c
             - |
-
+                #!/usr/bin/env bash
+                set -e
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
                 {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas $signalsReplicas  }}
                 {{- if .Values.datacontent.enabled }}
