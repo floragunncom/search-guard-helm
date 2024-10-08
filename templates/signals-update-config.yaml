@@ -77,7 +77,7 @@ spec:
                date '+%Y-%m-%d %H:%M:%S'
               }
               {{- if or (eq .Values.signals_configuration.tenant_filter_update_type "automatic") (eq .Values.signals_configuration.tenant_filter_update_type "predefined") }}
-              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
+              while kubectl --namespace {{ .Release.Namespace }} get pods --selector=role=master,app={{ template "searchguard.fullname" . }} -o jsonpath='{range .items[*]}{.status.containerStatuses[*]}{"\n"}{end}'|sed 's/"//g'|grep 'ready:false'; do
                 echo '[INFO] Wait for $DISCOVERY_SERVICE service to be ready';
                 sleep 10 ;
               done
