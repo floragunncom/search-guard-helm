@@ -209,7 +209,7 @@ spec:
                         echo "$STATUS_JSON"
                         
                         if [ "$SETNAME" == "kibana" ]; then
-                          KIBANA_REPLICAS=(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
+                          KIBANA_REPLICAS=$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
                           echo "Current number of replicas for ${SETNAME}/${STS_NAME} = $KIBANA_REPLICAS"
                           kubectl scale --replicas=1 statefulset/${STS_NAME} -n {{ .Release.Namespace }}
                         fi
