@@ -32,14 +32,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ template "searchguard.fullname" . }}-signals-update"
+  name: "{{ template "searchguard.fullname" . }}-signals-configure"
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}-signals-update
+    component: {{ template "searchguard.fullname" . }}-signals-configure
     role: sgctl
   annotations:
     "helm.sh/hook": post-install,post-upgrade
@@ -59,7 +59,7 @@ spec:
       restartPolicy: Never
       serviceAccountName: {{ template "searchguard.fullname" . }}
       containers:
-      - name: signals-update
+      - name: signals-configure
         env:
           - name: DISCOVERY_SERVICE
             value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc

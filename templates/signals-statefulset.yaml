@@ -60,7 +60,7 @@ spec:
         {{- end }}
       annotations:
         {{ if $.Values.common.restart_pods_on_config_change }}
-        checksum/config: {{ include (print $.Template.BasePath "/signals-configuration.yaml") $ | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/signals-configmap.yaml") $ | sha256sum }}
         {{ end }}
       {{- if .annotations }}
 {{ toYaml .annotations | indent 8 }}
