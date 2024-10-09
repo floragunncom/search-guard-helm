@@ -14,37 +14,46 @@
    limitations under the License.
 */}}
 
+
+{{- $kibanaValues := .Values.kibana }} 
+{{- if not (kindIs "slice" .Values.kibana) }}
+{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- end }}
+
+{{- range (slice $kibanaValues 0 1) }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "searchguard.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "searchguard.fullname" $ }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ template "searchguard.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}
+    app: {{ template "searchguard.fullname" $ }}
+    chart: "{{ $.Chart.Name }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    component: {{ template "searchguard.fullname" $ }}
     role: kibana
-  {{ if and .Values.kibana.service_annotations (eq .Values.kibana.serviceType "LoadBalancer")}}
+  {{ if and .service_annotations (eq .serviceType "LoadBalancer")}}
   annotations:
-    {{- .Values.kibana.service_annotations | toYaml | nindent 4 }}
+    {{- .service_annotations | toYaml | nindent 4 }}
   {{ end }}
 
 spec:
-  type: {{ .Values.kibana.serviceType }}
-{{ if and .Values.kibana.loadBalancerIp (eq .Values.kibana.serviceType "LoadBalancer") }}
-  loadBalancerIP: {{ .Values.kibana.loadBalancerIp }}
+  type: {{ .serviceType }}
+{{ if and .loadBalancerIp (eq .serviceType "LoadBalancer") }}
+  loadBalancerIP: {{ .loadBalancerIp }}
 {{ end }} 
   selector:
-    component: {{ template "searchguard.fullname" . }}
+    component: {{ template "searchguard.fullname" $ }}
     role: kibana
   ports:
   - name: http
-    port: {{ .Values.kibana.httpPort }}
+    port: {{.httpPort }}
     targetPort: 5601
     protocol: TCP
-    {{ if and .Values.kibana.nodePort (eq .Values.kibana.serviceType "NodePort") }}
-    nodePort: {{ .Values.kibana.nodePort }}
+    {{ if and .nodePort (eq .serviceType "NodePort") }}
+    nodePort: {{ .nodePort }}
     {{ end }}
 
+{{ end }}  

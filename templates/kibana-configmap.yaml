@@ -14,20 +14,29 @@
    limitations under the License.
 */}}
 
+
+{{- $kibanaValues := .Values.kibana }} 
+{{- if not (kindIs "slice" .Values.kibana) }}
+{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- end }}
+
+
+{{- range $kibanaValues  }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "searchguard.fullname" . }}-kibana-config
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "kibana" }}kibana{{ else }}kibana-{{ .name }}{{ end }}-config
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ template "searchguard.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ template "searchguard.fullname" $ }}
+    chart: "{{ $.Chart.Name }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
 data:
   kibana.yml: |-
 
-{{ if and .Values.common.xpack_basic (eq (include "searchguard.elk-version" .) "7") }}
+{{ if and $.Values.common.xpack_basic (eq (include "searchguard.elk-version" $) "7") }}
     xpack.security.enabled: false
     xpack.spaces.enabled: false
     xpack.ml.enabled: false
@@ -55,7 +64,7 @@ data:
     # certificate.
     elasticsearch.ssl.verificationMode: "full"
 
-{{- if eq (include "searchguard.elk-version" .) "7" }}
+{{- if eq (include "searchguard.elk-version" $) "7" }}
     # If you would like to send the log output to a file you can set the path below.
     logging.dest: stdout
 
@@ -66,9 +75,9 @@ data:
     
     #### Search Guard specific config ####
     
-{{- if eq .Values.common.sgversion "1.5.0-flx" }}
+{{- if eq $.Values.common.sgversion "1.5.0-flx" }}
     searchguard.multitenancy.enabled: false
-{{- else if (eq (include "searchguard.sg-major-version" .) "1") }}
+{{- else if (eq (include "searchguard.sg-major-version" $) "1") }}
     searchguard.multitenancy.enabled: true
 {{- end }}
 
@@ -78,6 +87,7 @@ data:
     searchguard.cookie.password: "${KIBANA_COOKIE_PWD}"
 
     #### Additional config ####
-{{ if .Values.kibana.config }}
-{{ toYaml .Values.kibana.config | indent 4 }}
+{{ if .config }}
+{{ toYaml .config | indent 4 }}
 {{ end }}
+{{ end }}  

@@ -23,7 +23,7 @@
 
 {{- range $kibanaValues  }}
 
-
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -235,7 +235,7 @@ spec:
             secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
             defaultMode: 0644
         - configMap:
-            name: {{ template "searchguard.fullname" $ }}-kibana-config
+            name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "kibana" }}kibana{{ else }}kibana-{{ .name }}{{ end }}-config
           name: config
         - name: kubectl
           emptyDir: {}
