@@ -164,11 +164,7 @@ spec:
         {{- range $key, $value :=  .env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
-        {{- end }}
-        - name: SIGNALS_SIMPLE_MISFIRE_STRATEGY
-          value: "-1"
-        - name: SIGNALS_CRON_MISFIRE_STRATEGY
-          value: "-1"           
+        {{- end }}        
         ports:
         - containerPort: 9200
           name: http
