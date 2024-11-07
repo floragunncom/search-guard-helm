@@ -89,30 +89,30 @@ common:
   ingress:
     enabled: false
     className: ""
-    annotations: {}
-      # kubernetes.io/ingress.class: "nginx"
-      # nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    annotations: 
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     labels: {}
-    hosts: []
-      # - host: kibana.local
-      #   paths:
-      #     - path: /
-      #       pathType: Prefix
-      #       serviceNamePostfix: ""
-      #       servicePort: 5601
-      # - host: clients.local
-      #   paths:
-      #     - path: /
-      #       pathType: Prefix
-      #       serviceNamePostfix: "client"
-      #       servicePort: 9200
+    # hosts: 
+    #   - host: kibana.local
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         serviceNamePostfix: ""
+    #         servicePort: 5601
+    #   - host: clients.local
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    #         serviceNamePostfix: "clients"
+    #         servicePort: 9200
     tls: []
-     # - secretName: example-kibana-tls-secret
+     # - secretName: kibana-tls
      #   hosts:
      #     - kibana.local
-     # - secretName: example-clients-tls-secret
+     # - secretName: clients-tls
      #   hosts:
      #     - clients.local
+ 
 
   ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.
