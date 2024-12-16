@@ -360,10 +360,10 @@ client:
   resources:
     limits:
       cpu: 1
-      memory: 1500Mi
+      memory: 2000Mi
     requests:
       cpu: 800m
-      memory: 1500Mi
+      memory: 2000Mi
 
   tolerations:
    - key: "key1"
@@ -487,10 +487,10 @@ master:
   resources:
     limits:
       cpu: 1
-      memory: 1500Mi
+      memory: 20000Mi
     requests:
       cpu: 800m
-      memory: 1500Mi
+      memory: 2000Mi
 # The datacontent node is a part of content tier with  long data retention.
 # Enabling datacontent will create dedicated statefulset in the cluster
 datacontent:
@@ -518,10 +518,10 @@ datacontent:
   resources:
     limits:
       cpu: 1
-      memory: 1500Mi
+      memory: 2000Mi
     requests:
       cpu: 800m
-      memory: 1500Mi   
+      memory: 2000Mi   
 
   # tolerations:
   #  - key: "key1"
