@@ -269,7 +269,11 @@ common:
   #     value: ["172.16.0.254", "172.16.0.230"]
   #     description: "Demo IP blocked, i.e. this specific IP gets blocked"
   # 
+  
+  # enable default frontend_multi_tenancy configuration for FLX 2 and above
+  frontend_multi_tenancy_enabled: false
 
+  # custom configuation for frontend_multi_tenancy, for FLX 2 and above overwrite settings frontend_multi_tenancy_enabled
   # frontend_multi_tenancy:
   #   enabled: true
   #   server_user: kibanaserver
