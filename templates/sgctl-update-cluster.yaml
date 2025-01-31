@@ -84,14 +84,14 @@ spec:
 
               sleep 30
 
-              mkdir /tmp/sgconfig
+              mkdir /tmp/sgconfig /tmp/sgconfig-skip
               cp -v /sgconfig/*.yml /tmp/sgconfig/
               if [ -f "/tmp/sgconfig/sg_frontend_multi_tenancy.yml" ]; then
                 
                 echo "Executing sgctl to update the configs except sg_frontend_multi_tenancy.yml"
-                mv /tmp/sgconfig/sg_frontend_multi_tenancy.yml /tmp/sgconfig/sg_frontend_multi_tenancy.yml.skip
+                mv /tmp/sgconfig/sg_frontend_multi_tenancy.yml /tmp/sgconfig-skip/sg_frontend_multi_tenancy.yml
                 /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /tmp/sgconfig/
-                mv /tmp/sgconfig/sg_frontend_multi_tenancy.yml.skip /tmp/sgconfig/sg_frontend_multi_tenancy.yml
+                mv /tmp/sgconfig-skip/sg_frontend_multi_tenancy.yml /tmp/sgconfig/sg_frontend_multi_tenancy.yml
                 
                 echo "Executing sgctl to update the configs for sg_frontend_multi_tenancy.yml"
                 /usr/share/sg/sgctl/sgctl.sh update-config -h "$DISCOVERY_SERVICE" --key /sgcerts/key.pem --cert /sgcerts/crt.pem --ca-cert /sgcerts/root-ca.pem /tmp/sgconfig/sg_frontend_multi_tenancy.yml
