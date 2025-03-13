@@ -15,8 +15,13 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
-{{- if and (not (eq (include "searchguard.elk-version" .) "7")) .Values.datacontent.enabled }}
 
+{{- if  (kindIs "slice" .Values.datacontent) }}
+     {{ fail "[ERROR] The data-content attribute does not support lists as a data type. To use this option, define them in the \"data\" section instead." }}
+{{- end }}
+
+
+{{- if and (not (eq (include "searchguard.elk-version" .) "7")) .Values.datacontent.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

@@ -1,3 +1,59 @@
+{{- $dataValues := .Values.data }} 
+{{- if not (kindIs "slice" .Values.data) }}
+{{- $dataValues = list (merge (dict "name" "data") .Values.data) }}
+{{- end }}
+{{- $dataReplicas:=0 }}
+{{- range $dataValues  }}
+{{ $dataReplicas = add $dataReplicas .replicas }}
+{{- end }}
+
+{{- $clientValues := .Values.client }} 
+{{- if not (kindIs "slice" .Values.client) }}
+{{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
+{{- end }}
+{{- $clientReplicas:=0 }}
+{{- range $clientValues  }}
+{{ $clientReplicas = add $clientReplicas .replicas }}
+{{- end }}
+
+{{- $kibanaValues := .Values.kibana }} 
+{{- if not (kindIs "slice" .Values.kibana) }}
+{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- end }}
+{{- $kibanaReplicas:=0 }}
+{{- range $kibanaValues  }}
+{{ $kibanaReplicas = add $kibanaReplicas .replicas }}
+{{- end }}
+
+{{- $masterValues := .Values.master }} 
+{{- if not (kindIs "slice" .Values.master) }}
+{{- $masterValues = list (merge (dict "name" "master") .Values.master) }}
+{{- end }}
+{{- $masterReplicas:=0 }}
+{{- range $masterValues  }}
+{{ $masterReplicas = add $masterReplicas .replicas }}
+{{- end }}
+
+
+{{- $signalsValues := .Values.signals | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
+{{- end }}
+{{- $signalsReplicas:=0 }}
+{{- range $signalsValues  }}
+{{ $signalsReplicas = add $signalsReplicas .replicas }}
+{{- end }}
+
+
+{{- $dataContentValues := .Values.dataContent | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.dataContent)) (hasKey .Values "dataContent") }}
+{{- $dataContentValues = list (merge (dict "name" "dataContent") .Values.dataContent) }}
+{{- end }}
+{{- $dataContentReplicas:=0 }}
+{{- range $dataContentValues  }}
+{{ $dataContentReplicas = add $dataContentReplicas .replicas }}
+{{- end }}
+
 ---
 apiVersion: batch/v1
 kind: Job
@@ -79,29 +135,32 @@ spec:
             - /bin/bash
             - -c
             - |
+                set -e
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
-                {{- $totalReplicas := add .Values.master.replicas .Values.data.replicas .Values.client.replicas }}
+                {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas $signalsReplicas  }}
                 {{- if .Values.datacontent.enabled }}
                   {{- $totalReplicas = add $totalReplicas .Values.datacontent.replicas }}
                 {{- end }}
+            
+        
                 echo "Wait until {{ $totalReplicas }} node are up and the cluster is at least yellow"
+
                 curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
 
-
                 function waitForStatefulSet() {
-                  SETNAME="$1"
+                  STS_NAME="$1"
                   
-                  STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
-                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                  STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                   REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                   CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
                   UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
 
                   while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
-                    echo "$RR out of $REPLICAS replicas are ready for $SETNAME, wait ... ($CR/$UR)"
+                    echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, wait ... ($CR/$UR)"
                     sleep 3
-                    STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
-                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas' | tr -d '"')"
+                    STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                     REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                     CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
                     UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
@@ -129,7 +188,7 @@ spec:
 
                   done
 
-                  echo "$RR out of $REPLICAS replicas are ready for $SETNAME, proceed ..."
+                  echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, proceed ..."
 
                 
                 }
@@ -137,44 +196,52 @@ spec:
                 function updateIfRequired() {
 
                   SETNAME="$1"
+                  for STS_NAME in $(kubectl get sts --no-headers -o custom-columns=":metadata.name" -l role=${SETNAME},app={{ template "searchguard.fullname" . }},chart={{ .Chart.Name }} -n {{ .Release.Namespace }})
+                    do
+                      # check if we need to update the stateful set
+                      # this is the case when .status.currentRevision != .status.updateRevision
+                      STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                      CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+                      UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
 
-                  # check if we need to update the stateful set
-                  # this is the case when .status.currentRevision != .status.updateRevision
-                  STATUS_JSON="$(kubectl rollout history statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
-                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
-                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+                      if [ "$CR" != "$UR" ]; then
+                        echo "Update needed for $SETNAME/${STS_NAME} because currentRevision $CR does not match updateRevision $UR"
+                        echo "$STATUS_JSON"
+                        
+                        if [ "$SETNAME" == "kibana" ]; then
+                          KIBANA_REPLICAS=$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
+                          echo "Current number of replicas for ${SETNAME}/${STS_NAME} = $KIBANA_REPLICAS"
+                          kubectl scale --replicas=1 statefulset/${STS_NAME} -n {{ .Release.Namespace }}
+                        fi
 
-                  if [ "$CR" != "$UR" ]; then
-                    echo "Update needed for $SETNAME because currentRevision $CR does not match updateRevision $UR"
-                    echo "$STATUS_JSON"
-                    if [ "$SETNAME" == "kibana" ]; then
-                      kubectl scale --replicas=1 statefulset/{{ template "searchguard.fullname" . }}-kibana -n {{ .Release.Namespace }} 
-                    fi
-
-                    kubectl patch statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
-                    waitForStatefulSet "$SETNAME"
-                    
-                    if [ "$SETNAME" == "kibana" ]; then
-                      kubectl scale --replicas={{ .Values.kibana.replicas }} statefulset/{{ template "searchguard.fullname" . }}-kibana -n {{ .Release.Namespace }}
-                    fi
-                    
-                    kubectl patch statefulset/{{ template "searchguard.fullname" . }}-$SETNAME -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
-                  else
-                    echo "No Update needed for $SETNAME"
-                  fi
+                        kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
+                        waitForStatefulSet "${STS_NAME}"
+                        
+                        if [ "$SETNAME" == "kibana" ]; then
+                          kubectl scale --replicas=${KIBANA_REPLICAS} statefulset/${STS_NAME} -n {{ .Release.Namespace }}
+                        fi
+                        
+                        kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
+                      else
+                        echo "No Update needed for ${SETNAME}/${STS_NAME}"
+                      fi
+                  done    
 
                 }
-
+                
                 updateIfRequired "client"
+                {{- if gt $signalsReplicas 0 }}
+                updateIfRequired "signals"
+                {{- end }}
                 updateIfRequired "data"
                 {{- if .Values.datacontent.enabled }}
                 updateIfRequired "data-content"
-                {{- end  }}                
+                {{- end  }}                     
                 updateIfRequired "master"
-                if [ {{ .Values.kibana.replicas }} -gt 0 ]; then
+                {{- if gt $kibanaReplicas 0 }}
                 updateIfRequired "kibana"
-                fi
-                
+                {{- end }}
+
                 echo "Cluster ugrade finished"
                 exit 0
       volumes:
