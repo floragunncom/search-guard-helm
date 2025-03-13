@@ -14,30 +14,31 @@
    limitations under the License.
 */}}
 
-
-{{- $kibanaValues := .Values.kibana }} 
-{{- if not (kindIs "slice" .Values.kibana) }}
-{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- $signalsValues := .Values.signals | default (list)   }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals ) }}
 {{- end }}
 
+{{- range $signalsValues  }}
 
-{{- range $kibanaValues  }}
+{{- if not (hasKey $.Values "signals_configuration") }}
+     {{ fail "[ERROR] The \".Values.signals_configuration\" attribute is missing" }}
+{{- end }}
 
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "kibana" }}kibana{{ else }}kibana-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
     chart: "{{ $.Chart.Name }}"
     release: "{{ $.Release.Name }}"
     heritage: "{{ $.Release.Service }}"
-    component: {{ template "searchguard.fullname" $ }}-kibana
-    role: kibana
+    component: {{ template "searchguard.fullname" $ }}-signals
+    role: signals
 spec:
-  serviceName: {{ template "searchguard.fullname" $ }}-kibana
+  serviceName: {{ template "searchguard.fullname" $ }}-signals
   replicas: {{ .replicas }}
   updateStrategy:
     type: OnDelete
@@ -45,21 +46,21 @@ spec:
   selector:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
-      role: kibana
+      role: signals
   template:
     metadata:
       labels:
         release: "{{ $.Release.Name }}"
         app: {{ template "searchguard.fullname" $ }}
         component: {{ template "searchguard.fullname" $ }}
-        role: kibana
-        estype: kibana
+        role: signals
+        estype: node
         {{- if .labels }}
 {{ toYaml .labels | indent 8 }}
         {{- end }}
       annotations:
         {{ if $.Values.common.restart_pods_on_config_change }}
-        checksum/config: {{ include (print $.Template.BasePath "/kibana-configmap.yaml") $ | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/signals-configmap.yaml") $ | sha256sum }}
         {{ end }}
       {{- if .annotations }}
 {{ toYaml .annotations | indent 8 }}
@@ -75,23 +76,23 @@ spec:
         nodeAffinity:
 {{ toYaml .nodeAffinity | indent 10 }}
       {{ end }}     
-      {{ end }}
+      {{ end }}      
       {{- if eq .antiAffinity "hard" }}
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: "topology.kubernetes.io/zone"
-              labelSelector:
-                matchLabels:
-                  component: {{ template "searchguard.fullname" $ }}
-                  role: kibana
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 1
             podAffinityTerm:
-              topologyKey: "kubernetes.io/hostname"
+              topologyKey: "topology.kubernetes.io/zone"
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" $ }}
-                  role: kibana
+                  role: signals
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  component: {{ template "searchguard.fullname" $ }}
+                  role: signals
       {{- else if eq .antiAffinity "soft" }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -101,81 +102,41 @@ spec:
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" $ }}
-                  role: kibana
+                  role: signals
           - weight: 2
             podAffinityTerm:
               topologyKey: "kubernetes.io/hostname"
               labelSelector:
                 matchLabels:
                   component: {{ template "searchguard.fullname" $ }}
-                  role: kibana
+                  role: signals
       {{- end }}
       {{ if .tolerations }}
       tolerations:
 {{ toYaml .tolerations | indent 6 }}
       {{ end }}
-      initContainers:
-        - name: init-kubectl-0 #doubled, we need a better solution
-        {{ include "searchguard.kubectl-image" $ | indent 2 }}
-          imagePullPolicy: {{ $.Values.common.pullPolicy }}
-          volumeMounts:
-          - name: kubectl
-            mountPath: /data
-          command: ["cp", "/usr/bin/kubectl", "/data/kubectl"]
-        - name: kibana-init
-          image: {{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.sgctl_base_image }}:{{ $.Values.common.sgctl_version }}
-          imagePullPolicy: {{ $.Values.common.pullPolicy }}
-          volumeMounts:
-            - name: kubectl
-              subPath: kubectl
-              mountPath: /usr/local/bin/kubectl
-              readOnly: true
-          command:
-            - bash
-            - -c
-            - |
-                
-                if [ "$(id -u)" == "0" ]; then echo Should be run as root user; exit -1; fi 
-                id -u
-                set -e
-                until kubectl --namespace {{ $.Release.Namespace }} get secrets {{ template "searchguard.fullname" $ }}-passwd-secret; do
-                  echo 'Wait for {{ template "searchguard.fullname" $ }}-passwd-secret';
-                  sleep 10 ;
-                done
 
-                echo "OK, {{ template "searchguard.fullname" $ }}-passwd-secret exists now"
-
-          resources:
-            limits:
-              cpu: "500m"
-              memory: 256Mi
-            requests:
-              cpu: 100m
-              memory: 256Mi
-{{ include "searchguard.generate-certificates-init-container" $ | indent 8 }}
+      initContainers:    
+{{ include "searchguard.init-containers" $ | indent 6 }}
       {{ if $.Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: {{ $.Values.common.docker_registry.imagePullSecret }}
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
-      - name: kibana
-{{ include "searchguard.security-context.least" . | indent 8 }}
+      - name: elasticsearch
+{{ include "searchguard.security-context.least" . | indent 8 }}        
       {{ if $.Values.common.xpack_basic }}
-        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-{{ $.Values.common.sgkibanaversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.elkversion }}-{{ $.Values.common.sgversion }}"
       {{ else }}
-        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.kibana_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgkibanaversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgversion }}"
       {{ end }}
-        imagePullPolicy: {{ $.Values.common.pullPolicy }}
         lifecycle:
           postStart:
-            exec:
-              command:
-                - bash
-                - -c
-                - |             
+{{ include "searchguard.remove-demo-certs" $ | indent 12 }}
 {{ include "searchguard.recreate-node-certificates" $ | indent 20 }}
           preStop:
 {{ include "searchguard.lifecycle-cleanup-certs" $ | indent 12 }}
+        imagePullPolicy: {{ $.Values.common.pullPolicy }}
         envFrom:
         - secretRef:
             name: {{ template "searchguard.fullname" $ }}-passwd-secret
@@ -189,7 +150,13 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
-          value: {{ template "searchguard.fullname" $ }}-clients.{{ $.Release.Namespace }}.svc
+          value: {{ template "searchguard.fullname" $ }}-discovery.{{ $.Release.Namespace }}.svc
+        - name: ES_JAVA_OPTS
+          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .heapSize }} -Xmx{{ .heapSize }}"
+        - name: NODE_ROLES
+          value: "[]"
+        - name: PROCESSORS
+          value: "{{ .processors }}"
         {{- range $key, $value :=  $.Values.common.env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
@@ -197,58 +164,62 @@ spec:
         {{- range $key, $value :=  .env }}
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
-        {{- end }}
+        {{- end }}        
         ports:
-        - containerPort: 5601
+        - containerPort: 9200
           name: http
           protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
         livenessProbe:
-          exec:
-            command:
-              - pgrep
-              - node
+          tcpSocket:
+            port: transport
           initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
-{{ toYaml .readinessProbe | indent 10 }}
+          httpGet:
+            path: /_searchguard/health
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 30
         resources:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:
-        #- mountPath: /storage/
-        #  name: storage
-        - mountPath: /usr/share/kibana/config/kibana.yml
-          name: config
-          subPath: kibana.yml
-        - name: certificates-secrets-volume
+{{- include "searchguard.config-volume-mount" . | nindent 8 }}
+        - mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          name: signals-config
+          subPath: elasticsearch.yml
+        - name: secret-volume
           readOnly: true
-          mountPath: "/usr/share/kibana/config/certificates-secrets"
+          mountPath: "/usr/share/elasticsearch/config/certificates-secrets"
         - name: kubectl
           subPath: kubectl
           mountPath: /usr/local/bin/kubectl
           readOnly: true
         - name: nodes-cert
           mountPath: /sg-nodes-certs
-          readOnly: true             
+          readOnly: true
+{{ if $.Values.common.custom_elasticsearch_keystore.enabled }}
+{{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
+{{ end }}
       volumes:
-        - name: certificates-secrets-volume
+{{- include "searchguard.config-volumes" $ | nindent 8 }}        
+        - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
             defaultMode: 0644
         - configMap:
-            name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "kibana" }}kibana{{ else }}kibana-{{ .name }}{{ end }}-config
-          name: config
+            name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}-config
+          name: signals-config
         - name: kubectl
           emptyDir: {}
         - name: nodes-cert
-          emptyDir: {}   
-  # volumeClaimTemplates:
-  #   - metadata:
-  #       name: storage
-  #     spec:
-  #       accessModes: [ "ReadWriteOnce" ]
-  #       storageClassName: {{ .storageClass }}
-  #       resources:
-  #         requests:
-  #           storage: {{ .storage }}
-  
-  {{- end }}
+          emptyDir: {}
+{{ if $.Values.common.custom_elasticsearch_keystore.enabled }}
+        - name: elasticsearch-keystore
+          emptyDir: {}
+{{ end }}
+{{- end }}            

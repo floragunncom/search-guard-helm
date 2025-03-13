@@ -92,18 +92,22 @@ data:
 
 
 {{ if ne .Values.common.sgversion "1.5.0-flx" }}
+{{ if .Values.common.frontend_multi_tenancy }}
 ######## sg_frontend_multi_tenancy.yml ########
   sg_frontend_multi_tenancy.yml: |-
     ---
-{{ if .Values.common.frontend_multi_tenancy }}
 {{ toYaml .Values.common.frontend_multi_tenancy | indent 4 }}
 {{ else if not .Values.common.frontend_multi_tenancy }}
 {{ if  (eq (include "searchguard.sg-major-version" .) "1") }}
+######## sg_frontend_multi_tenancy.yml ########
+  sg_frontend_multi_tenancy.yml: |-
     default:
       enabled: true
       index: .kibana
       server_user: kibanaserver
-{{ else }}
+{{ else if .Values.common.frontend_multi_tenancy_enabled }}
+######## sg_frontend_multi_tenancy.yml ########
+  sg_frontend_multi_tenancy.yml: |-
     enabled: true
     server_user: kibanaserver
     global_tenant_enabled : true 
