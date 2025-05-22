@@ -20,7 +20,7 @@
 {{- end }}
 
 {{- range $clientValues  }}
-
+---
 
 apiVersion: apps/v1
 kind: StatefulSet
