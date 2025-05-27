@@ -13,6 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
+ {{ if .Release.IsInstall }}
 
 apiVersion: batch/v1
 kind: Job
@@ -184,3 +185,4 @@ spec:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - name: kubectl
           emptyDir: {}
+{{ end }}

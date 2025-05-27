@@ -69,6 +69,10 @@ common:
   ## Run automatically sgctl whenever necessary 
   update_sgconfig_on_change: true
 
+   
+   ## Run cluster pod restart whenever necessary
+  update_cluster_on_change: true
+
   ## Restart pods automatically when their configuration was changed
   restart_pods_on_config_change: true
   
