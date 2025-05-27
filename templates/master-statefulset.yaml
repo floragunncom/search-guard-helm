@@ -156,7 +156,7 @@ spec:
           value: "{{ .processors }}"
 
         {{ if or $.Release.IsInstall (not $.Values.common.remove_initial_master_nodes_after_install) }}
-        {{- $master_name := printf "%s-%s-%s" $.Release.Name $.Chart.Name "master" }}
+        {{- $master_name := printf "%s-%s" (include "searchguard.fullname" $) "master" }}
         {{- $zkservers := list -}}
         {{- range $ordinal, $e := untilStep 0 (.replicas | int) 1 }}
         {{- $zkservers = printf "%s-%d" $master_name $ordinal | append $zkservers -}}

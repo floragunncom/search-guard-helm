@@ -14,13 +14,16 @@
    limitations under the License.
 */}}
 
+
+
+
 {{- $clientValues := .Values.client }} 
 {{- if not (kindIs "slice" .Values.client) }}
 {{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
 {{- end }}
 
 {{- range $clientValues  }}
-
+---
 
 apiVersion: apps/v1
 kind: StatefulSet
