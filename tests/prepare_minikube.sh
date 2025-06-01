@@ -8,7 +8,7 @@ killall -9 helm
 echo "****** Preparing minikube version $VERSION *****"
 
 PROFILE=multinode
-minikube config set memory 8192 -p "$PROFILE"
+minikube config set memory 16384 -p "$PROFILE"
 minikube config set cpus 4 -p "$PROFILE"
 minikube delete -p "$PROFILE"
 set -e
