@@ -16,39 +16,64 @@
    limitations under the License.
 */}}
 
+
+{{- $clientValues := .Values.client }} 
+{{- if not (kindIs "slice" .Values.client) }}
+{{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
+{{- else }}
+  {{- range $client := $clientValues }}
+    {{- if and (eq $client.name "client") (gt (len $client) 1) }}
+      {{- fail "[ERROR] You are using multiple client definitions and one of them is named 'client'. Please change that name to a different one." }}
+    {{- end }}
+  {{- end }}
+  {{- $clientValues = append $clientValues (dict "name" "client") }}  
+{{- end }}
+
+
+
+
+{{- range $clientValues  }}
+
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "searchguard.fullname" . }}-clients
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}clients{{ else }}client-{{ .name }}{{ end }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ template "searchguard.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: {{ template "searchguard.fullname" . }}
+    app: {{ template "searchguard.fullname" $ }}
+    chart: "{{ $.Chart.Name }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    component: {{ template "searchguard.fullname" $ }}
     role: client
-  {{ if and .Values.common.service_annotations (eq .Values.common.serviceType "LoadBalancer")}}
+    group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}clients{{ else }}client-{{ .name }}{{ end }}
+  {{ if and $.Values.common.service_annotations (eq .Values.common.serviceType "LoadBalancer")}}
   annotations:
-    {{- .Values.common.service_annotations | toYaml | nindent 4 }}
+    {{- $.Values.common.service_annotations | toYaml | nindent 4 }}
   {{ end }}
 spec:
-  type: {{ .Values.common.serviceType }}
-{{ if and .Values.common.loadBalancerIp (eq .Values.common.serviceType "LoadBalancer") }}
-  loadBalancerIP: {{ .Values.common.loadBalancerIp }}
+  type: {{ $.Values.common.serviceType }}
+{{ if and $.Values.common.loadBalancerIp (eq .Values.common.serviceType "LoadBalancer") }}
+  loadBalancerIP: {{ $.Values.common.loadBalancerIp }}
 {{ end }} 
   selector:
-    component: {{ template "searchguard.fullname" . }}
+    component: {{ template "searchguard.fullname" $ }}
     role: client
+    {{- if ne .name "client" }}
+    group: {{ template "searchguard.fullname" $ }}-client-{{ .name }}
+    {{- end }}
   ports:
   - name: http
-    port: {{ .Values.service.httpPort }}
+    port: {{ $.Values.service.httpPort }}
     targetPort: 9200
     protocol: TCP
-    {{ if and .Values.common.nodePort (eq .Values.common.serviceType "NodePort") }}
+    {{ if and $.Values.common.nodePort (eq $.Values.common.serviceType "NodePort") }}
     nodePort: {{ .Values.common.nodePort }}
     {{ end }}
   - name: transport
-    port: {{ .Values.service.transportPort }}
+    port: {{ $.Values.service.transportPort }}
     targetPort: 9300
     protocol: TCP
+
+{{- end }} 

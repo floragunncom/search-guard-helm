@@ -165,7 +165,7 @@ spec:
         - name: "cluster.initial_master_nodes"
           value: {{ join "," $zkservers | quote }}
 
-        {{ end }}
+        {{- end }}
 
 
         {{- range $key, $value :=  $.Values.common.env }}
@@ -196,6 +196,14 @@ spec:
             port: transport
           initialDelaySeconds: 120
           periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /_searchguard/health?mode=nonstrict
+            port: http
+            scheme: HTTPS
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          failureThreshold: 40          
         resources:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:

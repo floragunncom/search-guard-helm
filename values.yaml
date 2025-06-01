@@ -70,7 +70,7 @@ common:
   update_sgconfig_on_change: true
 
    
-   ## Run cluster pod restart whenever necessary
+  ## Run cluster pod restart whenever necessary
   update_cluster_on_change: true
 
   ## Restart pods automatically when their configuration was changed
@@ -292,7 +292,7 @@ common:
 
   tenants:
     human_resources:
-    description: "The human resources tenant"
+      description: "The human resources tenant"
 
 
 

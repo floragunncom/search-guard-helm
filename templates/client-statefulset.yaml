@@ -37,6 +37,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}-client
     role: client
+    group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
 spec:
   serviceName: {{ template "searchguard.fullname" $ }}-client
   replicas: {{ .replicas }}
@@ -47,12 +48,14 @@ spec:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
       role: client
+      group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
   template:
     metadata:
       labels:
         release: "{{ $.Release.Name }}"
         app: {{ template "searchguard.fullname" $ }}
         component: {{ template "searchguard.fullname" $ }}
+        group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
         role: client
         estype: node
         {{- if .labels }}
