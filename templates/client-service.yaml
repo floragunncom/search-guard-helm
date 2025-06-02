@@ -16,7 +16,6 @@
    limitations under the License.
 */}}
 
-
 {{- $clientValues := .Values.client }} 
 {{- if not (kindIs "slice" .Values.client) }}
 {{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
@@ -26,14 +25,9 @@
       {{- fail "[ERROR] You are using multiple client definitions and one of them is named 'client'. Please change that name to a different one." }}
     {{- end }}
   {{- end }}
-  {{- $clientValues = append $clientValues (dict "name" "client") }}  
+  {{- $clientValues = append $clientValues (dict "name" "client") }} 
 {{- end }}
-
-
-
-
 {{- range $clientValues  }}
-
 ---
 apiVersion: v1
 kind: Service
@@ -48,15 +42,18 @@ metadata:
     component: {{ template "searchguard.fullname" $ }}
     role: client
     group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}clients{{ else }}client-{{ .name }}{{ end }}
-  {{ if and $.Values.common.service_annotations (eq .Values.common.serviceType "LoadBalancer")}}
+  {{ $serviceType := .serviceType | default $.Values.common.serviceType }}
+  {{ $annotations := .service_annotations | default $.Values.common.service_annotations }}
+  {{- if and $annotations (eq $serviceType "LoadBalancer") }}
   annotations:
-    {{- $.Values.common.service_annotations | toYaml | nindent 4 }}
-  {{ end }}
+    {{- $annotations | toYaml | nindent 4 }}
+  {{- end }}
 spec:
-  type: {{ $.Values.common.serviceType }}
-{{ if and $.Values.common.loadBalancerIp (eq .Values.common.serviceType "LoadBalancer") }}
-  loadBalancerIP: {{ $.Values.common.loadBalancerIp }}
-{{ end }} 
+  type: {{ $serviceType }}
+  {{- $loadBalancerIP := .loadBalancerIp | default $.Values.common.loadBalancerIp }}
+  {{- if and $loadBalancerIP (eq $serviceType "LoadBalancer") }}
+  loadBalancerIP: {{ $loadBalancerIP }}
+  {{- end }}
   selector:
     component: {{ template "searchguard.fullname" $ }}
     role: client
@@ -68,12 +65,17 @@ spec:
     port: {{ $.Values.service.httpPort }}
     targetPort: 9200
     protocol: TCP
-    {{ if and $.Values.common.nodePort (eq $.Values.common.serviceType "NodePort") }}
-    nodePort: {{ .Values.common.nodePort }}
-    {{ end }}
+    {{- $nodePort := .nodePort | default $.Values.common.nodePort }}
+    {{- if and $nodePort (eq $serviceType "NodePort") }}
+    nodePort: {{ $nodePort }}
+    {{- end }}
   - name: transport
-    port: {{ $.Values.service.transportPort }}
+    port: {{ .transportPort | default $.Values.service.transportPort }}
     targetPort: 9300
     protocol: TCP
-
+{{- $sourceRanges := .loadBalancerSourceRanges | default $.Values.common.loadBalancerSourceRanges }}
+{{- if and $sourceRanges (eq $serviceType "LoadBalancer") }}
+  loadBalancerSourceRanges:
+    {{- toYaml $sourceRanges | nindent 4 }}
+{{- end }}
 {{- end }} 
