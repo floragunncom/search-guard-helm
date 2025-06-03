@@ -18,17 +18,17 @@
 
 
 {{- $clientValues := .Values.client }} 
+{{- $single := false }} 
 {{- if not (kindIs "slice" .Values.client) }}
 {{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
+{{- $single = true }} 
 {{- end }}
-
 {{- range $clientValues  }}
 ---
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if $single }}client{{ else }}client-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -37,7 +37,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}-client
     role: client
-    group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
+    group: {{ template "searchguard.fullname" $ }}-{{ if $single }}client{{ else }}client-{{ .name }}{{ end }}
 spec:
   serviceName: {{ template "searchguard.fullname" $ }}-client
   replicas: {{ .replicas }}
@@ -48,14 +48,14 @@ spec:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
       role: client
-      group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
+      group: {{ template "searchguard.fullname" $ }}-{{ if $single }}client{{ else }}client-{{ .name }}{{ end }}
   template:
     metadata:
       labels:
         release: "{{ $.Release.Name }}"
         app: {{ template "searchguard.fullname" $ }}
         component: {{ template "searchguard.fullname" $ }}
-        group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}client{{ else }}client-{{ .name }}{{ end }}
+        group: {{ template "searchguard.fullname" $ }}-{{ if $single }}client{{ else }}client-{{ .name }}{{ end }}
         role: client
         estype: node
         {{- if .labels }}
@@ -123,7 +123,7 @@ spec:
 {{ include "searchguard.init-containers" $ | indent 6 }}
       {{ if $.Values.common.docker_registry.enabled }}
       imagePullSecrets:
-      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      - name: {{ $.Values.common.docker_registry.imagePullSecret }}
       {{ end }}
       containers:
       - name: elasticsearch
