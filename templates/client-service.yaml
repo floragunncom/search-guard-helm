@@ -18,21 +18,21 @@
 
 {{- $clientValues := .Values.client }} 
 {{- if not (kindIs "slice" .Values.client) }}
-{{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
+{{- $clientValues = list (merge (dict "name" "isShared") .Values.client) }}
 {{- else }}
   {{- range $client := $clientValues }}
-    {{- if and (eq $client.name "client") (gt (len $client) 1) }}
-      {{- fail "[ERROR] You are using multiple client definitions and one of them is named 'client'. Please change that name to a different one." }}
+    {{- if eq $client.name "isShared" }}
+      {{- fail "[ERROR] You are using multiple client definitions and one of them is named 'isShared'. Please change that name to a different one." }}
     {{- end }}
   {{- end }}
-  {{- $clientValues = append $clientValues (dict "name" "client") }} 
+  {{- $clientValues = append $clientValues (dict "name" "isShared") }} 
 {{- end }}
 {{- range $clientValues  }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}clients{{ else }}client-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "isShared" }}clients{{ else }}client-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -41,7 +41,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}
     role: client
-    group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "client" }}clients{{ else }}client-{{ .name }}{{ end }}
+    group: {{ template "searchguard.fullname" $ }}-{{ if eq .name "isShared" }}clients{{ else }}client-{{ .name }}{{ end }}
   {{ $serviceType := .serviceType | default $.Values.common.serviceType }}
   {{ $annotations := .service_annotations | default $.Values.common.service_annotations }}
   {{- if and $annotations (eq $serviceType "LoadBalancer") }}
@@ -57,7 +57,7 @@ spec:
   selector:
     component: {{ template "searchguard.fullname" $ }}
     role: client
-    {{- if ne .name "client" }}
+    {{- if ne .name "isShared" }}
     group: {{ template "searchguard.fullname" $ }}-client-{{ .name }}
     {{- end }}
   ports:
