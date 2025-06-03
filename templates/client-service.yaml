@@ -21,12 +21,7 @@
 {{- if not (kindIs "slice" .Values.client) }}
 {{- $clientValues = list (merge (dict "svcType" "shared") .Values.client) }}
 {{- else }}
-  {{ $clientDynamicServiceType :=  .Values.common.clientDynamicServiceType | default  "both"}}
-  {{- if eq $clientDynamicServiceType "single" }}
-    {{- $clientValues = list (dict "svcType" "shared") }}
-  {{- else if eq  $clientDynamicServiceType "both"}}
-    {{- $clientValues = append $clientValues (dict "svcType" "shared") }} 
-  {{- end }}
+  {{- $clientValues = append $clientValues (dict "svcType" "shared") }} 
 {{- end }}
 {{- range $clientValues  }}
 
