@@ -195,15 +195,7 @@ spec:
           tcpSocket:
             port: transport
           initialDelaySeconds: 120
-          periodSeconds: 10
-        startupProbe:
-          httpGet:
-            path: /_searchguard/health?mode=nonstrict
-            port: http
-            scheme: HTTPS
-          initialDelaySeconds: 10
-          periodSeconds: 15
-          failureThreshold: 40          
+          periodSeconds: 10       
         resources:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:
