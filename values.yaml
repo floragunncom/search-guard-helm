@@ -33,7 +33,7 @@ common:
 
   ## Elasticsearch and Kibana version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "8.17.0"
+  elkversion: "8.17.6"
 
   ## Search Guard plugin version
   sgversion: "3.0.3-flx"
