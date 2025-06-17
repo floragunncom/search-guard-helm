@@ -421,13 +421,11 @@ securityContext:
     network.host: "0.0.0.0"
 
     cluster.name: {{ .Values.common.cluster_name }}
-    node.name: ${NODE_NAME}
     
     {{- if eq (include "searchguard.elk-version" .) "7" }}
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS}
     {{- end }}
-    node.roles: ${NODE_ROLES}
     discovery.seed_hosts: ${DISCOVERY_SERVICE}
     # Search Guard
     searchguard.enterprise_modules_enabled: {{ .Values.common.sg_enterprise_modules_enabled }}

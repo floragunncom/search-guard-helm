@@ -28,4 +28,5 @@ metadata:
     heritage: "{{ .Release.Service }}"
 data:
   elasticsearch.yml: |-
+      node.roles: ${NODE_ROLES}
 {{ include "searchguard.configmap" . | indent 2 }}

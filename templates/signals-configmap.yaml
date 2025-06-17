@@ -35,8 +35,9 @@ metadata:
     heritage: "{{ $.Release.Service }}"
 data:
   elasticsearch.yml: |-
+      node.roles: [ ]
 {{ include "searchguard.configmap" $ | indent 2 }}
-  
+
       #Custom attribute for signal only nodes
       node.attr.signals_node: signals_only
       signals.worker_threads.pool.max_size: {{ .worker_threads_pool_max_size }}
