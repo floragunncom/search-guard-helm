@@ -4,6 +4,14 @@ ARG ELK_FLAVOUR
 # https://github.com/elastic/kibana-docker
 FROM docker.elastic.co/kibana/kibana${ELK_FLAVOUR}:${ELK_VERSION} as base
 
+USER root
+RUN if ! command -v pgrep >/dev/null 2>&1; then \
+      echo "Installing procps-ng for pgrep..."; \
+      microdnf install -y procps-ng && microdnf clean all; \
+    fi
+USER 1000
+
+
 # Search Guard plugin
 ARG SG_KIBANA_VERSION
 ARG ELK_VERSION
