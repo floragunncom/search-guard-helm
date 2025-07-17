@@ -42,9 +42,9 @@ workflow:
            
       
 image: 
-  name: alpine/helm:latest
+  name: alpine/helm:3.18.3
   entrypoint: [""]   
-  pull_policy: always
+  
 
 variables:
   GIT_STRATEGY: clone   
