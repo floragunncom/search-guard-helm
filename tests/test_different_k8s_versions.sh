@@ -63,14 +63,24 @@ do
   # echo ""
   # echo ""
   # echo ""
+  # echo "############################################" 
+  # echo "$0 Running the test for ELK 8 for kubernetes $version"
+  # echo "############################################"
+  # ./run_tests.sh  common.elkversion="8.12.2",common.sgversion="2.0.0-flx",common.sgkibanaversion="2.0.0-flx",common.sgctl_version="2.0.0"  false
+  # ./run_tests.sh  common.elkversion="8.11.4",common.sgversion="2.0.0-flx",common.sgkibanaversion="2.0.0-flx",common.sgctl_version="2.0.0"  false
+  # ./run_tests.sh  common.elkversion="8.10.4",common.sgversion="2.0.0-flx",common.sgkibanaversion="2.0.0-flx",common.sgctl_version="2.0.0"  false
+  # ./run_tests.sh  common.elkversion="8.9.2",common.sgversion="2.0.0-flx",common.sgkibanaversion="2.0.0-flx",common.sgctl_version="2.0.0"  false
+  # ./run_tests.sh  common.elkversion="8.8.2",common.sgversion="2.0.0-flx",common.sgkibanaversion="2.0.0-flx",common.sgctl_version="2.0.0"  false
+
+  echo ""
+  echo ""
+  echo ""
   echo "############################################" 
-  echo "$0 Running the test for ELK 8 for kubernetes $version"
+  echo "$0 Running the test for ELK 9 for kubernetes $version"
   echo "############################################"
-  ./run_tests.sh  common.elkversion="8.18.3",common.sgversion="3.1.0-flx",common.sgkibanaversion="3.1.0-flx",common.sgctl_version="3.1.0"  false
-  ./run_tests.sh  common.elkversion="8.18.2",common.sgversion="3.1.0-flx",common.sgkibanaversion="3.1.0-flx",common.sgctl_version="3.1.0"  false
-  ./run_tests.sh  common.elkversion="8.18.2",common.sgversion="3.1.0-flx",common.sgkibanaversion="3.1.0-flx",common.sgctl_version="3.1.0"  false
-  ./run_tests.sh  common.elkversion="8.18.1",common.sgversion="3.1.0-flx",common.sgkibanaversion="3.1.0-flx",common.sgctl_version="3.1.0"  false
-  ./run_tests.sh  common.elkversion="8.18.0",common.sgversion="3.1.0-flx",common.sgkibanaversion="3.1.0-flx",common.sgctl_version="3.1.0"  false  
+  ./run_tests.sh  common.elkversion="9.0.1",common.sgversion="3.1.1-flx",common.sgkibanaversion="3.1.1-flx",common.sgctl_version="3.1.1"  false
+  ./run_tests.sh  common.elkversion="9.0.2",common.sgversion="3.1.1-flx",common.sgkibanaversion="3.1.1-flx",common.sgctl_version="3.1.1"  false
+  ./run_tests.sh  common.elkversion="9.0.3",common.sgversion="3.1.1-flx",common.sgkibanaversion="3.1.1-flx",common.sgctl_version="3.1.1"  false
       
   echo ""
   echo ""

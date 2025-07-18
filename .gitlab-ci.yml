@@ -42,8 +42,9 @@ workflow:
            
       
 image: 
-  name: alpine/helm:latest
+  name: alpine/helm:3.18.3
   entrypoint: [""]   
+  
 
 variables:
   GIT_STRATEGY: clone   
