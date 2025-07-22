@@ -97,7 +97,7 @@ publish_helm:
     - validate_helm  
     - validate_release
   only:
-    - main  
+    - bugfix/docker_registry  
   tags:
     - build  
   stage: Publish
@@ -114,9 +114,9 @@ publish_helm:
       helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
       echo "[INFO] Published $chart_version version for $helm_repo_name"
                       
-      git tag "$chart_version-flx"
-      git push origin $chart_version-flx    
-      echo "[INFO] Published tags"
-      echo "[INFO] Completed successfully"
+      # git tag "$chart_version-flx"
+      # git push origin $chart_version-flx    
+      # echo "[INFO] Published tags"
+      # echo "[INFO] Completed successfully"
 
 
