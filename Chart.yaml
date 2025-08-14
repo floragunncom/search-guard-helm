@@ -2,7 +2,7 @@ apiVersion: v2
 name: search-guard-flx
 type: application
 home: https://search-guard.com/
-version: 3.1.1
+version: 3.1.2
 kubeVersion: ">= 1.27.0-0 < 1.34.0-0"
 description: The Search Guard FLX protected Elasticsearch cluster
 sources:
