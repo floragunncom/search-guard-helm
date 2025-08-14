@@ -97,7 +97,7 @@ publish_helm:
     - validate_helm  
     - validate_release
   only:
-    - main  
+    - main
   tags:
     - build  
   stage: Publish
