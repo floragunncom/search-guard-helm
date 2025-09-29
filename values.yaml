@@ -336,6 +336,9 @@ common:
   custom_elasticsearch_keystore:
     enabled: false
 
+  sg_secrets:
+    common-super-secret: ""
+
 client:
 
   roles:

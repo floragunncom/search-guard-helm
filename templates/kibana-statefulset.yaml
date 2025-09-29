@@ -198,6 +198,14 @@ spec:
         - name: {{ $key | upper | replace "-" "_" }}
           value: {{ $value | quote }}
         {{- end }}
+        {{ include "searchguard.common-secrets" $ | indent 6 }}
+        {{- range $key, $value :=  .sg_secret }}
+        - name: {{ $key | upper | replace "-" "_" }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $key }}
+              key: password
+        {{- end }}
         ports:
         - containerPort: 5601
           name: http
