@@ -336,11 +336,7 @@ common:
   custom_elasticsearch_keystore:
     enabled: false
 
-  sg_secrets:
-    common-super-secret: ""
-
 client:
-
   roles:
     - transform
     - remote_cluster_client
@@ -407,7 +403,6 @@ client:
 ## The main benefit of having dedicated data nodes is the separation of the
 ## master and data roles.
 data:
-
   roles:
     - data
     - remote_cluster_client

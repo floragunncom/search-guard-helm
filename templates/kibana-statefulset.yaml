@@ -190,22 +190,10 @@ spec:
               fieldPath: metadata.name
         - name: DISCOVERY_SERVICE
           value: {{ template "searchguard.fullname" $ }}-clients.{{ $.Release.Namespace }}.svc
-        {{- range $key, $value :=  $.Values.common.env }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- range $key, $value :=  .env }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          value: {{ $value | quote }}
-        {{- end }}
+        {{ include "searchguard.common-env" $ | indent 6 }}
+        {{ include "searchguard.local-env" . | indent 6 }}
         {{ include "searchguard.common-secrets" $ | indent 6 }}
-        {{- range $key, $value :=  .sg_secret }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          valueFrom:
-            secretKeyRef:
-              name: {{ $key }}
-              key: password
-        {{- end }}
+        {{ include "searchguard.local-secrets" . | indent 6 }}
         ports:
         - containerPort: 5601
           name: http

@@ -1,0 +1,7 @@
+common:  
+  secrets:
+    common-super-secret: ""
+
+kibana:
+  secrets:
+    kibana-super-secret: ""

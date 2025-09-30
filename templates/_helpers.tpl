@@ -86,11 +86,35 @@ exec:
         rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
 
+{{- define "searchguard.common-env" -}}
+  {{- range $key, $value :=  $.Values.common.env }}
+  - name: {{ $key | upper | replace "-" "_" }}
+    value: {{ $value | quote }}
+  {{- end }}
+{{- end -}}
+
+{{- define "searchguard.local-env" -}}
+  {{- range $key, $value :=  .env }}
+  - name: {{ $key | upper | replace "-" "_" }}
+    value: {{ $value | quote }}
+  {{- end }}
+{{- end -}}
+
 {{- define "searchguard.common-secrets" -}}
-  {{- range $key, $value :=  $.Values.common.sg_secrets }}
+  {{- range $key, $value :=  $.Values.common.secrets }}
   - name: {{ $key | upper | replace "-" "_" }}
     valueFrom:
      secretKeyRef:
+        name: {{ $key }}
+        key: password
+  {{- end }}
+{{- end -}}
+
+{{- define "searchguard.local-secrets" -}}
+  {{- range $key, $value :=  .secrets }}
+  - name: {{ $key | upper | replace "-" "_" }}
+    valueFrom:
+      secretKeyRef:
         name: {{ $key }}
         key: password
   {{- end }}
