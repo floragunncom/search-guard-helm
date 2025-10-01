@@ -12,6 +12,7 @@ if $TEST_UPDATE_ES_KB_VERSION; then
 else
     echo "Skipping update_es_kb_version"
 fi
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/custom_secrets" "" "7" "tests/pre_upgrade.sh" "tests/post_upgrade.sh"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/update_static_config" "" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/update_sg_config" "" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/enable_sgctl_cli" "" "7"
