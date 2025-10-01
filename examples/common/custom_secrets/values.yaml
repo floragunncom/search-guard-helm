@@ -1,7 +1,18 @@
 common:  
   secrets:
-    common-super-secret: "secret"
+    - envName: COMMON_CUSTOM_SECRET
+      secretName: common-custom-secret
+      secretKey: password
+    - envName: COMMON_CUSTOM_KEY
+      secretName: common-custom-secret
+      secretKey: key2      
 
 kibana:
   secrets:
-    kibana-super-secret: "secret"
+    - envName: KIBANA_CUSTOM_SECRET
+      secretName: kibana-custom-secret
+      secretKey: password
+    - envName: KIBANA_CUSTOM_KEY2
+      secretName: kibana-custom-secret
+      secretKey: key2      
+
