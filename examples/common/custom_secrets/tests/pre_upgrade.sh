@@ -4,5 +4,5 @@ set -x
 #$2 - yaml files folder
 
 # Create test secrets
-kubectl create secret generic common-super-secret -n $1 --from-literal=password=CommonSecretPassword
-kubectl create secret generic kibana-super-secret -n $1 --from-literal=password=KibanaSecretPassword
+kubectl create secret generic common-super-secret -n $1 --from-literal=secret=CommonSecretPassword
+kubectl create secret generic kibana-super-secret -n $1 --from-literal=secret=KibanaSecretPassword
