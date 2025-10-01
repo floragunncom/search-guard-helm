@@ -106,17 +106,43 @@ exec:
     valueFrom:
      secretKeyRef:
         name: {{ $key }}
-        key: password
+        key: {{ $value }}
   {{- end }}
 {{- end -}}
 
 {{- define "searchguard.local-secrets" -}}
+{{- range $key, $value := .secrets }}
+
+  {{- if kindOf $value | eq "map" }}
+    # KOD DLA MAPY: Iterujemy po zagnieżdżonych kluczach
+    {{- range $innerKey, $innerValue := $value }}
+- name: {{ printf "%s_%s" ($key | upper | replace "-" "_") ($innerKey | upper | replace "-" "_") }}
+  valueFrom:
+    secretKeyRef:
+      # Zakładamy, że Secret o nazwie np. 'kibana-secrets' istnieje
+      name: {{ $key }}
+      key: {{ $innerKey }}
+    {{- end }}
+  {{- else }}
+    # KOD DLA WSZYSTKIEGO INNEGO: $value jest płaskim stringiem ("costam")
+    # Generujemy pojedynczy EnvVar, używając $key jako nazwy Secretu
+- name: {{ $key | upper | replace "-" "_" }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $key }}  # nazwa secretu to np. user-secret
+      key: {{ $value }} # kluczem w secrecie jest jego wartość, np. costam
+  {{- end }}
+  
+{{- end }}
+{{- end -}}
+
+{{- define "searchguard.local-secrets-orig" -}}
   {{- range $key, $value :=  .secrets }}
   - name: {{ $key | upper | replace "-" "_" }}
     valueFrom:
       secretKeyRef:
         name: {{ $key }}
-        key: password
+        key: {{ $value }}
   {{- end }}
 {{- end -}}
 
