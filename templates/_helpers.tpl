@@ -101,22 +101,22 @@ exec:
 {{- end -}}
 
 {{- define "searchguard.common-secrets" -}}
-  {{- range $key, $value :=  $.Values.common.secrets }}
-  - name: {{ $key | upper | replace "-" "_" }}
+  {{- range $key, $value :=  $.Values.common.env_secrets }}
+  - name: {{ $value.envName }}
     valueFrom:
      secretKeyRef:
-        name: {{ $key }}
-        key: {{ $value }}
+        name: {{ $value.secretName }}
+        key: {{ $value.secretKey }}
   {{- end }}
 {{- end -}}
 
 {{- define "searchguard.local-secrets" -}}
-  {{- range $key, $value :=  .secrets }}
-  - name: {{ $key | upper | replace "-" "_" }}
+  {{- range $key, $value :=  .env_secrets }}
+  - name: {{ $value.envName }}
     valueFrom:
-      secretKeyRef:
-        name: {{ $key }}
-        key: {{ $value }}
+     secretKeyRef:
+        name: {{ $value.secretName }}
+        key: {{ $value.secretKey }}
   {{- end }}
 {{- end -}}
 
