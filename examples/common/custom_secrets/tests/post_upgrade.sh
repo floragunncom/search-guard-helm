@@ -35,5 +35,3 @@ if [ ${KIBANA_PASSWORD} != 'KibanaSecretPassword' ]; then
 fi
 echo "Kibana password OK"
 echo "Custom env-secrets OK"
-kubectl delete secret common-custom-secret -n $1 
-kubectl delete secret kibana-custom-secret -n $1
