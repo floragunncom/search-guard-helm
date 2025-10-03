@@ -86,6 +86,39 @@ exec:
         rm -f /usr/share/elasticsearch/config/*.pem
 {{- end -}}
 
+{{- define "searchguard.common-env" -}}
+  {{- range $key, $value :=  $.Values.common.env }}
+  - name: {{ $key | upper | replace "-" "_" }}
+    value: {{ $value | quote }}
+  {{- end }}
+{{- end -}}
+
+{{- define "searchguard.local-env" -}}
+  {{- range $key, $value :=  .env }}
+  - name: {{ $key | upper | replace "-" "_" }}
+    value: {{ $value | quote }}
+  {{- end }}
+{{- end -}}
+
+{{- define "searchguard.common-secrets" -}}
+  {{- range $key, $value :=  $.Values.common.env_secrets }}
+  - name: {{ $value.envName }}
+    valueFrom:
+     secretKeyRef:
+        name: {{ $value.secretName }}
+        key: {{ $value.secretKey }}
+  {{- end }}
+{{- end -}}
+
+{{- define "searchguard.local-secrets" -}}
+  {{- range $key, $value :=  .env_secrets }}
+  - name: {{ $value.envName }}
+    valueFrom:
+     secretKeyRef:
+        name: {{ $value.secretName }}
+        key: {{ $value.secretKey }}
+  {{- end }}
+{{- end -}}
 
 {{- define "searchguard.patch-node-certificates" -}}
 kubectl patch secret {{ template "searchguard.fullname" . }}-nodes-cert-secret -p="{\"data\":{\"$NODE_NAME.pem\": \"$(cat /sg-nodes-certs/$NODE_NAME.pem | base64 -w0)\", \"$NODE_NAME.key\": \"$(cat /sg-nodes-certs/$NODE_NAME.key | base64 -w0)\", \"root-ca.pem\": \"$(cat /sg-nodes-certs/root-ca.pem | base64 -w0)\"}}" -v=5

@@ -168,14 +168,10 @@ spec:
         {{ end }}
 
 
-        {{- range $key, $value :=  $.Values.common.env }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          value: {{ $value | quote }}
-        {{- end }}
-        {{- range $key, $value :=  .env }}
-        - name: {{ $key | upper | replace "-" "_" }}
-          value: {{ $value | quote }}
-        {{- end }}
+        {{ include "searchguard.common-env" $ | indent 6 }}
+        {{ include "searchguard.local-env" . | indent 6 }}
+        {{ include "searchguard.common-secrets" $ | indent 6 }}
+        {{ include "searchguard.local-secrets" . | indent 6 }}
         ports:
         - containerPort: 9300
           name: transport
