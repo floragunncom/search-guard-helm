@@ -150,7 +150,7 @@ spec:
                 function waitForStatefulSet() {
                   STS_NAME="$1"
                   
-                  STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                  STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
                   RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                   REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                   CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
@@ -159,7 +159,7 @@ spec:
                   while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
                     echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, wait ... ($CR/$UR)"
                     sleep 3
-                    STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                    STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
                     RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
                     REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
                     CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
@@ -200,7 +200,7 @@ spec:
                     do
                       # check if we need to update the stateful set
                       # this is the case when .status.currentRevision != .status.updateRevision
-                      STATUS_JSON="$(kubectl rollout history statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}' --revision=1)"
+                      STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
                       CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
                       UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
 
