@@ -30,9 +30,9 @@ sgctl_versions=(
 )
 
 cluster_config_versions=(
-    "KUBECTL_VERSION=1.31"
-    "KUBECTL_VERSION=1.32"
-    "KUBECTL_VERSION=1.33"
+    "KUBECTL_VERSION=1.31.0"
+    "KUBECTL_VERSION=1.32.0"
+    "KUBECTL_VERSION=1.33.0"
 )
 
 
