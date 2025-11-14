@@ -123,9 +123,9 @@ spec:
       - name: elasticsearch
 {{ include "searchguard.security-context.least" $ | indent 8 }}
       {{ if $.Values.common.xpack_basic }}
-        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.elkversion }}-{{ $.Values.common.sgversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.sgversion }}-es-{{ $.Values.common.elkversion }}"
       {{ else }}
-        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgversion }}"
+        image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.sgversion }}-oss-{{ $.Values.common.elkversion }}"
       {{ end }}
         imagePullPolicy: {{ $.Values.common.pullPolicy }}
         lifecycle:
