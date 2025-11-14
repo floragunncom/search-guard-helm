@@ -8,10 +8,6 @@ DEFAULT_PLATFORMS="linux/arm64,linux/amd64"
 # architecture of your build system set DEFAULT_PLATFORMS=local
 #DEFAULT_PLATFORMS="local"
 
-# set this to true if you want to install the typical plugins like
-# repository-s3 repository-azure repository-gcs repository-hdfs analysis-icu analysis-phonetic
-INSTALL_DEFAULT_PLUGINS="false"
-
 versions=(
     # version 8
     "ES_VERSION=4.0.0 SG_VERSION=8.19.6 SG_KIBANA_VERSION=8.19.6"
