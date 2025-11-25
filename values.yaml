@@ -1,4 +1,4 @@
-common:          
+common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
@@ -12,10 +12,10 @@ common:
   images:
     repository: "docker.io"
     provider: "floragunncom"
-    elasticsearch_base_image: "sg-elasticsearch-h4"
-    kibana_base_image: "sg-kibana-h4"
-    sgctl_base_image: "sg-sgctl-h4"
-    kubectl_base_image: "sg-kubectl-h4"
+    elasticsearch_base_image: "search-guard-flx-elasticsearch"
+    kibana_base_image: "search-guard-flx-kibana"
+    sgctl_base_image: "search-guard-flx-sgctl"
+    cluster_config_base_image: "search-guard-flx-cluster-config"
 
   ## Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
   docker_registry:
@@ -33,16 +33,16 @@ common:
 
   ## Elasticsearch and Kibana version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "9.0.1"
+  elkversion: "9.1.7"
 
   ## Search Guard plugin version
-  sgversion: "3.1.1-flx"
+  sgversion: "4.0.0"
 
   ## Search Guard Kibana plugin version
   ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
-  sgkibanaversion: "3.1.1-flx"
+  sgkibanaversion: "4.0.0"
 
-  sgctl_version: 3.1.1
+  sgctl_version: 4.0.0
 
   ## If true then install also all free and basic x-pack features
   ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
@@ -85,14 +85,14 @@ common:
   remove_initial_master_nodes_after_install: true
 
   init_sysctl: true
-  
+
   ingress:
     enabled: false
     className: ""
-    annotations: 
+    annotations:
       nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     labels: {}
-    # hosts: 
+    # hosts:
     #   - host: kibana.local
     #     paths:
     #       - path: /
@@ -112,7 +112,7 @@ common:
      # - secretName: clients-tls
      #   hosts:
      #     - clients.local
- 
+
 
   ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.
@@ -145,15 +145,15 @@ common:
   ca_certificates_enabled: false
   
 
-  # Create pods with installed sgctl.sh tool 
+  # Create pods with installed sgctl.sh tool
   sgctl_cli: false
 
   #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
   sg_dynamic_configuration_from_secret:
     enabled: false
     secret_name: "sg-dynamic-configuration-secret"
-    
-    
+
+
   tls:
     ## root_dn only has an effect when sgctl_certificates_enabled is false and ca_certificates_enabled is true
     root_dn: 'CN=root-ca,OU=CA,O=Example Com\, Inc.,DC=example,DC=com'
@@ -187,7 +187,7 @@ common:
     searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_all_access"]
     searchguard.check_snapshot_restore_write_privileges: true
     searchguard.audit.type: internal_elasticsearch
-      
+
 
   ## Configure additional users (maps to sg_internal_users.yml)
   # users:
@@ -268,8 +268,8 @@ common:
   #     verdict: "disallow"
   #     value: ["172.16.0.254", "172.16.0.230"]
   #     description: "Demo IP blocked, i.e. this specific IP gets blocked"
-  # 
-  
+  #
+
   # enable default frontend_multi_tenancy configuration for FLX 2 and above
   frontend_multi_tenancy_enabled: false
 
@@ -277,11 +277,12 @@ common:
   # frontend_multi_tenancy:
   #   enabled: true
   #   server_user: kibanaserver
-  #   global_tenant_enabled : true 
+  #   global_tenant_enabled : true
 
 
   action_groups:
     MY_ACTION_GROUP:
+      type: "index"
       allowed_actions:
         - "indices:data/read/search*"
         - "indices:data/read/msearch*"
@@ -525,7 +526,7 @@ datacontent:
       memory: 2000Mi
     requests:
       cpu: 800m
-      memory: 2000Mi   
+      memory: 2000Mi
 
   # tolerations:
   #  - key: "key1"
