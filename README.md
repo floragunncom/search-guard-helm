@@ -32,6 +32,28 @@ This is repo is considered GA status and supports Search Guard FLX for Elasticse
 
 Please report issues via our [Gitlab issue tracker](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/issues), go to our [forum](https://forum.search-guard.com) or directly get in [contact with us][]
 
+## Changes in version 4.0.0:
+
+Starting from chart version `4.0.0`, the way Docker images are built and the Docker repositories to which the images are published has changed.
+
+`sg-elasticsearch-h4` has been replaced by `search-guard-flx-elasticsearch`
+
+`sg-kibana-h4` has been replaced by `search-guard-flx-kibana`
+In these repositories, tags will be published in the following format: `sgversion-es-esversion` e.g. `4.0.0-es-9.1.6`
+
+`sg-sgctl-h4` has been replaced by `search-guard-flx-sgctl`
+
+`sg-kubectl-h4` has been replaced by `search-guard-flx-cluster-config`
+
+For the last repository listed above, a change was introduced that removes the need to build a new image for every Kubernetes patch version. This means that for Kubernetes `1.31`, you no longer need to build images for `1.31.0, 1.31.1, 1.31.2` building only the `1.31` version is sufficient.
+
+Additionally, the `-flx` suffix has been removed from the docker tags. This should be considered when using the values specified in values.yaml under `common.sgversion` and `common.sgkibanaversion`.
+
+The scripts located in the docker folder have also been updated to publish images using the new version format.
+
+
+Helm chart support has also been updated to use this format.
+
 ## Change in Versioning Method for Helm Charts
 
 With the release of Search Guard Plugin version 2.0.0, the versioning for Helm charts has been updated by adding the suffix `-flx` to the version number of the Helm charts. This change ensures compatibility between the Helm chart versions and the versions published by Search Guard Plugin.

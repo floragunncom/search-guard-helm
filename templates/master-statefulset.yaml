@@ -16,7 +16,7 @@
    limitations under the License.
 */}}
 
-{{- $masterValues := .Values.master }} 
+{{- $masterValues := .Values.master }}
 {{- if not (kindIs "slice" .Values.master) }}
 {{- $masterValues = list (merge (dict "name" "master") .Values.master) }}
 {{- end }}
@@ -127,7 +127,7 @@ spec:
       {{ else }}
         image: "{{ $.Values.common.images.repository }}/{{ $.Values.common.images.provider }}/{{ $.Values.common.images.elasticsearch_base_image }}:{{ $.Values.common.elkversion }}-oss-{{ $.Values.common.sgversion }}"
       {{ end }}
-        imagePullPolicy: {{ $.Values.common.pullPolicy }} 
+        imagePullPolicy: {{ $.Values.common.pullPolicy }}
         lifecycle:
           postStart:
 {{ include "searchguard.remove-demo-certs" $ | indent 12 }}
@@ -195,7 +195,7 @@ spec:
         resources:
 {{ toYaml .resources | indent 10 }}
         volumeMounts:
-{{- include "searchguard.config-volume-mount" . | nindent 8 }}          
+{{- include "searchguard.config-volume-mount" . | nindent 8 }}
         - mountPath: /usr/share/elasticsearch/data
           name: storage
           subPath: data
@@ -219,7 +219,7 @@ spec:
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
 {{ end }}
       volumes:
-{{- include "searchguard.config-volumes" $ | nindent 8 }}    
+{{- include "searchguard.config-volumes" $ | nindent 8 }}
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
@@ -237,11 +237,11 @@ spec:
 {{ end }}
   volumeClaimTemplates:
   - metadata:
-      name: storage   
+      name: storage
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: {{ .storageClass }}
       resources:
         requests:
           storage: {{ .storage }}
-{{- end }}     
+{{- end }}

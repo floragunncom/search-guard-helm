@@ -14,7 +14,7 @@
    limitations under the License.
 */}}
 
-{{- $clientValues := .Values.client }} 
+{{- $clientValues := .Values.client }}
 {{- if not (kindIs "slice" .Values.client) }}
 {{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
 {{- end }}
@@ -113,7 +113,7 @@ spec:
 {{ toYaml .tolerations | indent 6 }}
       {{ end }}
 
-      initContainers:    
+      initContainers:
 {{ include "searchguard.init-containers" $ | indent 6 }}
       {{ if $.Values.common.docker_registry.enabled }}
       imagePullSecrets:
@@ -205,7 +205,7 @@ spec:
 {{ include "searchguard.custom-elasticsearch-keystore-volumeMounts" . | indent 8 }}
 {{ end }}
       volumes:
-{{- include "searchguard.config-volumes" $ | nindent 8 }}        
+{{- include "searchguard.config-volumes" $ | nindent 8 }}
         - name: secret-volume
           secret:
             secretName: {{ template "searchguard.fullname" $ }}-nodes-cert-secret
@@ -223,11 +223,11 @@ spec:
 {{ end }}
   volumeClaimTemplates:
     - metadata:
-        name: storage   
+        name: storage
       spec:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: {{ .storageClass }}
         resources:
           requests:
             storage: {{ .storage }}
-{{- end }}            
+{{- end }}
