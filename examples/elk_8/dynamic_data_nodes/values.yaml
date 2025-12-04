@@ -1,0 +1,78 @@
+data:
+  - name : "data"
+    replicas: 3
+    antiAffinity: "soft"
+    storage: 3Gi
+    storageClass: local-path 
+    heapSize: 1g
+    processors: 1
+    labels: {}
+    annotations: {}
+    resources:
+      limits:
+        cpu: 1
+        memory: 2000Mi
+      requests:
+        cpu: 800m
+        memory: 2000Mi
+    roles: 
+     - data
+     - remote_cluster_client
+  - name : "hot"
+    replicas: 1
+    antiAffinity: "soft"
+    storage: 3Gi
+    storageClass: local-path 
+    heapSize: 1g
+    processors: 1
+    labels: {}
+    annotations: {}
+    resources:
+      limits:
+        cpu: 1
+        memory: 2000Mi
+      requests:
+        cpu: 800m
+        memory: 2000Mi
+    roles: 
+     - data_hot
+     - remote_cluster_client
+  - name : "warm"
+    replicas: 1
+    antiAffinity: "soft"
+    storage: 3Gi
+    storageClass: local-path 
+    heapSize: 1g
+    processors: 1
+    labels: {}
+    annotations: {}
+    resources:
+      limits:
+        cpu: 1
+        memory: 2000Mi
+      requests:
+        cpu: 800m
+        memory: 2000Mi
+    roles: 
+     - data_warm
+     - remote_cluster_client
+  - name : "cold"
+    replicas: 1
+    antiAffinity: "soft"
+    storage: 3Gi
+    storageClass: local-path 
+    heapSize: 1g
+    processors: 1
+    labels: {}
+    annotations: {}
+    resources:
+      limits:
+        cpu: 1
+        memory: 2000Mi
+      requests:
+        cpu: 800m
+        memory: 2000Mi
+    roles: 
+     - data_cold
+     - remote_cluster_client
+
