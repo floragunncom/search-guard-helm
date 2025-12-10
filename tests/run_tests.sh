@@ -21,7 +21,8 @@ fi
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/disable_sgctl_cli_configuration_from_secret" "" "7"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/scale_cluster" "" "8"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/setup_field_anonymization" "" "8"
-"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/dynamic_data_nodes" "" "11" "scripts/remove_data_sts.sh" 
-"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/enable_data_content_node" "" "13"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/enable_data_content_node" "" "10"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/elk_8/dynamic_data_nodes" "" "13" "scripts/remove_data_sts.sh" 
+
 echo "Finished $(date '+%Y-%m-%d %H:%M:%S')"
 
