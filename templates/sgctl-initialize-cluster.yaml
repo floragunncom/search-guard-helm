@@ -13,13 +13,15 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */}}
-
-{{ if .Release.IsInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{{ template "searchguard.fullname" . }}-sgctl-initialize"
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "0"
   labels:
     app: {{ template "searchguard.fullname" . }}
     chart: "{{ .Chart.Name }}"
@@ -185,4 +187,3 @@ spec:
             secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
         - name: kubectl
           emptyDir: {}
-{{ end }}

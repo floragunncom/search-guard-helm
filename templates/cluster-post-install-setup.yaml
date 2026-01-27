@@ -1,0 +1,203 @@
+{{- /*
+    Copyright 2021 floragunn GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/}}
+
+
+{{- $dataValues := .Values.data }} 
+{{- if not (kindIs "slice" .Values.data) }}
+{{- $dataValues = list (merge (dict "name" "data") .Values.data) }}
+{{- end }}
+{{- $dataReplicas:=0 }}
+{{- range $dataValues  }}
+{{ $dataReplicas = add $dataReplicas .replicas }}
+{{- end }}
+
+{{- $clientValues := .Values.client }} 
+{{- if not (kindIs "slice" .Values.client) }}
+{{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
+{{- end }}
+{{- $clientReplicas:=0 }}
+{{- range $clientValues  }}
+{{ $clientReplicas = add $clientReplicas .replicas }}
+{{- end }}
+
+{{- $kibanaValues := .Values.kibana }} 
+{{- if not (kindIs "slice" .Values.kibana) }}
+{{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
+{{- end }}
+{{- $kibanaReplicas:=0 }}
+{{- range $kibanaValues  }}
+{{ $kibanaReplicas = add $kibanaReplicas .replicas }}
+{{- end }}
+
+{{- $masterValues := .Values.master }} 
+{{- if not (kindIs "slice" .Values.master) }}
+{{- $masterValues = list (merge (dict "name" "master") .Values.master) }}
+{{- end }}
+{{- $masterReplicas:=0 }}
+{{- range $masterValues  }}
+{{ $masterReplicas = add $masterReplicas .replicas }}
+{{- end }}
+
+
+{{- $signalsValues := .Values.signals | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.signals)) (hasKey .Values "signals") }}
+{{- $signalsValues = list (merge (dict "name" "signals") .Values.signals) }}
+{{- end }}
+{{- $signalsReplicas:=0 }}
+{{- range $signalsValues  }}
+{{ $signalsReplicas = add $signalsReplicas .replicas }}
+{{- end }}
+
+
+{{- $dataContentValues := .Values.dataContent | default (list) }} 
+{{- if and (not (kindIs "slice" .Values.dataContent)) (hasKey .Values "dataContent") }}
+{{- $dataContentValues = list (merge (dict "name" "dataContent") .Values.dataContent) }}
+{{- end }}
+{{- $dataContentReplicas:=0 }}
+{{- range $dataContentValues  }}
+{{ $dataContentReplicas = add $dataContentReplicas .replicas }}
+{{- end }}
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "searchguard.fullname" . }}-post-install-setup"
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "10"
+  labels:
+    app: {{ template "searchguard.fullname" . }}
+    chart: "{{ .Chart.Name }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: {{ template "searchguard.fullname" . }}-sgctl
+    role: sgctl
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        release: "{{ .Release.Name }}"
+        app: {{ template "searchguard.fullname" . }}
+        component: {{ template "searchguard.fullname" . }}
+        role: sgctl
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ template "searchguard.fullname" . }}
+      {{ if .Values.common.docker_registry.enabled }}
+      imagePullSecrets:
+      - name: {{ .Values.common.docker_registry.imagePullSecret }}
+      {{ end }}
+      {{ if .Values.common.tolerations }}
+      tolerations:
+{{ toYaml .Values.common.tolerations | indent 6 }}
+      {{ end }}
+      {{ if .Values.common.nodeAffinity }}
+      affinity:
+        nodeAffinity:
+{{ toYaml .Values.common.nodeAffinity | indent 10 }}
+      {{ end }}
+      initContainers:
+{{ include "searchguard.kubectl-init-container" . | indent 6 }}
+      containers:
+      - name: sgctl-complete
+        env:
+          - name: DISCOVERY_SERVICE
+            value: {{ template "searchguard.fullname" . }}-discovery.{{ .Release.Namespace }}.svc
+        image: {{ .Values.common.images.repository }}/{{ .Values.common.images.provider }}/{{ .Values.common.images.sgctl_base_image }}:{{ .Values.common.sgctl_version }}
+        imagePullPolicy: {{ .Values.common.pullPolicy }}
+        command:
+          - bash
+          - -c
+          - |
+            set -e
+                 
+            {{ include "searchguard.sgctl.updateIfRequired" . | indent 12 }}
+
+            {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas $signalsReplicas  }}
+            {{- if .Values.datacontent.enabled }}
+              {{- $totalReplicas = add $totalReplicas .Values.datacontent.replicas }}
+            {{- end }}
+          
+            echo "Wait until {{ $totalReplicas }} node are up and the cluster is at least yellow"
+
+            curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
+{{- if $.Values.common.remove_initial_master_nodes_after_install }}
+
+            echo "Removing cluster.initial_master_nodes from master nodes configuration"          
+            for STS_NAME in $(kubectl get statefulset -n {{ .Release.Namespace }} -l role=master -o name); do
+              kubectl patch "$STS_NAME" -n {{ .Release.Namespace }}  \
+                --type=strategic \
+                -p '{
+                  "spec": {
+                    "template": {
+                      "spec": {
+                        "containers": [
+                          {
+                            "name": "elasticsearch",
+                            "env": [
+                              {
+                                "name": "cluster.initial_master_nodes",
+                                "$patch": "delete"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }'
+            done          
+                          
+            updateIfRequired "master"
+
+            echo "Removing cluster.initial_master_nodes finished"
+
+ {{- else }}
+
+            echo "Skipping removal of cluster.initial_master_nodes"
+            echo "Reason: common.remove_initial_master_nodes_after_install=false"
+
+{{- end }}           
+            exit 0
+    
+        resources:
+          limits:
+            cpu: "500m"
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+          - mountPath: /sgconfig/
+            name: searchguard-config
+          - name: secret-volume
+            readOnly: true
+            mountPath: /sgcerts/
+          - name: kubectl
+            subPath: kubectl
+            mountPath: /usr/local/bin/kubectl
+            readOnly: true
+      volumes:
+{{- include "searchguard.config-volumes" . | nindent 8 }}            
+        - name: secret-volume
+          secret:
+            secretName: {{ template "searchguard.fullname" . }}-admin-cert-secret
+        - name: kubectl
+          emptyDir: {}

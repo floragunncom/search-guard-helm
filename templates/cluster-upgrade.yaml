@@ -69,7 +69,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   backoffLimit: 6
   template:
@@ -136,6 +136,7 @@ spec:
             - -c
             - |
                 set -e
+                {{ include "searchguard.sgctl.updateIfRequired" . | indent 16 }}
                 echo "Upgrade to Helm Release Version {{ .Release.Revision }}"
                 {{- $totalReplicas := add $masterReplicas $dataReplicas $clientReplicas $signalsReplicas  }}
                 {{- if .Values.datacontent.enabled }}
@@ -147,88 +148,6 @@ spec:
 
                 curl --fail -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem "https://$DISCOVERY_SERVICE:9200/_cluster/health?wait_for_nodes={{ $totalReplicas }}&wait_for_status=yellow&timeout=300s&pretty"
 
-                function waitForStatefulSet() {
-                  STS_NAME="$1"
-                  
-                  STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
-                  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
-                  REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
-                  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
-                  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
-
-                  while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
-                    echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, wait ... ($CR/$UR)"
-                    sleep 3
-                    STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
-                    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
-                    REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
-                    CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
-                    UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
-                    
-
-                    # This a workaround for https://git.floragunn.com/search-guard/search-guard-suite-enterprise/-/issues/148
-                    # and can be removed if the issue is fixed.
-
-                    echo ""
-                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
-                    {
-                      "transient": {
-                        "logger.dummy.dummy": "ERROR"
-                      }
-                    }'
-                    echo ""
-                    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" -H 'content-type: application/json' -d '
-                    {
-                      "transient": {
-                        "logger.dummy.dummy": null
-                      }
-                    }'
-                    echo ""
-                    # end workaround
-
-                  done
-
-                  echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, proceed ..."
-
-                
-                }
-
-                function updateIfRequired() {
-
-                  SETNAME="$1"
-                  for STS_NAME in $(kubectl get sts --no-headers -o custom-columns=":metadata.name" -l role=${SETNAME},app={{ template "searchguard.fullname" . }},chart={{ .Chart.Name }} -n {{ .Release.Namespace }})
-                    do
-                      # check if we need to update the stateful set
-                      # this is the case when .status.currentRevision != .status.updateRevision
-                      STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
-                      CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
-                      UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
-
-                      if [ "$CR" != "$UR" ]; then
-                        echo "Update needed for $SETNAME/${STS_NAME} because currentRevision $CR does not match updateRevision $UR"
-                        echo "$STATUS_JSON"
-                        
-                        if [ "$SETNAME" == "kibana" ]; then
-                          KIBANA_REPLICAS=$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
-                          echo "Current number of replicas for ${SETNAME}/${STS_NAME} = $KIBANA_REPLICAS"
-                          kubectl scale --replicas=1 statefulset/${STS_NAME} -n {{ .Release.Namespace }}
-                        fi
-
-                        kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
-                        waitForStatefulSet "${STS_NAME}"
-                        
-                        if [ "$SETNAME" == "kibana" ]; then
-                          kubectl scale --replicas=${KIBANA_REPLICAS} statefulset/${STS_NAME} -n {{ .Release.Namespace }}
-                        fi
-                        
-                        kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
-                      else
-                        echo "No Update needed for ${SETNAME}/${STS_NAME}"
-                      fi
-                  done    
-
-                }
-                
                 updateIfRequired "client"
                 {{- if gt $signalsReplicas 0 }}
                 updateIfRequired "signals"

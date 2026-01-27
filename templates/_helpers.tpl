@@ -486,4 +486,87 @@ securityContext:
 {{- end -}}
 
 
+{{- define "searchguard.sgctl.updateIfRequired" -}}
+function waitForStatefulSet() {
+  STS_NAME="$1"
 
+  STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
+  RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
+  REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+  CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+  UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+  while [ "$RR" != "$REPLICAS" ] || [ "$CR" != "$UR" ]; do
+    echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, wait ... ($CR/$UR)"
+    sleep 3
+
+    STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
+    RR="$(echo "$STATUS_JSON" | jq '.readyReplicas // 0' | tr -d '"')"
+    REPLICAS="$(echo "$STATUS_JSON" | jq '.replicas' | tr -d '"')"
+    CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+    UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+    # Workaround
+    echo ""
+    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem \
+      -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" \
+      -H 'content-type: application/json' -d '
+    {
+      "transient": {
+        "logger.dummy.dummy": "ERROR"
+      }
+    }'
+    echo ""
+    curl -Ss --cert /sgcerts/crt.pem --key /sgcerts/key.pem --cacert /sgcerts/root-ca.pem \
+      -XPUT "https://$DISCOVERY_SERVICE:9200/_cluster/settings" \
+      -H 'content-type: application/json' -d '
+    {
+      "transient": {
+        "logger.dummy.dummy": null
+      }
+    }'
+    echo ""
+  done
+
+  echo "$RR out of $REPLICAS replicas are ready for ${STS_NAME}, proceed ..."
+}
+
+function updateIfRequired() {
+  SETNAME="$1"
+
+  for STS_NAME in $(kubectl get sts --no-headers \
+      -o custom-columns=":metadata.name" \
+      -l role=${SETNAME},app={{ template "searchguard.fullname" . }},chart={{ .Chart.Name }} \
+      -n {{ .Release.Namespace }}); do
+
+    STATUS_JSON="$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o=jsonpath='{.status}')"
+    CR="$(echo "$STATUS_JSON" | jq '.currentRevision' | tr -d '"')"
+    UR="$(echo "$STATUS_JSON" | jq '.updateRevision' | tr -d '"')"
+
+    if [ "$CR" != "$UR" ]; then
+      echo "Update needed for $SETNAME/${STS_NAME} because currentRevision $CR does not match updateRevision $UR"
+      echo "$STATUS_JSON"
+
+      if [ "$SETNAME" == "kibana" ]; then
+        KIBANA_REPLICAS=$(kubectl get statefulset/${STS_NAME} -n {{ .Release.Namespace }} -o jsonpath='{.status.replicas}')
+        echo "Current number of replicas for ${SETNAME}/${STS_NAME} = $KIBANA_REPLICAS"
+        kubectl scale --replicas=1 statefulset/${STS_NAME} -n {{ .Release.Namespace }}
+      fi
+
+      kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} \
+        -p '{"spec":{"updateStrategy":{"type":"RollingUpdate"}}}'
+
+      waitForStatefulSet "${STS_NAME}"
+
+      if [ "$SETNAME" == "kibana" ]; then
+        kubectl scale --replicas=${KIBANA_REPLICAS} statefulset/${STS_NAME} -n {{ .Release.Namespace }}
+      fi
+
+      kubectl patch statefulset/${STS_NAME} -n {{ .Release.Namespace }} \
+        -p '{"spec":{"updateStrategy":{"type":"OnDelete"}}}'
+    else
+      echo "No Update needed for ${SETNAME}/${STS_NAME}"
+    fi
+  done
+}
+{{- end -}}
