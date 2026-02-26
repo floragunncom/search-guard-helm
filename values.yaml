@@ -89,6 +89,15 @@ common:
   remove_initial_master_nodes_after_install: true
 
   init_sysctl: true
+
+  ## Kibana ConfigMap settings (kibana.yml)
+  kibana_configmap:
+    serverName: kibana
+    serverHost: "0.0.0.0"
+    elasticsearchUsername: "kibanaserver"
+    elasticsearchPassword: "${SG_KIBANASERVER_PWD}"
+    serverSslEnabled: true
+    elasticsearchSslVerificationMode: "full"
   
   ingress:
     enabled: false
@@ -117,6 +126,10 @@ common:
      #   hosts:
      #     - clients.local
  
+
+  ## When true (default), a shared client service is created (selector without group, targets all client pods).
+  ## Set to false to create only per-group client services (e.g. when using multiple named client groups).
+  # clientCreateSharedService: true
 
   ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.

@@ -305,6 +305,12 @@ and upgrade fails.
  | common.custom_elasticsearch_keystore.enabled | Enable/Disable custom elasticsearch keystore  | false | >=7 |
  | common.custom_elasticsearch_keystore.extraEnvs | Use extra environment variables for elasticsearch keystore   | null | >=7 |
  | common.custom_elasticsearch_keystore.script | Use custom script to generate for elasticsearch keystore   | null | >=7 |
+ | common.kibana_configmap.serverName | Kibana server name (server.name in kibana.yml) | kibana | >=7 |
+ | common.kibana_configmap.serverHost | Kibana server bind address (server.host in kibana.yml) | "0.0.0.0" | >=7 |
+ | common.kibana_configmap.elasticsearchUsername | Elasticsearch username for Kibana (elasticsearch.username in kibana.yml) | "kibanaserver" | >=7 |
+ | common.kibana_configmap.elasticsearchPassword | Elasticsearch password for Kibana, use e.g. "${SG_KIBANASERVER_PWD}" (elasticsearch.password in kibana.yml) | "${SG_KIBANASERVER_PWD}" | >=7 |
+ | common.kibana_configmap.serverSslEnabled | Enable SSL for Kibana server (server.ssl.enabled in kibana.yml) | true | >=7 |
+ | common.kibana_configmap.elasticsearchSslVerificationMode | Elasticsearch SSL cert verification: full, certificate, none (elasticsearch.ssl.verificationMode in kibana.yml) | "full" | >=7 |
  | data.annotations | Metadata to attach to data nodes | null | >=7 |
  | data.antiAffinity | Affinity policy for master nodes: 'hard' for pods scheduling only on the different nodes, 'soft' pods scheduling on the same node possible | soft | >=7 |
  | data.heapSize | HeapSize limit for data nodes | 1g | >=7 |
