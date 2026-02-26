@@ -17,20 +17,50 @@
 */}}
 
 
-{{- $clientValues := .Values.client }} 
+{{- $clientValues := .Values.client }}
+{{- $single := false }}
+{{- $createSharedService := kindIs "invalid" .Values.common.clientCreateSharedService | ternary true .Values.common.clientCreateSharedService }}
 {{- if not (kindIs "slice" .Values.client) }}
+{{- if $createSharedService }}
 {{- $clientValues = list (merge (dict "svcType" "shared") .Values.client) }}
 {{- else }}
-  {{- $clientValues = append $clientValues (dict "svcType" "shared") }} 
+{{- $clientValues = list (merge (dict "name" "client") .Values.client) }}
 {{- end }}
-{{- range $clientValues  }}
+{{- $single = true }}
+{{- else }}
+{{- if $createSharedService }}
+{{- $clientValues = append $clientValues (dict "svcType" "shared") }}
+{{- end }}
+{{- end }}
+{{- range $clientValues }}
 
 {{- $isShared := eq .svcType "shared" }}
+{{- $clientGroupName := "" }}
+{{- if $isShared }}
+{{-   $clientGroupName = printf "%s-clients" (include "searchguard.fullname" $) }}
+{{- else }}
+{{-   $usePlural := .pluralName | default false }}
+{{-   $baseName := "" }}
+{{-   if $usePlural }}
+{{-     $baseName = "clients" }}
+{{-   else }}
+{{-     $baseName = "client" }}
+{{-   end }}
+{{-   $useBaseNameOnly := or $single (or .baseNameOnly .single) }}
+{{-   $clientGroupSuffix := "" }}
+{{-   if $useBaseNameOnly }}
+{{-     $clientGroupSuffix = $baseName }}
+{{-   else }}
+{{-     $clientGroupSuffix = printf "%s-%s" $baseName .name }}
+{{-   end }}
+{{-   $fullname := include "searchguard.fullname" $ }}
+{{-   $clientGroupName = printf "%s-%s%s" $fullname (.prefix | default "") $clientGroupSuffix }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if $isShared }}clients{{ else }}client-{{ .name }}{{ end }}
+  name: {{ $clientGroupName }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -39,7 +69,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}
     role: client
-    group: {{ template "searchguard.fullname" $ }}-{{ if $isShared  }}clients{{ else }}client-{{ .name }}{{ end }}
+    group: {{ $clientGroupName }}
   {{ $serviceType := .serviceType | default $.Values.common.serviceType }}
   {{ $annotations := .service_annotations | default $.Values.common.service_annotations }}
   {{- if and $annotations (eq $serviceType "LoadBalancer") }}
@@ -56,7 +86,7 @@ spec:
     component: {{ template "searchguard.fullname" $ }}
     role: client
     {{- if not $isShared }}
-    group: {{ template "searchguard.fullname" $ }}-client-{{ .name }}
+    group: {{ $clientGroupName }}
     {{- end }}
   ports:
   - name: http

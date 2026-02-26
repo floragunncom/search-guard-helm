@@ -20,15 +20,13 @@
 {{- end }}
 
 {{- range $signalsValues  }}
-
 {{- if not (hasKey $.Values "signals_configuration") }}
      {{ fail "[ERROR] The \".Values.signals_configuration\" attribute is missing" }}
 {{- end }}
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -37,6 +35,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}-signals
     role: signals
+    group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
 spec:
   serviceName: {{ template "searchguard.fullname" $ }}-signals
   replicas: {{ .replicas }}
@@ -47,6 +46,7 @@ spec:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
       role: signals
+      group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
   template:
     metadata:
       labels:
@@ -55,6 +55,7 @@ spec:
         component: {{ template "searchguard.fullname" $ }}
         role: signals
         estype: node
+        group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "signals" }}signals{{ else }}signals-{{ .name }}{{ end }}
         {{- if .labels }}
 {{ toYaml .labels | indent 8 }}
         {{- end }}

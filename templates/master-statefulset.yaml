@@ -22,11 +22,10 @@
 {{- end }}
 
 {{- range $masterValues  }}
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "master" }}master{{ else }}master-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "master" }}master{{ else }}master-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -35,6 +34,7 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}-master
     role: master
+    group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "master" }}master{{ else }}master-{{ .name }}{{ end }}
 spec:
   serviceName: {{ template "searchguard.fullname" $ }}-master
   replicas: {{ .replicas }}
@@ -45,6 +45,7 @@ spec:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
       role: master
+      group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "master" }}master{{ else }}master-{{ .name }}{{ end }}
   template:
     metadata:
       labels:
@@ -53,6 +54,7 @@ spec:
         component: {{ template "searchguard.fullname" $ }}
         role: master
         estype: node
+        group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "master" }}master{{ else }}master-{{ .name }}{{ end }}
         {{- if .labels }}
 {{ toYaml .labels | indent 8 }}
         {{- end }}

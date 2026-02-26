@@ -27,7 +27,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "searchguard.fullname" $ }}-{{ if eq .name "data" }}data{{ else }}data-{{ .name }}{{ end }}
+  name: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "data" }}data{{ else }}data-{{ .name }}{{ end }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "searchguard.fullname" $ }}
@@ -36,8 +36,9 @@ metadata:
     heritage: "{{ $.Release.Service }}"
     component: {{ template "searchguard.fullname" $ }}
     role: data
+    group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "data" }}data{{ else }}data-{{ .name }}{{ end }}
 spec:
-  serviceName: {{ template "searchguard.fullname" $ }}-{{ .name }}
+  serviceName: {{ template "searchguard.fullname" $ }}-data
   replicas: {{ .replicas }}
   updateStrategy:
     type: OnDelete
@@ -46,6 +47,7 @@ spec:
     matchLabels:
       component: {{ template "searchguard.fullname" $ }}
       role: data
+      group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "data" }}data{{ else }}data-{{ .name }}{{ end }}
   template:
     metadata:
       labels:
@@ -54,6 +56,7 @@ spec:
         component: {{ template "searchguard.fullname" $ }}
         role: data
         estype: node
+        group: {{ template "searchguard.fullname" $ }}-{{ .prefix | default "" }}{{ if eq .name "data" }}data{{ else }}data-{{ .name }}{{ end }}
         {{- if .labels }}
 {{ toYaml .labels | indent 8 }}
         {{- end }}

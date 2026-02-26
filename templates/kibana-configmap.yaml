@@ -15,7 +15,8 @@
 */}}
 
 
-{{- $kibanaValues := .Values.kibana }} 
+{{- $kibanaValues := .Values.kibana }}
+{{- $kibanaConfigmap := .Values.common.kibana_configmap | default dict }}
 {{- if not (kindIs "slice" .Values.kibana) }}
 {{- $kibanaValues = list (merge (dict "name" "kibana") .Values.kibana) }}
 {{- end }}
@@ -44,16 +45,16 @@ data:
     xpack.graph.enabled: false
 {{ end }}
 
-    server.name: kibana
-    server.host: "0.0.0.0"
+    server.name: {{ $kibanaConfigmap.serverName | default "kibana" }}
+    server.host: {{ $kibanaConfigmap.serverHost | default "0.0.0.0" | quote }}
 
     elasticsearch.hosts: ["https://${DISCOVERY_SERVICE}:9200"]
 
-    elasticsearch.username: "kibanaserver"
-    elasticsearch.password: "${SG_KIBANASERVER_PWD}"
+    elasticsearch.username: {{ $kibanaConfigmap.elasticsearchUsername | default "kibanaserver" | quote }}
+    elasticsearch.password: {{ $kibanaConfigmap.elasticsearchPassword | default "${SG_KIBANASERVER_PWD}" | quote }}
 
     # SSL for outgoing requests from the Kibana Server to the browser (PEM formatted)
-    server.ssl.enabled: true
+    server.ssl.enabled: {{ kindIs "invalid" $kibanaConfigmap.serverSslEnabled | ternary true $kibanaConfigmap.serverSslEnabled }}
     server.ssl.certificate: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.pem
     server.ssl.key: /usr/share/kibana/config/certificates-secrets/${NODE_NAME}.key
     # If you need to provide a CA certificate for your Elasticsearch instance, put
@@ -62,7 +63,7 @@ data:
 
     # Set to false to have a complete disregard for the validity of the SSL
     # certificate.
-    elasticsearch.ssl.verificationMode: "full"
+    elasticsearch.ssl.verificationMode: {{ $kibanaConfigmap.elasticsearchSslVerificationMode | default "full" | quote }}
 
 {{- if eq (include "searchguard.elk-version" $) "7" }}
     # If you would like to send the log output to a file you can set the path below.
