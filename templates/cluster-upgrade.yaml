@@ -1,4 +1,6 @@
-{{ if and .Release.IsUpgrade .Values.common.update_cluster_on_change }}
+{{ if and .Release.IsUpgrade (kindIs "invalid" .Values.common.update_cluster_on_change | ternary true .Values.common.update_cluster_on_change) }}
+
+
 
 {{- $dataValues := .Values.data }} 
 {{- if not (kindIs "slice" .Values.data) }}
@@ -250,7 +252,7 @@ spec:
                 updateIfRequired "kibana"
                 {{- end }}
 
-                echo "Cluster ugrade finished"
+                echo "Cluster upgrade finished"
                 exit 0
       volumes:
         - name: secret-volume
