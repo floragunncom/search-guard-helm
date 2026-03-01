@@ -306,7 +306,7 @@ common:
 
   tenants:
     human_resources:
-      description: "The human resources tenant"
+    description: "The human resources tenant"
 
 
 
