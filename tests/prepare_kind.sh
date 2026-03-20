@@ -52,5 +52,54 @@ kubectl config set-cluster "${CLUSTER_NAME}" \
 curl -Ss https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml \
   | kubectl apply --validate=false -f -
 
+# In CI, force writable permissions on newly provisioned local-path volumes.
+# This avoids ES startup failure when JVM tries to write logs/gc.log.
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-path-config
+  namespace: local-path-storage
+data:
+  config.json: |-
+    {
+      "nodePathMap":[
+      {
+        "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
+        "paths":["/opt/local-path-provisioner"]
+      }
+      ]
+    }
+  setup: |-
+    #!/bin/sh
+    set -eu
+    mkdir -m 0777 -p "$VOL_DIR"
+    chown 1000:1000 "$VOL_DIR" || true
+    chmod 0777 "$VOL_DIR" || true
+  teardown: |-
+    #!/bin/sh
+    set -eu
+    rm -rf "$VOL_DIR"
+  helperPod.yaml: |-
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: helper-pod
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: node.kubernetes.io/disk-pressure
+          operator: Exists
+          effect: NoSchedule
+      containers:
+      - name: helper-pod
+        image: busybox
+        imagePullPolicy: IfNotPresent
+EOF
+
+# Make sure provisioner picks up updated setup script.
+kubectl -n local-path-storage rollout restart deploy/local-path-provisioner || true
+kubectl -n local-path-storage rollout status deploy/local-path-provisioner --timeout=120s || true
+
 echo "******* Created kind cluster ${KIND_CLUSTER_NAME} *******"
 
