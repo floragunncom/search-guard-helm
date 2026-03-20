@@ -138,7 +138,6 @@ integration_minikube:
   services:
     - name: docker:27-dind
       command: ["--tls=false"]
-  privileged: true
   script:
     - |
       set -euo pipefail
