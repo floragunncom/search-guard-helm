@@ -143,6 +143,7 @@ integration_kind:
       apt-get install -y --no-install-recommends \
         bash curl ca-certificates tar gzip procps \
         psmisc \
+        netcat-openbsd \
         docker.io
 
       # Install Helm (scripts under tests/ call `helm`).
