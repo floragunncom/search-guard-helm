@@ -17,10 +17,6 @@ kind delete cluster --name "${KIND_CLUSTER_NAME}" >/dev/null 2>&1 || true
 cat > "${SCRIPT_DIR}/kind-config.yaml" <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-networking:
-  # The job container can reach the DinD service via the hostname `docker`.
-  # Using 127.0.0.1 here breaks kubectl connectivity inside CI.
-  apiServerAddress: docker
 nodes:
   - role: control-plane
   # Single-node kind cluster.
@@ -32,9 +28,17 @@ kind create cluster --name "${KIND_CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" -
 
 # Ensure local-path storage exists (chart defaults expect storageClass "local-path").
 curl -Ss https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml \
-  | kubectl apply -f -
+  | kubectl apply --validate=false -f -
 
+# Switch to kind context and rewrite the kubeconfig server to point to the DinD service hostname.
+# Default kind kubeconfig uses 127.0.0.1:<random_port>, which isn't reachable from the CI job container.
 kubectl config use-context "${KIND_CONTEXT}"
+SERVER_URL="$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')"
+CLUSTER_NAME="$(kubectl config view --minify -o jsonpath='{.contexts[0].context.cluster}')"
+KIND_API_PORT="${SERVER_URL##*:}"
+kubectl config set-cluster "${CLUSTER_NAME}" \
+  --server "https://docker:${KIND_API_PORT}" \
+  --insecure-skip-tls-verify=true >/dev/null
 
 echo "******* Created kind cluster ${KIND_CLUSTER_NAME} *******"
 
