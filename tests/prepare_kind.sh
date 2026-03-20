@@ -30,6 +30,15 @@ EOF
 # Create a single-node kind cluster.
 kind create cluster --name "${KIND_CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" --config "${SCRIPT_DIR}/kind-config.yaml" --wait=60s
 
+# Ensure local-path host root is writable for Elasticsearch uid/gid (1000).
+# This is CI/runtime-specific and keeps chart values untouched.
+KIND_NODE_CONTAINER="${KIND_CLUSTER_NAME}-control-plane"
+docker exec "${KIND_NODE_CONTAINER}" sh -c '
+  mkdir -p /opt/local-path-provisioner
+  chown -R 1000:1000 /opt/local-path-provisioner
+  chmod -R g+rwX /opt/local-path-provisioner
+'
+
 # Switch to kind context and rewrite the kubeconfig server to point to the DinD service hostname.
 # Default kind kubeconfig uses 127.0.0.1:<random_port>, which isn't reachable from the CI job container.
 kubectl config use-context "${KIND_CONTEXT}"
