@@ -19,15 +19,11 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
-  - role: worker
-  - role: worker
-  - role: worker
-  - role: worker
-  - role: worker
-  - role: worker
+  # Single-node kind cluster.
+  # Elasticsearch node-count (used by tests) is independent of Kubernetes node-count.
 EOF
 
-# Create a 7-node cluster (install.sh / run_tests.sh assume 7 nodes are present).
+# Create a single-node kind cluster.
 kind create cluster --name "${KIND_CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" --config "${SCRIPT_DIR}/kind-config.yaml" --wait=60s
 
 # Ensure local-path storage exists (chart defaults expect storageClass "local-path").
