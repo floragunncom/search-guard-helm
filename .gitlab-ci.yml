@@ -128,7 +128,7 @@ integration_kind:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
     KIND_CLUSTER_NAME: "kind"
-    KIND_K8S_VERSION: "v1.34.1"
+    KIND_K8S_VERSION: "v1.34.0"
     TEST_NS: "integtests"
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""

@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-K8S_VERSION="${1:-"v1.34.1"}"
+K8S_VERSION="${1:-"v1.34.0"}"
 KIND_CLUSTER_NAME="${2:-"kind"}"
 
 K8S_VERSION_STRIPPED="${K8S_VERSION#v}"
