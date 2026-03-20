@@ -17,6 +17,10 @@ kind delete cluster --name "${KIND_CLUSTER_NAME}" >/dev/null 2>&1 || true
 cat > "${SCRIPT_DIR}/kind-config.yaml" <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  # The job container can reach the DinD service via the hostname `docker`.
+  # Using 127.0.0.1 here breaks kubectl connectivity inside CI.
+  apiServerAddress: docker
 nodes:
   - role: control-plane
   # Single-node kind cluster.
