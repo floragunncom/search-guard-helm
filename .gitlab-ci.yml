@@ -168,11 +168,16 @@ integration_kind:
       ./tests/prepare_kind.sh "$KIND_K8S_VERSION" "$KIND_CLUSTER_NAME"
       kubectl config use-context "kind-kind"
 
-      # Run integration tests; $2=false skips update_es_kb_version.
-      ./tests/run_tests.sh "" false
+      # Run integration tests with default script arguments.
+      ./tests/run_tests.sh
   after_script:
     - |
       echo "[INFO] Integration test diagnostics"
+      if [ "${CI_JOB_STATUS:-success}" = "success" ]; then
+        echo "[INFO] Job succeeded - skipping pod log collection"
+        exit 0
+      fi
+
       mkdir -p ci-artifacts
       kubectl config current-context || true
       helm status sg-elk -n "$TEST_NS" || true
@@ -199,7 +204,7 @@ integration_kind:
         done
       done < <(kubectl get pods -A --no-headers -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name' | awk '{print $1 "\t" $2}')
   artifacts:
-    when: always
+    when: on_failure
     expire_in: 7 days
     paths:
       - ci-artifacts/
