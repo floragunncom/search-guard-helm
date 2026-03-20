@@ -26,10 +26,6 @@ EOF
 # Create a single-node kind cluster.
 kind create cluster --name "${KIND_CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" --config "${SCRIPT_DIR}/kind-config.yaml" --wait=60s
 
-# Ensure local-path storage exists (chart defaults expect storageClass "local-path").
-curl -Ss https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml \
-  | kubectl apply --validate=false -f -
-
 # Switch to kind context and rewrite the kubeconfig server to point to the DinD service hostname.
 # Default kind kubeconfig uses 127.0.0.1:<random_port>, which isn't reachable from the CI job container.
 kubectl config use-context "${KIND_CONTEXT}"
@@ -39,6 +35,10 @@ KIND_API_PORT="${SERVER_URL##*:}"
 kubectl config set-cluster "${CLUSTER_NAME}" \
   --server "https://docker:${KIND_API_PORT}" \
   --insecure-skip-tls-verify=true >/dev/null
+
+# Ensure local-path storage exists (chart defaults expect storageClass "local-path").
+curl -Ss https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml \
+  | kubectl apply --validate=false -f -
 
 echo "******* Created kind cluster ${KIND_CLUSTER_NAME} *******"
 
