@@ -173,8 +173,35 @@ integration_kind:
   after_script:
     - |
       echo "[INFO] Integration test diagnostics"
+      mkdir -p ci-artifacts
       kubectl config current-context || true
       helm status sg-elk -n "$TEST_NS" || true
-      kubectl get pods -A || true
+      kubectl get pods -A -o wide | tee ci-artifacts/pods-wide.txt || true
+      kubectl get events -A --sort-by=.metadata.creationTimestamp | tail -n 1000 > ci-artifacts/events.txt || true
+
+      # Collect descriptions and logs for all pods/containers as artifacts.
+      while IFS=$'\t' read -r ns pod; do
+        [ -z "$ns" ] && continue
+        [ -z "$pod" ] && continue
+        safe_ns="$(echo "$ns" | tr '/ ' '__')"
+        safe_pod="$(echo "$pod" | tr '/ ' '__')"
+
+        kubectl -n "$ns" describe pod "$pod" > "ci-artifacts/${safe_ns}_${safe_pod}_describe.txt" || true
+
+        for c in $(kubectl -n "$ns" get pod "$pod" -o jsonpath='{.spec.containers[*].name}' 2>/dev/null); do
+          kubectl -n "$ns" logs "$pod" -c "$c" > "ci-artifacts/${safe_ns}_${safe_pod}_${c}.log" || true
+          kubectl -n "$ns" logs "$pod" -c "$c" --previous > "ci-artifacts/${safe_ns}_${safe_pod}_${c}_previous.log" || true
+        done
+
+        for c in $(kubectl -n "$ns" get pod "$pod" -o jsonpath='{.spec.initContainers[*].name}' 2>/dev/null); do
+          kubectl -n "$ns" logs "$pod" -c "$c" > "ci-artifacts/${safe_ns}_${safe_pod}_${c}.log" || true
+          kubectl -n "$ns" logs "$pod" -c "$c" --previous > "ci-artifacts/${safe_ns}_${safe_pod}_${c}_previous.log" || true
+        done
+      done < <(kubectl get pods -A --no-headers -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name' | awk '{print $1 "\t" $2}')
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - ci-artifacts/
 
 
