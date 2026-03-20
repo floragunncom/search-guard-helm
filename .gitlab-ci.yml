@@ -133,8 +133,8 @@ integration_minikube:
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
     # Avoid using runner-provided Docker credentials (can cause auth failures when pulling dind).
-    # Overriding to empty auth makes Docker Hub pulls work anonymously.
-    DOCKER_AUTH_CONFIG: "{}"
+    # Force "no auth" by overriding to an empty value.
+    DOCKER_AUTH_CONFIG: ""
   image:
     name: alpine/helm:3.18.3
     entrypoint: [""]
