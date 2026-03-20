@@ -132,10 +132,6 @@ integration_minikube:
     TEST_NS: "integtests"
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
-    # Avoid using runner-provided Docker credentials (can cause auth failures when pulling dind).
-    # Force Docker to use an empty config for pulling images/services on the runner.
-    DOCKER_AUTH_CONFIG: ""
-    DOCKER_CONFIG: "/tmp/ci-docker-config"
   image:
     name: alpine/helm:3.18.3
     entrypoint: [""]
