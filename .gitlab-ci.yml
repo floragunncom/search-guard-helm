@@ -181,6 +181,7 @@ integration_kind:
       mkdir -p ci-artifacts
       kubectl config current-context || true
       helm status sg-elk -n "$TEST_NS" || true
+      kubectl get po -A | tee ci-artifacts/pods-state.txt || true
       kubectl get pods -A -o wide | tee ci-artifacts/pods-wide.txt || true
       kubectl get events -A --sort-by=.metadata.creationTimestamp | tail -n 1000 > ci-artifacts/events.txt || true
 
