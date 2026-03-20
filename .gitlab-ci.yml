@@ -120,15 +120,15 @@ publish_helm:
       echo "[INFO] Published tags"
       echo "[INFO] Completed successfully"
 
-integration_minikube:
+integration_kind:
   stage: Test
   tags:
     - build
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   variables:
-    MINIKUBE_PROFILE: "multinode"
-    MINIKUBE_K8S_VERSION: "v1.34.1"
+    KIND_CLUSTER_NAME: "kind"
+    KIND_K8S_VERSION: "v1.34.1"
     TEST_NS: "integtests"
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
@@ -151,10 +151,10 @@ integration_minikube:
         export PATH="$PATH:/root/.local/bin"
       fi
 
-      # minikube (latest stable) - required for tests/prepare_minikube.sh
-      if ! command -v minikube >/dev/null 2>&1; then
-        curl -sLo /usr/local/bin/minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-        chmod +x /usr/local/bin/minikube
+      # kind (multi-node local Kubernetes)
+      if ! command -v kind >/dev/null 2>&1; then
+        curl -sLo /usr/local/bin/kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+        chmod +x /usr/local/bin/kind
       fi
 
       # kubectl might not exist in the base image; install if missing.
@@ -164,12 +164,9 @@ integration_minikube:
         chmod +x /usr/local/bin/kubectl
       fi
 
-      # Ensure minikube uses docker driver inside GitLab DinD.
-      minikube config set driver docker -p "$MINIKUBE_PROFILE"
-
-      # Start cluster and align kubectl context with what install.sh expects.
-      ./tests/prepare_minikube.sh "$MINIKUBE_K8S_VERSION"
-      kubectl config use-context "$MINIKUBE_PROFILE"
+      # Start cluster and align kubectl context with what install.sh expects (kind-kind).
+      ./tests/prepare_kind.sh "$KIND_K8S_VERSION" "$KIND_CLUSTER_NAME"
+      kubectl config use-context "kind-kind"
 
       # Run integration tests; $2=false skips update_es_kb_version.
       ./tests/run_tests.sh "" false
