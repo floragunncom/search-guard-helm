@@ -17,6 +17,10 @@ kind delete cluster --name "${KIND_CLUSTER_NAME}" >/dev/null 2>&1 || true
 cat > "${SCRIPT_DIR}/kind-config.yaml" <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  # Bind apiserver on all interfaces so the CI job container can reach it.
+  apiServerAddress: "0.0.0.0"
+  apiServerPort: 6443
 nodes:
   - role: control-plane
   # Single-node kind cluster.
@@ -31,9 +35,8 @@ kind create cluster --name "${KIND_CLUSTER_NAME}" --image "${KIND_NODE_IMAGE}" -
 kubectl config use-context "${KIND_CONTEXT}"
 SERVER_URL="$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')"
 CLUSTER_NAME="$(kubectl config view --minify -o jsonpath='{.contexts[0].context.cluster}')"
-KIND_API_PORT="${SERVER_URL##*:}"
 kubectl config set-cluster "${CLUSTER_NAME}" \
-  --server "https://docker:${KIND_API_PORT}" \
+  --server "https://docker:6443" \
   --insecure-skip-tls-verify=true >/dev/null
 
 # Ensure local-path storage exists (chart defaults expect storageClass "local-path").
