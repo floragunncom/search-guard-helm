@@ -142,6 +142,7 @@ integration_minikube:
       apt-get update
       apt-get install -y --no-install-recommends \
         bash curl ca-certificates tar gzip procps \
+        psmisc \
         docker.io
 
       # Install Helm (scripts under tests/ call `helm`).
