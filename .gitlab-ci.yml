@@ -132,16 +132,23 @@ integration_minikube:
     TEST_NS: "integtests"
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
-  image:
-    name: alpine/helm:3.18.3
-    entrypoint: [""]
+  image: ubuntu:24.04
   services:
     - name: docker:27-dind
       command: ["--tls=false"]
   script:
     - |
       set -euo pipefail
-      apk add --no-cache bash curl tar gzip procps docker-cli ca-certificates
+      apt-get update
+      apt-get install -y --no-install-recommends \
+        bash curl ca-certificates tar gzip procps \
+        docker.io
+
+      # Install Helm (scripts under tests/ call `helm`).
+      if ! command -v helm >/dev/null 2>&1; then
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        export PATH="$PATH:/root/.local/bin"
+      fi
 
       # minikube (latest stable) - required for tests/prepare_minikube.sh
       if ! command -v minikube >/dev/null 2>&1; then
