@@ -86,9 +86,10 @@ validate_release:
         exit 1
       fi
       
-      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version) 
+      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version)
       if [ ! "$chart_exist" == "[]" ]; then
        echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+       exit 1
       fi
       
       echo "[INFO] Validation completed successfully"
@@ -102,20 +103,55 @@ publish_helm:
     - build  
   stage: Publish
   script:
-    - *common-config  
+    - *common-config
     - |
       set -e
+      if echo "$chart_version" | grep -qE -- '-[0-9A-Za-z][0-9A-Za-z.]*$'; then
+        echo "[ERROR] Version $chart_version in $chart_file has a pre-release suffix, use a rc/test/prerelease branch instead of main"
+        exit 1
+      fi
       if ! helm plugin list | grep -q "cm-push"; then
         helm plugin install https://github.com/chartmuseum/helm-push
       fi
       echo "[INFO] Executing helm package"
-      helm package .  
+      helm package .
       echo "[INFO] Executing helm cm-push"
       helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
       echo "[INFO] Published $chart_version version for $helm_repo_name"
                       
       git tag "$chart_version-flx"
-      git push origin $chart_version-flx    
+      git push origin $chart_version-flx
+      echo "[INFO] Published tags"
+      echo "[INFO] Completed successfully"
+
+publish_helm_prerelease:
+  needs:
+    - validate_helm
+    - validate_release
+  only:
+    - /^(rc|test|prerelease)\/.*$/
+  tags:
+    - build
+  stage: Publish
+  script:
+    - *common-config
+    - |
+      set -e
+      if ! echo "$chart_version" | grep -qE -- '-[0-9A-Za-z][0-9A-Za-z.]*$'; then
+        echo "[ERROR] Version $chart_version in $chart_file has no semver pre-release suffix (e.g. 4.0.3-test.1), refusing to publish"
+        exit 1
+      fi
+      if ! helm plugin list | grep -q "cm-push"; then
+        helm plugin install https://github.com/chartmuseum/helm-push
+      fi
+      echo "[INFO] Executing helm package"
+      helm package .
+      echo "[INFO] Executing helm cm-push"
+      helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
+      echo "[INFO] Published test version $chart_version for $helm_repo_name"
+
+      git tag "$chart_version-flx"
+      git push origin $chart_version-flx
       echo "[INFO] Published tags"
       echo "[INFO] Completed successfully"
 
