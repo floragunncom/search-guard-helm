@@ -12,7 +12,7 @@ minikube config set memory 8192 -p "$PROFILE"
 minikube config set cpus 4 -p "$PROFILE"
 minikube delete -p "$PROFILE"
 set -e
-minikube start --kubernetes-version "$VERSION" --nodes 3 -p "$PROFILE" --wait=true
+minikube start --kubernetes-version "$VERSION"   --container-runtime=containerd  --nodes 3 -p "$PROFILE" --wait=true
 
 #fix minikube issues with hostpath permissions on multicluster nodes
 #https://github.com/kubernetes/minikube/issues/12165
