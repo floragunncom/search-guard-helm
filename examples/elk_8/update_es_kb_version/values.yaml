@@ -1,5 +1,5 @@
 common:
-  elkversion: "9.2.3"
-  sgctl_version: "4.0.1"
-  sgkibanaversion: "4.0.1"
-  sgversion: "4.0.1"
+  elkversion: "9.3.5"
+  sgctl_version: "4.1.0"
+  sgkibanaversion: "4.1.0"
+  sgversion: "4.1.0"
