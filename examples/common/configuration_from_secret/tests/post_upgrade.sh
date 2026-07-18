@@ -9,7 +9,7 @@ waitport() {
 
 SECRET_NAME=sg-elk-search-guard-flx-sg-dynamic-configuration-secret
 
-if ! netstat -tuln | grep -q ":9200 "; then
+if ! nc -z localhost 9200; then
   kubectl port-forward -n $1 service/sg-elk-search-guard-flx-clients 9200:9200 &
 fi
 
