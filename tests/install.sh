@@ -20,9 +20,9 @@ else
   echo "${CONTEXT}, no override"
 fi
 
-if [ -z "$CI" ]; then
-  kill -9 $(pgrep -d ' ' -f "kubectl port-forward")  > /dev/null 2>&1
-fi
+# Kill stale port-forwards from previous steps, otherwise the new
+# port-forward fails with "bind: address already in use" on 9200.
+kill -9 $(pgrep -d ' ' -f "kubectl port-forward")  > /dev/null 2>&1
 
 
 kubectl delete jobs -n ${NSP} -l app=sg-elk-search-guard-flx > /dev/null 2>&1

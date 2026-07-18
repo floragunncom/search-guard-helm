@@ -52,6 +52,7 @@ variables:
 stages:
   - Validate
   - Publish
+  - Test
 
 validate_helm:
   tags:
@@ -118,5 +119,110 @@ publish_helm:
       git push origin $chart_version-flx    
       echo "[INFO] Published tags"
       echo "[INFO] Completed successfully"
+
+integration_minikube:
+  stage: Test
+  tags:
+    - test-large
+  rules:
+    #- if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    #- if: $CI_COMMIT_BRANCH == "ci/integration-minikube-tests-v2"
+    - if: $RUN_MINIKUBE_TESTS == "true"
+  variables:
+    # Built from gh/docker-images (alpine-minikube/): ships dockerd,
+    # minikube, kubectl, helm and the tools used by tests/*.sh.
+    # The tag is updated automatically by the docker-images pipeline.
+    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260612"
+    MINIKUBE_PROFILE: "multinode"
+    MINIKUBE_K8S_VERSION: "v1.34.1"
+    TEST_NS: "integtests"
+  image:
+    name: $SG_MINIKUBE_IMAGE
+    entrypoint: [""]
+  script:
+    - |
+      set -euo pipefail
+      # Run dockerd inside the job container (privileged runner). The minikube
+      # docker driver does not work against a remote DinD daemon because it
+      # provisions the node via ports published on 127.0.0.1 of the daemon
+      # host. With a local daemon those ports are reachable directly.
+      # Prefer a data-root on a non-overlay filesystem (overlay2 cannot run
+      # on top of overlayfs; fuse-overlayfs is the fallback).
+      DOCKER_DATA_ROOT="/var/lib/docker"
+      if [ "$(stat -f -c %T /builds 2>/dev/null)" != "overlayfs" ]; then
+        DOCKER_DATA_ROOT="/builds/docker-data"
+      fi
+      # cgroup v2: move job processes out of the root cgroup and enable
+      # subtree controllers, otherwise runc fails with "cannot enter
+      # cgroupv2 /sys/fs/cgroup/docker" (same bootstrap as docker:dind).
+      if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+        mkdir -p /sys/fs/cgroup/init
+        xargs -rn1 < /sys/fs/cgroup/cgroup.procs > /sys/fs/cgroup/init/cgroup.procs || true
+        sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \
+          > /sys/fs/cgroup/cgroup.subtree_control || true
+      fi
+
+      echo "[INFO] Starting dockerd with data-root $DOCKER_DATA_ROOT"
+      dockerd --data-root "$DOCKER_DATA_ROOT" > /var/log/dockerd.log 2>&1 &
+
+      for i in $(seq 1 30); do
+        docker info >/dev/null 2>&1 && break
+        sleep 2
+      done
+      if ! docker info >/dev/null 2>&1; then
+        echo "[ERROR] dockerd did not start"
+        tail -n 100 /var/log/dockerd.log
+        exit 1
+      fi
+      docker info | grep -E "Storage Driver|Cgroup" || true
+
+      # Ensure minikube uses the docker driver.
+      minikube config set driver docker -p "$MINIKUBE_PROFILE"
+
+      # Start cluster and align kubectl context with what install.sh expects (multinode).
+      ./tests/prepare_minikube.sh "$MINIKUBE_K8S_VERSION"
+      kubectl config use-context "$MINIKUBE_PROFILE"
+
+      # Run integration tests with default script arguments.
+      ./tests/run_tests.sh
+  after_script:
+    - |
+      echo "[INFO] Integration test diagnostics"
+      if [ "${CI_JOB_STATUS:-success}" = "success" ]; then
+        echo "[INFO] Job succeeded - skipping pod log collection"
+        exit 0
+      fi
+
+      mkdir -p ci-artifacts
+      kubectl config current-context || true
+      helm status sg-elk -n "$TEST_NS" || true
+      kubectl get po -A | tee ci-artifacts/pods-state.txt || true
+      kubectl get pods -A -o wide | tee ci-artifacts/pods-wide.txt || true
+      kubectl get events -A --sort-by=.metadata.creationTimestamp | tail -n 1000 > ci-artifacts/events.txt || true
+
+      # Collect descriptions and logs for all pods/containers as artifacts.
+      while IFS=$'\t' read -r ns pod; do
+        [ -z "$ns" ] && continue
+        [ -z "$pod" ] && continue
+        safe_ns="$(echo "$ns" | tr '/ ' '__')"
+        safe_pod="$(echo "$pod" | tr '/ ' '__')"
+
+        kubectl -n "$ns" describe pod "$pod" > "ci-artifacts/${safe_ns}_${safe_pod}_describe.txt" || true
+
+        for c in $(kubectl -n "$ns" get pod "$pod" -o jsonpath='{.spec.containers[*].name}' 2>/dev/null); do
+          kubectl -n "$ns" logs "$pod" -c "$c" > "ci-artifacts/${safe_ns}_${safe_pod}_${c}.log" || true
+          kubectl -n "$ns" logs "$pod" -c "$c" --previous > "ci-artifacts/${safe_ns}_${safe_pod}_${c}_previous.log" || true
+        done
+
+        for c in $(kubectl -n "$ns" get pod "$pod" -o jsonpath='{.spec.initContainers[*].name}' 2>/dev/null); do
+          kubectl -n "$ns" logs "$pod" -c "$c" > "ci-artifacts/${safe_ns}_${safe_pod}_${c}.log" || true
+          kubectl -n "$ns" logs "$pod" -c "$c" --previous > "ci-artifacts/${safe_ns}_${safe_pod}_${c}_previous.log" || true
+        done
+      done < <(kubectl get pods -A --no-headers -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name' | awk '{print $1 "\t" $2}')
+  artifacts:
+    when: on_failure
+    expire_in: 7 days
+    paths:
+      - ci-artifacts/
 
 

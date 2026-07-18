@@ -9,9 +9,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-if [ -z "$CI" ]; then
-  kill -9 $(pgrep -d ' ' -f "kubectl port-forward")  > /dev/null 2>&1
-fi
+# Kill stale port-forwards from previous steps, otherwise the new
+# port-forward fails with "bind: address already in use" on 9200.
+kill -9 $(pgrep -d ' ' -f "kubectl port-forward")  > /dev/null 2>&1
 
 NSP="$1"
 VALUES_FOLDER=$2
