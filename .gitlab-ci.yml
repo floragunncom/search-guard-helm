@@ -123,7 +123,7 @@ publish_helm:
 integration_minikube:
   stage: Test
   tags:
-    - build
+    - test-large
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "ci/integration-minikube-tests-v2"
