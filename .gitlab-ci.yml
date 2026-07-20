@@ -125,7 +125,7 @@ integration_minikube:
   tags:
     - test-large
   rules:
-    #- if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     #- if: $CI_COMMIT_BRANCH == "ci/integration-minikube-tests-v2"
     - if: $RUN_MINIKUBE_TESTS == "true"
   variables:
