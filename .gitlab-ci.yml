@@ -132,7 +132,7 @@ integration_minikube:
     # Built from gh/docker-images (alpine-minikube/): ships dockerd,
     # minikube, kubectl, helm and the tools used by tests/*.sh.
     # The tag is updated automatically by the docker-images pipeline.
-    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260612"
+    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260721-225354"
     MINIKUBE_PROFILE: "multinode"
     MINIKUBE_K8S_VERSION: "v1.34.1"
     TEST_NS: "integtests"
