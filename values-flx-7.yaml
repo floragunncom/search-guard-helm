@@ -2,8 +2,8 @@ common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
-  ## Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
-  ## If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
+  ## Docker images used in the Kubernetes cluster. Default ones are OSS images provided by Search Guard
+  ## If you use custom images for ES, Kibana and sg-admin instances, please use the following naming conventions:
   ## - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
   ## - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
   ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
@@ -17,7 +17,7 @@ common:
     sgctl_base_image: "sg-sgctl-h4"
     kubectl_base_image: "sg-kubectl-h4"
 
-  ## Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
+  ## Fill in server, username, password, email to authenticate to a private docker registry, or specify a pre-provisioned imagePullSecret with the required data
   docker_registry:
     enabled: false
     # server: https://index.docker.io/v1/
@@ -32,20 +32,20 @@ common:
   pullPolicy: IfNotPresent
 
   ## Elasticsearch and Kibana version
-  ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
   elkversion: "7.17.18"
 
   ## Search Guard plugin version
   sgversion: "1.6.0-flx"
 
   ## Search Guard Kibana plugin version
-  ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
   sgkibanaversion: "1.6.0-flx"
 
   sgctl_version: 1.6.0
 
-  ## If true then install also all free and basic x-pack features
-  ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
+  ## If true, also install all free and basic X-Pack features
+  ## If false, only the "oss" version of Elasticsearch and Kibana is installed 
   xpack_basic: true
 
   ## DN of the admin certificate
@@ -61,25 +61,25 @@ common:
   nodes_dn:
     - "CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
-  ## Enable or disable Search Guard enterprise modules
-  ## If you run Search Guard in production you need to obtain a license
-  ## when set to 'true'
+  ## Enable or disable the Search Guard enterprise modules
+  ## If you run Search Guard in production, you need to obtain a license
+  ## when this is set to 'true'
   sg_enterprise_modules_enabled: true
   
-  ## Run automatically sgctl whenever necessary 
+  ## Run sgctl automatically whenever necessary 
   update_sgconfig_on_change: true
 
-  ## Restart pods automatically when their configuration was changed
+  ## Restart pods automatically when their configuration has changed
   restart_pods_on_config_change: true
   
-  ## Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  ## Enable the Pod Disruption Budget feature for ES and Kibana pods. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/
   pod_disruption_budget_enable: true
   
-  ## After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
+  ## After obtaining a Search Guard license, you can add it here. If you don't have a license, please specify "none"
   license: none
   
-  ## By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
-  ## By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
+  ## By default, the jobs that generate the certificates are removed after completion by cleanup jobs starting every minute.
+  ## By enabling debug_job_mode, you can suspend the cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
   debug_job_mode: false
 
   remove_initial_master_nodes_after_install: true
@@ -113,22 +113,22 @@ common:
      #   hosts:
      #     - clients.local  
 
-  ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
+  ## Defines the service type for all Elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.
-  ## WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
+  ## WARNING: Setting this to 'LoadBalancer' will probably expose Elasticsearch to the outside/internet
   serviceType: ClusterIP
   # serviceType: NodePort
   # serviceType: LoadBalancer
 
-  ## static node port for client services. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  ## Static node port for client services. If omitted, a random one is chosen. Only applies if serviceType == NodePort
   ## This does not apply to Kibana.
   # nodePort: 30007
 
-  ## load balancer ip for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  ## Load balancer IP for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
   ## This does not apply to Kibana.
   # loadBalancerIp: 192.0.2.127
 
-  ## AWS specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  ## AWS-specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
   # service_annotations:
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
   #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
@@ -137,17 +137,17 @@ common:
   #   ... see below for more options
 
   ## PKI approaches are specified with the following keys:
-  ## Set sgctl_certificates_enabled if certificates are self-signed and generated by SG TLS tool
+  ## Set sgctl_certificates_enabled if certificates are self-signed and generated by the SG TLS tool
   sgctl_certificates_enabled: true
   
-  ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
+  ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by the cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
   
   
-  # Create pods with installed sgctl.sh tool 
+  # Create a pod with the sgctl.sh tool installed 
   sgctl_cli: false
 
-  #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
+  # To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
   sg_dynamic_configuration_from_secret:
     enabled: false
     secret_name: "sg-dynamic-configuration-secret"  
@@ -195,7 +195,7 @@ common:
   #       - beatsreader
 
 
-  ## Configure additional rolemappings (maps to sg_roles_mapping.yml)
+  ## Configure additional role mappings (maps to sg_roles_mapping.yml)
   rolesmapping:
     # demo roles:
     SGS_ALL_ACCESS:
@@ -220,7 +220,7 @@ common:
       users:
       - "kibanaserver"
 
-  ## Configure additional role (maps to sg_roles.yml)
+  ## Configure additional roles (maps to sg_roles.yml)
   # roles:
   #   sg_read_beats:
   #     cluster_permissions:
@@ -293,7 +293,7 @@ common:
   #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
   #   max_tokens_per_user: 100
 
-  ## tolerations for all pods which are not master, client, data or kibana
+  ## Tolerations for all pods which are not master, client, data or kibana
   # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
@@ -304,7 +304,7 @@ common:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  ## node affinity for all pods which are not master, client, data or kibana
+  ## Node affinity for all pods which are not master, client, data or kibana
   # nodeAffinity:
   #   requiredDuringSchedulingIgnoredDuringExecution:
   #     nodeSelectorTerms:
@@ -325,7 +325,7 @@ common:
 ## Client/ingest nodes can execute pre-processing pipelines, composed of
 ## one or more ingest processors. Depending on the type of operations performed
 ## by the ingest processors and the required resources, it may make sense to
-## have dedicated ingest nodes, that will only perform this specific task.
+## have dedicated ingest nodes that only perform this specific task.
 
   custom_elasticsearch_keystore:
     enabled: false
@@ -342,7 +342,7 @@ client:
   ## Set storageClass if non-default storage is used.
   # storageClass:
 
-  ## For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu.
@@ -385,7 +385,7 @@ client:
             - key-1
 
 ## Data nodes hold the shards that contain the documents you have indexed. Data
-## nodes handle data related operations like CRUD, search, and aggregations.
+## nodes handle data-related operations like CRUD, search, and aggregations.
 ## These operations are I/O-, memory-, and CPU-intensive. It is important to
 ## monitor these resources and to add more data nodes if they are overloaded.
 ##
@@ -402,7 +402,7 @@ data:
   ## Set storageClass if non-default storage is used.
   # storageClass: "gp2"
   
-  ## For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu.
@@ -459,7 +459,7 @@ master:
   ## Set storageClass if non-default storage is used.
   # storageClass: "gp2"
   
-  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu.
@@ -521,13 +521,13 @@ kibana:
   # serviceType: NodePort
   # serviceType: LoadBalancer
 
-  ## static node port. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  ## Static node port. If omitted, a random one is chosen. Only applies if serviceType == NodePort
   # nodePort: 30007
 
-  ## load balancer ip. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  ## Load balancer IP. Only applies when serviceType == LoadBalancer and supported by the cloud provider
   # loadBalancerIp: 192.0.2.127
 
-  ## AWS specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  ## AWS-specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
   # service_annotations:
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
   #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
@@ -593,7 +593,7 @@ kibana:
   #   ## Security groups defined here can be shared between services.
   #   service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-53fae93f,sg-42efd82e"
 
-  #   ## A comma separated list of key-value pairs which are used
+  #   ## A comma-separated list of key-value pairs which are used
   #   ## to select the target nodes for the load balancer
   #   service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
 
@@ -626,7 +626,7 @@ kibana:
 
   readinessProbe:
     httpGet:
-      ## path might need to be changed when server.basePath is set 
+      ## Path might need to be changed when server.basePath is set 
       path: api/status
       port: http
       scheme: HTTPS
@@ -657,8 +657,8 @@ service:
 
 ## Kubernetes Role-based access control
 ## https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-## Use "true" for first time installation for certain release in certain cluster/namespace
-## Use "false" for second+ time installations for certain release in certain cluster/namespace
+## Use "true" for the first installation of a given release in a given cluster/namespace
+## Use "false" for any subsequent installation of that release in the same cluster/namespace
 rbac:
   create: true
 
