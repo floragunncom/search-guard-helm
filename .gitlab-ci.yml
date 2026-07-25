@@ -515,8 +515,10 @@ integration_minikube:
       k8s_upper="$(echo "$chart_kube_range" | grep -oE '<[[:space:]]*[0-9]+\.[0-9]+' | tr -dc '0-9.' || true)"
       if [ -n "$k8s_upper" ]; then
         k8s_res_mm="$(echo "${MINIKUBE_K8S_VERSION#v}" | cut -d. -f1,2)"
-        if [ "$(printf '%s\n%s\n' "$k8s_upper" "$k8s_res_mm" | sort -V | tail -1)" = "$k8s_res_mm" ] \
-           && [ "$k8s_upper" != "$k8s_res_mm" ]; then
+        # The bound is exclusive ("< 1.37.0-0"), so 1.37 itself is already out of
+        # range: warn when the resolved minor sorts at or above the bound. sort -V
+        # puts the higher version last, and an equal pair also ends with it.
+        if [ "$(printf '%s\n%s\n' "$k8s_upper" "$k8s_res_mm" | sort -V | tail -1)" = "$k8s_res_mm" ]; then
           echo "[WARN] Kubernetes $MINIKUBE_K8S_VERSION is at or above the chart's upper bound ($k8s_upper)."
           echo "[WARN] helm install will fail on kubeVersion. Widen kubeVersion in Chart.yaml"
           echo "[WARN] once this Kubernetes release is supported."
