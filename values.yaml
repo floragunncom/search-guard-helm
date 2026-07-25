@@ -361,15 +361,15 @@ client:
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   tolerations:
@@ -426,15 +426,15 @@ data:
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   # tolerations:
@@ -488,20 +488,21 @@ master:
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
   ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 # The datacontent node is part of the content tier, with long data retention.
 # Enabling datacontent will create a dedicated StatefulSet in the cluster
 datacontent:
   enabled: false
+  #processors: 1
   roles:
     - data_content
     - remote_cluster_client
@@ -524,10 +525,10 @@ datacontent:
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   # tolerations:
@@ -700,10 +701,10 @@ kibana:
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2500Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2500Mi
 
 ## Incoming port of the service
