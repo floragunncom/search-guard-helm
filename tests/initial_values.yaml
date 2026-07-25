@@ -3,4 +3,4 @@ master:
 data:
   replicas: 2
 client:
-  replicas: 1
+  replicas: 2

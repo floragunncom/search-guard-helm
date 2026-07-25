@@ -386,23 +386,38 @@ integration_minikube:
   # keep the "test-minikube" runners at concurrent = 1, otherwise two jobs share
   # a host and both write /builds/docker-data with their own dockerd.
   #
-  # TEST_SCRIPT          - literal command line run at the end of the script
-  #                        below: the script plus any arguments it takes. Both
-  #                        run_tests.sh and run_tests_elk_7.sh accept
-  #                        $1 = comma separated helm --set values
-  #                        $2 = whether to run the ES/Kibana version upgrade step
-  #                        Do not quote the arguments, they are word-split as-is:
-  #                        "./tests/run_tests.sh common.elkversion=9.4.2 false"
-  # MINIKUBE_K8S_VERSION - Kubernetes version minikube boots. Supported at the
-  #                        moment: v1.36, v1.35 and v1.34.
+  # TEST_SCRIPT - literal command line run at the end of the script below: the
+  #               script plus any arguments it takes. The run_tests*.sh scripts
+  #               accept
+  #                 $1 = comma separated helm --set values
+  #                 $2 = whether to run the ES/Kibana version upgrade step
+  #               Do not quote the arguments, they are word-split as-is:
+  #               "./tests/run_tests.sh common.elkversion=9.4.2 false"
+  #
+  # K8S_TRACK   - which Kubernetes release to boot. Resolved to a concrete patch
+  #               version at run time, see "Resolving the Kubernetes version" in
+  #               the script below. Kubernetes maintains the three most recent
+  #               minors, so these three tracks always cover exactly the
+  #               maintained set and never need editing when a new Kubernetes
+  #               minor is released:
+  #                 latest    - newest stable minor
+  #                 latest-1  - one minor older
+  #                 latest-2  - two minors older
+  #               A literal "vX.Y.Z" is also accepted, to pin a single entry.
+  #
+  # The version cannot be a matrix dimension directly: GitLab expands the matrix
+  # when the pipeline is created, so the values have to be static in this file.
+  # The track name is static, the version it resolves to is not.
   parallel:
     matrix:
       - TEST_SCRIPT:
           - "./tests/run_tests.sh"
           - "./tests/run_tests_elk_7.sh"
           - "./tests/run_tests_elk_8.sh"
-        MINIKUBE_K8S_VERSION:
-          - "v1.35.6"
+        K8S_TRACK:
+          - "latest"
+          - "latest-1"
+          - "latest-2"
   image:
     name: $SG_MINIKUBE_IMAGE
     entrypoint: [""]
@@ -442,6 +457,71 @@ integration_minikube:
         exit 1
       fi
       docker info | grep -E "Storage Driver|Cgroup" || true
+
+      # ---------- Resolving the Kubernetes version ----------
+      # K8S_TRACK names a release track, not a version, because matrix values are
+      # fixed when the pipeline is created. dl.k8s.io publishes the current patch
+      # of every maintained minor as a plain text marker file:
+      #   stable.txt       -> newest stable overall, e.g. v1.36.3
+      #   stable-1.35.txt  -> newest patch of 1.35,  e.g. v1.35.7
+      # Kubernetes maintains the newest three minors, so latest / latest-1 /
+      # latest-2 derived from stable.txt is exactly the maintained set.
+      echo "[INFO] ===== Resolving the Kubernetes version ====="
+      echo "[INFO] K8S_TRACK: $K8S_TRACK"
+      k8s_marker() { curl -sSL --fail --max-time 30 "https://dl.k8s.io/release/$1" 2>/dev/null || true; }
+
+      case "$K8S_TRACK" in
+        v*)
+          # Explicit pin, used as-is.
+          MINIKUBE_K8S_VERSION="$K8S_TRACK"
+          echo "[INFO] Pinned version, no lookup performed"
+          ;;
+        latest|latest-1|latest-2)
+          k8s_latest="$(k8s_marker stable.txt)"
+          if ! echo "$k8s_latest" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "[ERROR] Could not resolve the newest Kubernetes release from dl.k8s.io"
+            echo "[ERROR] stable.txt returned: $(echo "$k8s_latest" | head -c 200)"
+            exit 1
+          fi
+          k8s_major="$(echo "${k8s_latest#v}" | cut -d. -f1)"
+          k8s_minor="$(echo "$k8s_latest" | cut -d. -f2)"
+          echo "[INFO] Newest stable Kubernetes: $k8s_latest (minor ${k8s_major}.${k8s_minor})"
+          case "$K8S_TRACK" in
+            latest)   k8s_want="$k8s_minor" ;;
+            latest-1) k8s_want="$((k8s_minor - 1))" ;;
+            latest-2) k8s_want="$((k8s_minor - 2))" ;;
+          esac
+          MINIKUBE_K8S_VERSION="$(k8s_marker "stable-${k8s_major}.${k8s_want}.txt")"
+          if ! echo "$MINIKUBE_K8S_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "[ERROR] No stable release published for ${k8s_major}.${k8s_want}"
+            echo "[ERROR] stable-${k8s_major}.${k8s_want}.txt returned: $(echo "$MINIKUBE_K8S_VERSION" | head -c 200)"
+            exit 1
+          fi
+          ;;
+        *)
+          echo "[ERROR] Unknown K8S_TRACK '$K8S_TRACK'"
+          echo "[ERROR] Expected latest, latest-1, latest-2 or a literal vX.Y.Z"
+          exit 1
+          ;;
+      esac
+      export MINIKUBE_K8S_VERSION
+      echo "[INFO] $K8S_TRACK resolves to Kubernetes $MINIKUBE_K8S_VERSION"
+
+      # The chart declares the Kubernetes range it supports. If the resolved
+      # version falls outside it, helm will refuse to install later on with a
+      # kubeVersion error, so say why up front.
+      chart_kube_range="$(grep '^kubeVersion:' Chart.yaml | cut -d: -f2- | tr -d ' "' || true)"
+      echo "[INFO] Chart.yaml kubeVersion: ${chart_kube_range:-<not declared>}"
+      k8s_upper="$(echo "$chart_kube_range" | grep -oE '<[[:space:]]*[0-9]+\.[0-9]+' | tr -dc '0-9.' || true)"
+      if [ -n "$k8s_upper" ]; then
+        k8s_res_mm="$(echo "${MINIKUBE_K8S_VERSION#v}" | cut -d. -f1,2)"
+        if [ "$(printf '%s\n%s\n' "$k8s_upper" "$k8s_res_mm" | sort -V | tail -1)" = "$k8s_res_mm" ] \
+           && [ "$k8s_upper" != "$k8s_res_mm" ]; then
+          echo "[WARN] Kubernetes $MINIKUBE_K8S_VERSION is at or above the chart's upper bound ($k8s_upper)."
+          echo "[WARN] helm install will fail on kubeVersion. Widen kubeVersion in Chart.yaml"
+          echo "[WARN] once this Kubernetes release is supported."
+        fi
+      fi
 
       # Ensure minikube uses the docker driver.
       minikube config set driver docker -p "$MINIKUBE_PROFILE"
