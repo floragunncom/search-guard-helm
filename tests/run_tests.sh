@@ -4,7 +4,7 @@ TEST_UPDATE_ES_KB_VERSION=${2:-true}
 CUSTOM_HELM_VALUES=${1:-}
 set -e
 NSP="integtests"
-BASE="$SCRIPT_DIR/empty.yaml"
+BASE="$SCRIPT_DIR/../examples/elk_9/values.yaml"
 INITIAL="$SCRIPT_DIR/../examples/common/setup_custom_ca/values.yaml"
 echo "Started $(date '+%Y-%m-%d %H:%M:%S')"
 "$SCRIPT_DIR/install.sh" "$NSP" "$BASE" "$INITIAL" "$SCRIPT_DIR/initial_values.yaml"  "" "$CUSTOM_HELM_VALUES"
