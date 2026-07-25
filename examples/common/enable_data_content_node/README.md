@@ -2,7 +2,7 @@
 
 
 
-The datacontent node is a part of content tier with  long data retention. 
+The datacontent node is a part of the content tier with long data retention. 
 Enabling datacontent will create dedicated statefulset in the cluster
 
 

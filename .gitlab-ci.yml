@@ -369,19 +369,40 @@ publish_helm:
 integration_minikube:
   stage: Test
   tags:
-    - test-large
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - test-minikube
+  #rules:
+    #- if: $CI_PIPELINE_SOURCE == "merge_request_event"
     #- if: $CI_COMMIT_BRANCH == "ci/integration-minikube-tests-v2"
-    - if: $RUN_MINIKUBE_TESTS == "true"
+    #- if: $RUN_MINIKUBE_TESTS == "true"
   variables:
     # Built from gh/docker-images (alpine-minikube/): ships dockerd,
     # minikube, kubectl, helm and the tools used by tests/*.sh.
     # The tag is updated automatically by the docker-images pipeline.
-    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260612"
+    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260723-194229"
     MINIKUBE_PROFILE: "multinode"
-    MINIKUBE_K8S_VERSION: "v1.34.1"
     TEST_NS: "integtests"
+  # Every combination below runs as its own job. Each one boots a full 3-node
+  # minikube (up to 24 GB / 12 CPU), so they must land on separate machines:
+  # keep the "test-minikube" runners at concurrent = 1, otherwise two jobs share
+  # a host and both write /builds/docker-data with their own dockerd.
+  #
+  # TEST_SCRIPT          - literal command line run at the end of the script
+  #                        below: the script plus any arguments it takes. Both
+  #                        run_tests.sh and run_tests_elk_7.sh accept
+  #                        $1 = comma separated helm --set values
+  #                        $2 = whether to run the ES/Kibana version upgrade step
+  #                        Do not quote the arguments, they are word-split as-is:
+  #                        "./tests/run_tests.sh common.elkversion=9.4.2 false"
+  # MINIKUBE_K8S_VERSION - Kubernetes version minikube boots. Supported at the
+  #                        moment: v1.36, v1.35 and v1.34.
+  parallel:
+    matrix:
+      - TEST_SCRIPT:
+          - "./tests/run_tests.sh"
+          - "./tests/run_tests_elk_7.sh"
+          - "./tests/run_tests_elk_8.sh"
+        MINIKUBE_K8S_VERSION:
+          - "v1.35.6"
   image:
     name: $SG_MINIKUBE_IMAGE
     entrypoint: [""]
@@ -429,8 +450,14 @@ integration_minikube:
       ./tests/prepare_minikube.sh "$MINIKUBE_K8S_VERSION"
       kubectl config use-context "$MINIKUBE_PROFILE"
 
-      # Run integration tests with default script arguments.
-      ./tests/run_tests.sh
+      # Run the integration tests. TEST_SCRIPT is a literal command line coming
+      # from the matrix, so it is deliberately left unquoted: the arguments have
+      # to word-split into separate parameters for the test script.
+      echo "[INFO] ===== Running integration tests ====="
+      echo "[INFO] TEST_SCRIPT          : $TEST_SCRIPT"
+      echo "[INFO] MINIKUBE_K8S_VERSION : $MINIKUBE_K8S_VERSION"
+      # shellcheck disable=SC2086
+      $TEST_SCRIPT
   after_script:
     - |
       echo "[INFO] Integration test diagnostics"
@@ -470,5 +497,9 @@ integration_minikube:
     expire_in: 7 days
     paths:
       - ci-artifacts/
+  cache:
+    key: minikube-cache
+    paths:
+      - .minikube/cache
 
 

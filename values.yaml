@@ -1,3 +1,5 @@
+## Search Guard FLX 4 and Elasticsearch 9
+
 common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"

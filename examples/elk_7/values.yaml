@@ -1,0 +1,24 @@
+## Search Guard FLX 1.6 and Elasticsearch 7.17
+
+common:
+  images:
+    repository: "docker.io"
+    provider: "floragunncom"
+    elasticsearch_base_image: "sg-elasticsearch-h4"
+    kibana_base_image: "sg-kibana-h4"
+    sgctl_base_image: "sg-sgctl-h4"
+
+  ## Elasticsearch and Kibana version
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
+  elkversion: "7.17.29"
+
+  ## Search Guard plugin version
+  sgversion: "1.6.0-flx"
+
+  ## Search Guard Kibana plugin version
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  sgkibanaversion: "1.6.0-flx"
+
+  sgctl_version: 1.6.0
+
+  frontend_multi_tenancy_enabled: false

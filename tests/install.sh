@@ -2,12 +2,12 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 NSP="$1"
-CUSTOM_HELM_VALUES=${5:-}
+CUSTOM_HELM_VALUES=${6:-}
 
 
 CONTEXT="$(kubectl config current-context)"
 
-if [ "$4" != "nocontext" ]; then
+if [ "$5" != "nocontext" ]; then
   if [ "$CONTEXT" != "multinode" ] && [ "$CONTEXT" != "kind-kind" ]; then
     echo "Assume AWS ($CONTEXT)"
     OVERRIDE="$SCRIPT_DIR/initial_values_aws.yaml"
@@ -37,11 +37,11 @@ echo ""
 echo ""
 #--debug 
 if [ -n "$CUSTOM_HELM_VALUES" ]; then
-  echo "---------------------- Installing via helm $2 $3 and using custom helm values $CUSTOM_HELM_VALUES  ... --------------------------------------------------------------------------------------------------"
-  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" --set $CUSTOM_HELM_VALUES
+  echo "---------------------- Installing via helm $2 $3 $4 OVERRIDE=$OVERRIDE and using custom helm values $CUSTOM_HELM_VALUES  ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$4" -f "$OVERRIDE" --set $CUSTOM_HELM_VALUES
 else
-  echo "---------------------- Installing via helm $2 $3 ... --------------------------------------------------------------------------------------------------"
-  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" 
+  echo "---------------------- Installing via helm $2 $3 $4 OVERRIDE=$OVERRIDE ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$4" -f "$OVERRIDE"
 fi
 retVal=$?
 

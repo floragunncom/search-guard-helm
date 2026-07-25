@@ -1,4 +1,4 @@
-# Search Guard Helm Charts for Kubernetes
+# Helm Charts for Search Guard FLX
 
 - [Status](#status)
 - [Support](#support)
@@ -27,6 +27,8 @@
 ## Status
 
 This repo is considered GA status and supports Search Guard FLX for Elasticsearch 7, 8 and 9.
+
+Search Guard Classic is not supported anymore. For Classic refer to [Classic Helm Charts (EOL)](https://git.floragunn.com/search-guard/search-guard-helm).
 
 ## Support
 
@@ -59,7 +61,7 @@ With the release of Search Guard plugin version 2.0.0, the versioning of the Hel
 Search Guard 2.x is not backwards compatible with previous versions. If you want to upgrade from version 1.x.x to 2.x or higher, you need to follow some additional steps described [here](docs/sg-2x-upgrade.md).
 
 
-## Important Notes for Search Guard FLX 1.5.0 release
+## Important Notes for Search Guard FLX 1.5.0/1.6.0 release
 
 Due to technical constraints, multi tenancy is not available in this version of Search Guard. We are working on this issue and will reintroduce multi tenancy in the next release of Search Guard. <br>
 If you use the Helm charts for this version, the value:
@@ -78,12 +80,14 @@ will be set in the Kibana configuration file, and the `sg_frontend_multi_tenancy
 * Optional: Minikube. Please follow [Minikube installation steps][].
 
 If you use Minikube, make sure that the VM has enough memory and CPUs assigned.
-We recommend at least 8 GB and 4 CPUs. By default, we deploy 8 pods (3 master, 2 data, 2 client and 1 Kibana).
+We recommend at least 8 GB and 4 CPUs. By default, we deploy 4 pods by default (1 master, 2 data, 1 client and 1 Kibana).
 
 To change Minikube resource configuration: 
 ```
 minikube config set memory 8192
 minikube config set cpus 4
+minikube addons enable storage-provisioner
+minikube addons enable default-storageclass
 minikube delete
 minikube start
 ```
@@ -130,9 +134,7 @@ helm install --set data.storageClass=gp2 --set master.storageClass=gp2  sg-elk s
 ### Deploy via GitLab
 
 To deploy from the Git repository, clone the project and install the chart from the local directory.
-Optionally read the comments in `values.yaml` and customize them to suit your needs. To deploy
-Elasticsearch 7, apply `values-flx-7.yaml` on top: it is a complete example of the chart values set
-up for an Elasticsearch 7 cluster. 
+Optionally read the comments in `values.yaml` and customize them to suit your needs.
 
 ```
 $ git clone https://git.floragunn.com/search-guard/search-guard-flx-helm-charts.git
@@ -145,7 +147,7 @@ $ helm install sg-elk .
 ```
 To install Elasticsearch 7
 ```
-$ helm install sg-elk . -f values-flx-7.yaml
+$ helm install sg-elk . -f examples/elk_7/values.yaml
 ```
 
 The same overrides as above apply, for example for AWS EBS:

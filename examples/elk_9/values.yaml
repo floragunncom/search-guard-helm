@@ -1,0 +1,15 @@
+## Search Guard FLX 4 and Elasticsearch 9
+
+common:
+  ## Elasticsearch and Kibana version
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
+  elkversion: "9.4.1"
+
+  ## Search Guard plugin version
+  sgversion: "4.1.1"
+
+  ## Search Guard Kibana plugin version
+  ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  sgkibanaversion: "4.1.1"
+
+  sgctl_version: 4.1.1
