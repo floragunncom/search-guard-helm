@@ -451,12 +451,12 @@ git push origin 4.1.3-flx-test
 This runs the same validation, version stamping and packaging as a real release, but:
 
 * nothing is pushed to the Helm repository
-* the version change is committed to the `test` branch instead of `main`
+* the version change is committed to the `ci-release-test` branch instead of `main`
 * the packaged chart is kept as a job artifact, so you can inspect exactly what would
   have been published
 
-The `test` branch is scratch space: every test run resets it to the tagged commit and
-force-pushes, discarding whatever was there. Do not base any work on it.
+The `ci-release-test` branch is scratch space: every test run resets it to the tagged
+commit and force-pushes, discarding whatever was there. Do not base any work on it.
 
 ### Notes
 

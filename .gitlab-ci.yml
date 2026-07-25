@@ -229,7 +229,12 @@ publish_helm:
     RELEASE_BRANCH: main
     # Scratch branch used by test runs. It is rebuilt from the tagged commit on
     # every test run, so anything previously on it is discarded.
-    TEST_BRANCH: test
+    #
+    # Must not collide with an existing branch namespace: git stores refs as files,
+    # so a branch "foo/bar" makes refs/heads/foo a directory and a branch named
+    # "foo" can then never be created. Plain "test" is unusable here for exactly
+    # that reason - test/15-multiple-data-tiers-test-publish already exists.
+    TEST_BRANCH: ci-release-test
   script:
     - *common-config
     - |
@@ -316,6 +321,21 @@ publish_helm:
         force_push="--force"
       fi
       echo "[INFO] Now on: $(git rev-parse --abbrev-ref HEAD) at $(git rev-parse --short HEAD)"
+
+      # Refs are stored as files, so a branch "<target>/something" turns
+      # refs/heads/<target> into a directory and the push below would be rejected
+      # with a bare "refname conflict". Detect that here and say what to do.
+      echo "[INFO] Checking that '$target_branch' is free of refname conflicts"
+      ref_conflicts=$(git ls-remote --heads origin "${target_branch}/*" | awk '{print $2}' | sed 's|refs/heads/||')
+      if [ -n "$ref_conflicts" ]; then
+        echo "[ERROR] Cannot push to branch '$target_branch': these branches already"
+        echo "[ERROR] occupy that name as a namespace, so it cannot exist as a branch:"
+        echo "$ref_conflicts" | sed 's/^/[ERROR]   /'
+        echo "[ERROR] Either delete them, or set a different branch name in the"
+        echo "[ERROR] RELEASE_BRANCH / TEST_BRANCH variable of the publish_helm job."
+        exit 1
+      fi
+      echo "[INFO]   OK: no branch occupies '${target_branch}/*'"
 
       sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
 
