@@ -399,25 +399,47 @@ integration_minikube:
   #               the script below. Kubernetes maintains the three most recent
   #               minors, so these three tracks always cover exactly the
   #               maintained set and never need editing when a new Kubernetes
-  #               minor is released:
-  #                 latest    - newest stable minor
-  #                 latest-1  - one minor older
-  #                 latest-2  - two minors older
-  #               A literal "vX.Y.Z" is also accepted, to pin a single entry.
+  #               minor is released. Counting goes backwards from the newest, so
+  #               latest-2 is the *oldest* release still maintained:
+  #
+  #                 track     | meaning                      | resolved 2026-07-25
+  #                 ----------+------------------------------+--------------------
+  #                 latest    | newest stable minor          | v1.36.3
+  #                 latest-1  | one minor older              | v1.35.7
+  #                 latest-2  | two minors older, the oldest | v1.34.10
+  #                           | one still maintained         |
+  #
+  #               The versions in the last column are only an illustration of what
+  #               the tracks resolved to on that date. They move on their own as
+  #               Kubernetes publishes new patches: once 1.37 is released the same
+  #               three tracks resolve to 1.37 / 1.36 / 1.35 with no change here.
+  #
+  #               A literal "vX.Y.Z" is also accepted, to pin a single entry, for
+  #               example "v1.34.10" to reproduce a failure on one exact version.
   #
   # The version cannot be a matrix dimension directly: GitLab expands the matrix
   # when the pipeline is created, so the values have to be static in this file.
   # The track name is static, the version it resolves to is not.
+  # Each list below is expanded as a cross product, and the entries are then
+  # added up. Current ELK is exercised on every maintained Kubernetes; the older
+  # ELK lines only on latest-1, which keeps the run at 5 jobs instead of 9.
   parallel:
     matrix:
+      # Current ELK against all three maintained Kubernetes releases.
       - TEST_SCRIPT:
           - "./tests/run_tests.sh"
-          - "./tests/run_tests_elk_7.sh"
-          - "./tests/run_tests_elk_8.sh"
         K8S_TRACK:
           - "latest"
           - "latest-1"
           - "latest-2"
+      # Older ELK lines: one Kubernetes release is enough, they are not where a
+      # Kubernetes regression would show up first. latest-1 rather than latest,
+      # so a brand new Kubernetes minor cannot break these two first.
+      - TEST_SCRIPT:
+          - "./tests/run_tests_elk_7.sh"
+          - "./tests/run_tests_elk_8.sh"
+        K8S_TRACK:
+          - "latest-1"
   image:
     name: $SG_MINIKUBE_IMAGE
     entrypoint: [""]
