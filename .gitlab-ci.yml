@@ -72,12 +72,33 @@ workflow:
      release_mode="none"
      chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
    fi
+   # Resolved configuration, echoed so a job log is self-contained when debugging.
+   # Never echo $access_token or the origin URL it is embedded in.
+   echo "[INFO] ===== Resolved CI configuration ====="
+   echo "[INFO] helm            : $(helm version --short 2>/dev/null)"
+   echo "[INFO] chart_file      : $chart_file"
+   echo "[INFO] chart_name      : $chart_name"
+   echo "[INFO] chart_version   : $chart_version"
+   echo "[INFO] release_mode    : $release_mode"
+   echo "[INFO] commit tag      : ${CI_COMMIT_TAG:-<none, not a tag pipeline>}"
+   echo "[INFO] commit sha      : ${CI_COMMIT_SHA:-<none>}"
+   echo "[INFO] project path    : ${CI_PROJECT_PATH:-<none>}"
+   echo "[INFO] server host     : $server_host"
+   echo "[INFO] helm repo name  : $helm_repo_name"
+   echo "[INFO] helm repo url   : $helm_repo_url"
+   echo "[INFO] ====================================="
+
    if helm repo list | grep -q "$helm_repo_name"; then
+     echo "[INFO] Removing already registered helm repo $helm_repo_name"
      helm repo remove $helm_repo_name
-   fi    
-          
+   fi
+
+   echo "[INFO] Adding helm repo $helm_repo_name -> $helm_repo_url"
    helm repo add --username $helm_user --password $access_token $helm_repo_name  $helm_repo_url
+   echo "[INFO] Updating helm repo index"
    helm repo update
+   echo "[INFO] Registered helm repos:"
+   helm repo list
            
       
 image: 
@@ -113,18 +134,26 @@ validate_helm:
 
     - |
       set -e
+      echo "[INFO] helm: $(helm version --short 2>/dev/null)"
+      echo "[INFO] ===== Rendering chart with default values ====="
       # Only stdout is discarded: helm's own error goes to stderr and stays in the
       # job log, so a failure below says what actually went wrong.
       if ! helm template . > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered for default values"
           exit 1
       fi
+      echo "[INFO]   OK: default values"
+
       # Both spellings, otherwise an overlay named values.yml is silently skipped.
-      for custom_value in $(find examples \( -name values.yaml -o -name values.yml \)) ; do
+      examples_list=$(find examples \( -name values.yaml -o -name values.yml \) | sort)
+      echo "[INFO] ===== Rendering chart with $(echo "$examples_list" | wc -l | tr -d ' ') example overlays ====="
+      for custom_value in $examples_list ; do
+        echo "[INFO] Rendering with $custom_value"
         if ! helm template . -f $custom_value > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered with $custom_value values"
           exit 1
         fi
+        echo "[INFO]   OK: $custom_value"
       done
       echo "[INFO] Validation completed successfully"
 
@@ -155,21 +184,34 @@ validate_release:
       set -e
       # Guard 1: the tag defines the released version and the mode. It must look
       # like "4.1.2-flx" for a real release or "4.1.2-flx-test" for a test run.
+      echo "[INFO] ===== Guard 1: tag format ====="
+      echo "[INFO] Checking tag '$CI_COMMIT_TAG' against ^[0-9]+\.[0-9]+\.[0-9]+-flx(-test)?$"
       if ! echo "$CI_COMMIT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-flx(-test)?$'; then
         echo "[ERROR] Tag $CI_COMMIT_TAG has an unexpected format"
         echo "[ERROR] Expected <major>.<minor>.<patch>-flx        for a release, e.g. 4.1.2-flx"
         echo "[ERROR]       or <major>.<minor>.<patch>-flx-test   for a test run, e.g. 4.1.2-flx-test"
         exit 1
       fi
-      echo "[INFO] Tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+      echo "[INFO]   OK: tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+      if [ "$release_mode" = "test" ]; then
+        echo "[INFO]   This is a TEST run: nothing will be published to $helm_repo_url"
+      else
+        echo "[INFO]   This is a REAL release: the chart will be published to $helm_repo_url"
+      fi
 
       # Guard 2: refuse to republish a version that is already in the helm repo.
       # "helm search repo" prints "[]" as JSON when nothing matches the version.
+      echo "[INFO] ===== Guard 2: version not published yet ====="
+      echo "[INFO] Searching $helm_repo_name for version $chart_version"
       chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version)
+      echo "[INFO] Search result: $chart_exist"
       if [ ! "$chart_exist" == "[]" ]; then
         echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+        echo "[ERROR] Publishing it again would overwrite an already released chart."
+        echo "[ERROR] Tag a new version instead."
         exit 1
       fi
+      echo "[INFO]   OK: version $chart_version is not published yet"
 
       echo "[INFO] Validation completed successfully"
 
@@ -192,43 +234,75 @@ publish_helm:
     - *common-config
     - |
       set -e
-      if ! helm plugin list | grep -q "cm-push"; then
-        helm plugin install https://github.com/chartmuseum/helm-push
+      echo "[INFO] ===== Installing the cm-push helm plugin ====="
+      if helm plugin list | grep -q "cm-push"; then
+        echo "[INFO] cm-push is already installed:"
+        helm plugin list
+      else
+        # Helm 4 verifies plugin signatures by default. chartmuseum/helm-push is
+        # installed straight from its git repository and ships no signature, so
+        # verification has to be switched off or the install fails with
+        # "plugin source does not support verification".
+        echo "[INFO] Installing cm-push from https://github.com/chartmuseum/helm-push"
+        helm plugin install --verify=false https://github.com/chartmuseum/helm-push
+        echo "[INFO] Installed plugins:"
+        helm plugin list
       fi
 
-      echo "[INFO] Tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+      echo "[INFO] ===== Publishing $CI_COMMIT_TAG (version $chart_version, mode $release_mode) ====="
 
       # Stamp the version extracted from the tag into Chart.yaml before packaging,
       # so the packaged chart always carries exactly the tagged version.
-      echo "[INFO] Setting version in $chart_file to $chart_version"
+      echo "[INFO] ===== Stamping the version into $chart_file ====="
+      echo "[INFO] $chart_file before:"
+      grep '^version:' "$chart_file" | sed 's/^/[INFO]   /'
       sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
-      grep '^version:' "$chart_file"
+      echo "[INFO] $chart_file after:"
+      grep '^version:' "$chart_file" | sed 's/^/[INFO]   /'
+      echo "[INFO] Full diff against the tagged commit:"
+      git --no-pager diff -- "$chart_file" | sed 's/^/[INFO]   /'
 
-      echo "[INFO] Executing helm package"
+      echo "[INFO] ===== Packaging the chart ====="
       helm package .
+      echo "[INFO] Packaged artifacts in $(pwd):"
+      ls -l *.tgz | sed 's/^/[INFO]   /'
 
       # The only step a test run skips: nothing ever reaches the helm repo.
       if [ "$release_mode" = "release" ]; then
-        echo "[INFO] Executing helm cm-push"
+        echo "[INFO] ===== Pushing the chart to $helm_repo_name ====="
+        echo "[INFO] helm cm-push $chart_name-$chart_version.tgz $helm_repo_name ($helm_repo_url)"
         helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
-        echo "[INFO] Published $chart_version version for $helm_repo_name"
+        echo "[INFO] Published version $chart_version to $helm_repo_name"
+        echo "[INFO] Verifying it is now visible in the repo index:"
+        helm repo update > /dev/null
+        helm search repo $helm_repo_name --version $chart_version | sed 's/^/[INFO]   /'
       else
-        echo "[INFO] TEST MODE: skipping helm cm-push, nothing is published"
+        echo "[INFO] ===== TEST MODE: not pushing anything ====="
+        echo "[INFO] Skipping: helm cm-push $chart_name-$chart_version.tgz $helm_repo_name"
+        echo "[INFO] Nothing has been published to $helm_repo_url"
         echo "[INFO] The packaged chart is kept as a job artifact for inspection:"
-        ls -l $chart_name-$chart_version.tgz
+        ls -l $chart_name-$chart_version.tgz | sed 's/^/[INFO]   /'
+        echo "[INFO] Chart.yaml as packaged:"
+        tar -xOf $chart_name-$chart_version.tgz $chart_name/Chart.yaml 2>/dev/null | sed 's/^/[INFO]   /' || true
       fi
 
       # Commit the stamped version back. A tag pipeline runs on a detached HEAD, so
       # restore the working tree, check the target branch out explicitly and re-apply
       # the change there.
+      echo "[INFO] ===== Committing the version back to git ====="
       git config --global user.name "${GITLAB_USER_NAME:-gitlab-ci}"
       git config --global user.email "${GITLAB_USER_EMAIL:-noreply@floragunn.com}"
+      echo "[INFO] Committing as $(git config --global user.name) <$(git config --global user.email)>"
+      # The token is embedded in this URL, so it is deliberately never echoed.
       git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
+      echo "[INFO] Restoring $chart_file to the tagged state before switching branches"
       git checkout -- "$chart_file"
 
       if [ "$release_mode" = "release" ]; then
         # Real release: add the version bump on top of the release branch.
         target_branch="$RELEASE_BRANCH"
+        echo "[INFO] Release mode: committing on top of '$target_branch'"
+        echo "[INFO] Fetching origin/$target_branch"
         git fetch origin "+refs/heads/${target_branch}:refs/remotes/origin/${target_branch}"
         git checkout -B "$target_branch" "refs/remotes/origin/${target_branch}"
         force_push=""
@@ -236,22 +310,35 @@ publish_helm:
         # Test run: rebuild the scratch branch from the tagged commit, so every
         # rehearsal is a clean reproduction instead of drifting run after run.
         target_branch="$TEST_BRANCH"
+        echo "[INFO] Test mode: rebuilding scratch branch '$target_branch' from $CI_COMMIT_SHA"
+        echo "[INFO] Anything previously on '$target_branch' will be discarded"
         git checkout -B "$target_branch" "$CI_COMMIT_SHA"
         force_push="--force"
       fi
+      echo "[INFO] Now on: $(git rev-parse --abbrev-ref HEAD) at $(git rev-parse --short HEAD)"
 
       sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
 
       if git diff --quiet -- "$chart_file"; then
         echo "[INFO] $chart_file is already at $chart_version, no version commit needed"
       else
+        echo "[INFO] Staging the version change:"
+        git --no-pager diff -- "$chart_file" | sed 's/^/[INFO]   /'
         git add "$chart_file"
         # [ci skip] keeps this push from starting another pipeline.
         git commit -m "Set chart version to $chart_version for $CI_COMMIT_TAG [ci skip]"
+        echo "[INFO] Created commit $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
       fi
 
+      echo "[INFO] Pushing HEAD to $target_branch ${force_push:+(force)}"
       git push $force_push origin "HEAD:${target_branch}"
       echo "[INFO] Updated $target_branch to version $chart_version"
+      echo "[INFO] ===== Summary ====="
+      echo "[INFO] tag            : $CI_COMMIT_TAG"
+      echo "[INFO] mode           : $release_mode"
+      echo "[INFO] chart version  : $chart_version"
+      echo "[INFO] published      : $([ "$release_mode" = "release" ] && echo "yes -> $helm_repo_url" || echo "no (test run)")"
+      echo "[INFO] branch updated : $target_branch"
       echo "[INFO] Completed successfully"
   artifacts:
     name: "$CI_COMMIT_TAG"
