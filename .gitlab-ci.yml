@@ -1,13 +1,24 @@
+# workflow:rules decides whether a pipeline is created *at all*. The rules are
+# evaluated top to bottom and the first match wins; if nothing matches, the push
+# produces no pipeline. Only "always" and "never" are meaningful here, and a rule
+# without an explicit "when" defaults to "always".
+#
+# Which jobs then run inside that pipeline is decided separately, by the rules on
+# each individual job.
 workflow:
   rules:
+    # Tag pushes. $CI_COMMIT_TAG is set only on tag pipelines, and this is the
+    # release pipeline: validate_release and publish_helm select on the same
+    # variable. Spelled out because this entry used to read "when: never", which
+    # suppressed tag pipelines completely and made a tag-driven release impossible.
+    # With the catch-all below it is now documentation rather than a real gate.
     - if: $CI_COMMIT_TAG
-      when: never
+    # Everything else - branch pushes and merge requests - still gets a pipeline,
+    # but only the validation and test jobs are selected in it; nothing publishes.
     - when: always
-    
+
 .common-config: &common-config
  - |
-   git config --global user.name "${GITLAB_USER_NAME}"
-   git config --global user.email "${GITLAB_USER_EMAIL}"  
    chart_file="Chart.yaml"
    chart_name=$(grep '^name:' Chart.yaml | awk '{print $2}')
    helm_user="helm"
@@ -26,13 +37,41 @@ workflow:
    fi
             
    helm_channel=stable
-   helm_repo_url=https://${server_host}/api/v4/projects/$helm_project_id/packages/helm/$helm_channel 
-   git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
-   chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
+   helm_repo_url=https://${server_host}/api/v4/projects/$helm_project_id/packages/helm/$helm_channel
    if [ ! -f "$chart_file" ]; then
     echo "[ERROR] Chart file $chart_file not exist"
     exit 1
-   fi 
+   fi
+   # On a release pipeline the tag is the source of truth for the version and for
+   # the mode. Chart.yaml is stamped from it in publish_helm, so whatever is
+   # currently committed there is only a fallback for non-tag pipelines.
+   #
+   #   4.1.2-flx       -> release_mode=release, chart_version=4.1.2
+   #                      publishes to the helm repo, commits to $RELEASE_BRANCH
+   #   4.1.2-flx-test  -> release_mode=test,    chart_version=4.1.2
+   #                      publishes nothing,    commits to $TEST_BRANCH
+   #
+   # The case is fail-closed on purpose: an unrecognised tag aborts rather than
+   # falling through to the publishing path.
+   if [ -n "${CI_COMMIT_TAG}" ]; then
+     case "${CI_COMMIT_TAG}" in
+       *-flx-test)
+         release_mode="test"
+         chart_version="${CI_COMMIT_TAG%-flx-test}"
+         ;;
+       *-flx)
+         release_mode="release"
+         chart_version="${CI_COMMIT_TAG%-flx}"
+         ;;
+       *)
+         echo "[ERROR] Tag ${CI_COMMIT_TAG} is neither <version>-flx nor <version>-flx-test"
+         exit 1
+         ;;
+     esac
+   else
+     release_mode="none"
+     chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
+   fi
    if helm repo list | grep -q "$helm_repo_name"; then
      helm repo remove $helm_repo_name
    fi    
@@ -42,7 +81,7 @@ workflow:
            
       
 image: 
-  name: alpine/helm:3.18.3
+  name: alpine/helm:4.2.3
   entrypoint: [""]   
   
 
@@ -54,71 +93,171 @@ stages:
   - Publish
   - Test
 
+# Proves the chart still renders. Runs in *every* pipeline - branches, merge
+# requests and tags - and is a prerequisite of publish_helm.
+#
+# It renders the chart twice over:
+#   1. with the defaults from values.yaml
+#   2. once per examples/**/values.yaml overlay, so a broken example is caught too
+#
+# This is purely a templating check: it proves the Go templates expand and produce
+# syntactically valid YAML. It does not contact a cluster and does not check the
+# manifests against the Kubernetes API schema, so a chart that renders here can
+# still be rejected by kubectl. Verifying that the cluster actually comes up is
+# the job of integration_minikube.
 validate_helm:
   tags:
-    - build    
+    - build
   stage: Validate
   script:
 
     - |
       set -e
-      if ! helm template . > /dev/null 2>&1; then
+      # Only stdout is discarded: helm's own error goes to stderr and stays in the
+      # job log, so a failure below says what actually went wrong.
+      if ! helm template . > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered for default values"
-          exit 1      
+          exit 1
       fi
-      for custom_value in $(find examples -name values.yaml) ; do
-        if ! helm template . -f $custom_value > /dev/null 2>&1; then
+      # Both spellings, otherwise an overlay named values.yml is silently skipped.
+      for custom_value in $(find examples \( -name values.yaml -o -name values.yml \)) ; do
+        if ! helm template . -f $custom_value > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered with $custom_value values"
           exit 1
         fi
       done
       echo "[INFO] Validation completed successfully"
 
+# Checks that a release is safe to publish, before publish_helm does anything
+# irreversible. Runs *only* on tag pipelines, so branches and merge requests skip
+# it entirely.
+#
+# Two guards, either of which aborts the pipeline:
+#   1. the tag is well-formed. The released version and the mode are derived from
+#      the tag (see .common-config) and the version is stamped into Chart.yaml by
+#      publish_helm, so a malformed tag would produce a wrongly versioned chart.
+#   2. that version has not been published before. The helm repo is append-only
+#      in practice, so re-publishing an existing version would either be rejected
+#      or overwrite an already released chart.
+#
+# Both guards also run for "-flx-test" tags, so a test run is a faithful rehearsal
+# of the real thing. Since test mode never publishes, testing 4.1.3-flx-test and
+# then releasing 4.1.3-flx both pass guard 2.
 validate_release:
   tags:
-    - build  
+    - build
   stage: Validate
+  rules:
+    - if: $CI_COMMIT_TAG
   script:
-    - *common-config  
+    - *common-config
     - |
       set -e
-      if git tag -l | grep -q "^$chart_version$"; then
-        echo "[ERROR] Tag for version $chart_version already exist"
+      # Guard 1: the tag defines the released version and the mode. It must look
+      # like "4.1.2-flx" for a real release or "4.1.2-flx-test" for a test run.
+      if ! echo "$CI_COMMIT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-flx(-test)?$'; then
+        echo "[ERROR] Tag $CI_COMMIT_TAG has an unexpected format"
+        echo "[ERROR] Expected <major>.<minor>.<patch>-flx        for a release, e.g. 4.1.2-flx"
+        echo "[ERROR]       or <major>.<minor>.<patch>-flx-test   for a test run, e.g. 4.1.2-flx-test"
         exit 1
       fi
-      
-      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version) 
+      echo "[INFO] Tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+
+      # Guard 2: refuse to republish a version that is already in the helm repo.
+      # "helm search repo" prints "[]" as JSON when nothing matches the version.
+      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version)
       if [ ! "$chart_exist" == "[]" ]; then
-       echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+        echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+        exit 1
       fi
-      
+
       echo "[INFO] Validation completed successfully"
+
 publish_helm:
   needs:
-    - validate_helm  
+    - validate_helm
     - validate_release
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_TAG
   tags:
-    - build  
+    - build
   stage: Publish
+  variables:
+    # Branch that carries the version bump produced by a real release.
+    RELEASE_BRANCH: main
+    # Scratch branch used by test runs. It is rebuilt from the tagged commit on
+    # every test run, so anything previously on it is discarded.
+    TEST_BRANCH: test
   script:
-    - *common-config  
+    - *common-config
     - |
       set -e
       if ! helm plugin list | grep -q "cm-push"; then
         helm plugin install https://github.com/chartmuseum/helm-push
       fi
+
+      echo "[INFO] Tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+
+      # Stamp the version extracted from the tag into Chart.yaml before packaging,
+      # so the packaged chart always carries exactly the tagged version.
+      echo "[INFO] Setting version in $chart_file to $chart_version"
+      sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
+      grep '^version:' "$chart_file"
+
       echo "[INFO] Executing helm package"
-      helm package .  
-      echo "[INFO] Executing helm cm-push"
-      helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
-      echo "[INFO] Published $chart_version version for $helm_repo_name"
-                      
-      git tag "$chart_version-flx"
-      git push origin $chart_version-flx    
-      echo "[INFO] Published tags"
+      helm package .
+
+      # The only step a test run skips: nothing ever reaches the helm repo.
+      if [ "$release_mode" = "release" ]; then
+        echo "[INFO] Executing helm cm-push"
+        helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
+        echo "[INFO] Published $chart_version version for $helm_repo_name"
+      else
+        echo "[INFO] TEST MODE: skipping helm cm-push, nothing is published"
+        echo "[INFO] The packaged chart is kept as a job artifact for inspection:"
+        ls -l $chart_name-$chart_version.tgz
+      fi
+
+      # Commit the stamped version back. A tag pipeline runs on a detached HEAD, so
+      # restore the working tree, check the target branch out explicitly and re-apply
+      # the change there.
+      git config --global user.name "${GITLAB_USER_NAME:-gitlab-ci}"
+      git config --global user.email "${GITLAB_USER_EMAIL:-noreply@floragunn.com}"
+      git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
+      git checkout -- "$chart_file"
+
+      if [ "$release_mode" = "release" ]; then
+        # Real release: add the version bump on top of the release branch.
+        target_branch="$RELEASE_BRANCH"
+        git fetch origin "+refs/heads/${target_branch}:refs/remotes/origin/${target_branch}"
+        git checkout -B "$target_branch" "refs/remotes/origin/${target_branch}"
+        force_push=""
+      else
+        # Test run: rebuild the scratch branch from the tagged commit, so every
+        # rehearsal is a clean reproduction instead of drifting run after run.
+        target_branch="$TEST_BRANCH"
+        git checkout -B "$target_branch" "$CI_COMMIT_SHA"
+        force_push="--force"
+      fi
+
+      sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
+
+      if git diff --quiet -- "$chart_file"; then
+        echo "[INFO] $chart_file is already at $chart_version, no version commit needed"
+      else
+        git add "$chart_file"
+        # [ci skip] keeps this push from starting another pipeline.
+        git commit -m "Set chart version to $chart_version for $CI_COMMIT_TAG [ci skip]"
+      fi
+
+      git push $force_push origin "HEAD:${target_branch}"
+      echo "[INFO] Updated $target_branch to version $chart_version"
       echo "[INFO] Completed successfully"
+  artifacts:
+    name: "$CI_COMMIT_TAG"
+    paths:
+      - "*.tgz"
+    expire_in: 30 days
 
 integration_minikube:
   stage: Test

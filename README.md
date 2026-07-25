@@ -16,6 +16,7 @@
     - [Security configuration](#security-configuration)
 - [Modify the configuration](#modify-the-configuration)
 - [Configuration parameters](#configuration-parameters)
+- [Releasing](#releasing)
 - [Credits](#credits)
 - [License](#license)
     
@@ -407,6 +408,62 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | service.httpPort | Port to be exposed by the Elasticsearch service in the cluster | 9200 |
 | service.transportPort | Port to be exposed by the Elasticsearch service for transport communication in the cluster | 9300 |
 
+
+## Releasing
+
+Releases are cut by **pushing a tag**. The tag is the single source of truth for the
+released version: CI extracts the version from it, writes it into `Chart.yaml`,
+commits that back to `main` and publishes the chart. You do not bump the version in
+`Chart.yaml` by hand.
+
+Pushes to `main` and merge requests never publish. They only run the validation and
+test jobs.
+
+### Release a new version
+
+Tag the commit you want to release with `<major>.<minor>.<patch>-flx`:
+
+```
+git tag 4.1.3-flx
+git push origin 4.1.3-flx
+```
+
+The tag pipeline then:
+
+1. renders the chart with its defaults and with every example (`validate_helm`)
+2. checks that the tag is well-formed and that the version is not already published
+   (`validate_release`)
+3. sets `version: 4.1.3` in `Chart.yaml`, packages the chart, pushes it to the Helm
+   repository and commits the version change to `main` (`publish_helm`)
+
+If the tag is malformed or the version already exists in the Helm repository, the
+pipeline fails before anything is published.
+
+### Test a release without publishing
+
+Append `-test` to the tag to rehearse a release:
+
+```
+git tag 4.1.3-flx-test
+git push origin 4.1.3-flx-test
+```
+
+This runs the same validation, version stamping and packaging as a real release, but:
+
+* nothing is pushed to the Helm repository
+* the version change is committed to the `test` branch instead of `main`
+* the packaged chart is kept as a job artifact, so you can inspect exactly what would
+  have been published
+
+The `test` branch is scratch space: every test run resets it to the tagged commit and
+force-pushes, discarding whatever was there. Do not base any work on it.
+
+### Notes
+
+* The tag points at the commit *before* the version bump, because the bump is created
+  by the pipeline that the tag triggers.
+* The target branches are configurable through the `RELEASE_BRANCH` and `TEST_BRANCH`
+  variables of the `publish_helm` job.
 
 ## Credits
 
