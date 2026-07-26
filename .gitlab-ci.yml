@@ -157,6 +157,30 @@ validate_helm:
       done
       echo "[INFO] Validation completed successfully"
 
+# Runs the helm-unittest suites in unittests/. Pure template-logic checks (no
+# cluster, no API server) that render in milliseconds - the fast complement to
+# integration_minikube. Runs in every pipeline.
+#
+# Started as allow_failure so it cannot block MRs while the suite is young;
+# remove allow_failure once the team is happy to treat it as a required gate.
+#
+# helm-unittest is installed at job time. Helm 4 verifies plugin signatures by
+# default and the plugin ships none, so --verify=false is required (same reason
+# the publish_helm cm-push install disables verification). The plugin version is
+# pinned so a plugin release cannot change behaviour under us; bump it
+# deliberately and re-run the suite when upgrading the helm image.
+helm_unittest:
+  tags:
+    - build
+  stage: Validate
+  allow_failure: true
+  script:
+    - |
+      set -e
+      echo "[INFO] helm: $(helm version --short 2>/dev/null)"
+      helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.2 --verify=false
+      helm unittest -f 'unittests/*_test.yaml' .
+
 # Checks that a release is safe to publish, before publish_helm does anything
 # irreversible. Runs *only* on tag pipelines, so branches and merge requests skip
 # it entirely.

@@ -1,0 +1,61 @@
+suite: node group map-or-list and datacontent toggle
+# Every node-group block may be a single map OR a list of named groups. This is
+# the documented fragile area (multi-group configs break if a template ignores
+# the normalization idiom), so cover both shapes plus the datacontent toggle.
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: renders one data StatefulSet when data is a single map
+    template: templates/data-statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: rel-search-guard-flx-data
+
+  - it: renders one StatefulSet per named group when data is a list
+    template: templates/data-statefulset.yaml
+    set:
+      data:
+        - name: data
+          replicas: 1
+          roles: [data, remote_cluster_client]
+        - name: hot
+          replicas: 1
+          roles: [data_hot, remote_cluster_client]
+    asserts:
+      - hasDocuments:
+          count: 2
+      # documentSelector picks the doc by name, so the assertion is independent
+      # of the order the groups are rendered in.
+      - equal:
+          path: kind
+          value: StatefulSet
+        documentSelector:
+          path: metadata.name
+          value: rel-search-guard-flx-data
+      - equal:
+          path: kind
+          value: StatefulSet
+        documentSelector:
+          path: metadata.name
+          value: rel-search-guard-flx-data-hot
+
+  - it: omits the data-content StatefulSet unless enabled
+    template: templates/data-content-statefulset.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders the data-content StatefulSet when enabled
+    template: templates/data-content-statefulset.yaml
+    set:
+      datacontent.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: rel-search-guard-flx-data-content

@@ -1,0 +1,56 @@
+suite: client service conditionals
+# The client Service emits loadBalancerIP / nodePort / annotations only for the
+# matching serviceType. These guards prevent accidental churn (e.g. a stray
+# loadBalancerIP forcing a Service recreation), so they are worth pinning.
+release:
+  name: rel
+  namespace: default
+templates:
+  - templates/client-service.yaml
+tests:
+  - it: defaults to ClusterIP with no loadBalancerIP and no annotations
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - notExists:
+          path: spec.loadBalancerIP
+      - notExists:
+          path: metadata.annotations
+
+  - it: sets loadBalancerIP and annotations for a LoadBalancer service
+    set:
+      common.serviceType: LoadBalancer
+      common.loadBalancerIp: 192.0.2.10
+      common.service_annotations:
+        foo: bar
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.loadBalancerIP
+          value: 192.0.2.10
+      - equal:
+          path: metadata.annotations.foo
+          value: bar
+
+  - it: ignores loadBalancerIp when the type is not LoadBalancer
+    set:
+      common.serviceType: ClusterIP
+      common.loadBalancerIp: 192.0.2.10
+    asserts:
+      - notExists:
+          path: spec.loadBalancerIP
+
+  - it: sets nodePort on the http port only for a NodePort service
+    set:
+      common.serviceType: NodePort
+      common.nodePort: 30007
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].nodePort
+          value: 30007

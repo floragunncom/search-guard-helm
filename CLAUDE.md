@@ -30,6 +30,23 @@ for v in $(find examples -name values.yaml); do helm template . -f "$v" > /dev/n
 
 All example overlays use the `values.yaml` extension, so they are all covered by that loop.
 
+### Template unit tests (helm-unittest)
+
+Fast, cluster-free assertions on rendered template output, in `unittests/*_test.yaml`
+(a separate folder because `helm-unittest` defaults to `./tests/`, which is the bash
+integration suite). CI runs them in the `helm_unittest` job (`allow_failure: true` for
+now). Locally:
+
+```bash
+helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.2 --verify=false
+helm unittest -f 'unittests/*_test.yaml' .
+```
+
+`--verify=false` is required because Helm 4 verifies plugin signatures by default and
+the plugin ships none. See `unittests/README.md` for conventions (e.g. select docs with
+`documentSelector`, don't put StatefulSets in a suite-level `templates:` list). Add a
+suite here whenever you change template logic.
+
 ### Integration tests (minikube)
 
 ```bash
