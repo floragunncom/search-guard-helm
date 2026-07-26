@@ -103,7 +103,7 @@ If not, execute the steps above (Warning: `minikube delete` will delete your Min
 ## Deploying with Helm
 
 By default, you get an Elasticsearch cluster with self-signed certificates for transport and HTTP communication.
-The default cluster consists of 3 master nodes, 2 data nodes, 2 client (ingest) nodes and 1 Kibana node.
+The default cluster consists of 1 master node, 1 data node, 1 client (ingest) node and 1 Kibana node.
 Elasticsearch and Kibana are exposed as `ClusterIP` services; Ingress is disabled by default and can be
 enabled via `common.ingress` in [values.yaml][].
 Please be aware that such an Elasticsearch cluster configuration should be used for testing purposes only.
@@ -145,6 +145,10 @@ To install Elasticsearch 8 or 9
 ```
 $ helm install sg-elk .
 ```
+To install Elasticsearch 8
+```
+$ helm install sg-elk . -f examples/elk_8/values.yaml
+```
 To install Elasticsearch 7
 ```
 $ helm install sg-elk . -f examples/elk_7/values.yaml
@@ -158,11 +162,18 @@ helm install --set data.storageClass=gp2 --set master.storageClass=gp2 sg-elk .
 ## Examples
 
 The repository contains various examples of different configurations. They are located in the `examples` directory, in the following subdirectories:
-- `common` - configurations that work for ELK 7, 8 and 9
+- `common` - configurations that work for ELK 7 (partially), 8 and 9
 - `elk_7` - configurations that work only for ELK 7
 - `elk_8` - configurations that work only for ELK 8 and higher
+- `elk_9` - configurations that work for ELK 9 and higher
 
 Each example directory contains a README.md file with a detailed description and a values.yaml file that can be used when installing or upgrading the chart.
+
+A few selected examples:
+
+- [`common/setup_field_anonymization`](examples/common/setup_field_anonymization) - demonstrates the field anonymization feature (available from FLX 1.0), where a dedicated user receives anonymized values for selected fields while an admin user still sees the original values.
+- [`common/configuration_variables`](examples/common/configuration_variables) - shows how to store sensitive Search Guard configuration data, such as the license key and JWT/JWKS keys, as encrypted Configuration variables in a secure index using the sgctl tool.
+- [`common/custom_secrets`](examples/common/custom_secrets) - shows how to inject environment variables into the containers from pre-existing Kubernetes Secret objects, both cluster-wide (`common`) and per component (for example `kibana`).
 
 
 

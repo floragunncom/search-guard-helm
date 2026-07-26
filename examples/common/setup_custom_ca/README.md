@@ -1,24 +1,56 @@
+# Setup with a Custom CA Certificate
 
-# Setup with custom CA certificate
+This example provides your **own CA certificate** (a `crt.pem` / `key.pem` pair) that the cluster uses to sign all Elasticsearch node certificates for transport communication as well as the certificates for the HTTPS services of Elasticsearch and Kibana. This replaces the default behaviour, where a self-signed CA is generated in the cluster by the SG TLS tool.
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/common/examples/setup_custom_ca/values.yaml) sets up a protected 4-node Elasticsearch cluster by providing a custom CA certificate to the Kubernetes cluster. 
+## ⚠️ WARNING: Pre-existing CA Files Required
 
-Please note that you are expected to provide your own CA certificate with the `crt.pem` and `key.pem` files in the `secrets/ca` folder.
-This CA certificate will be used to generate all Elasticsearch node certificates for transport communication and the certificates for the HTTPS service for Elasticsearch and Kibana.
+You must provide your own CA certificate and key as `crt.pem` and `key.pem` in the `ca` subfolder of the directory configured through `common.certificates_directory`. In this example that is `examples/common/setup_custom_ca/secrets/ca`. If these files are missing, certificate generation fails.
 
+## 1\. The `values.yaml` Structure
 
-To install this usage example, go to your `search-guard-helm` folder with pre-installed dependencies and do:
+```yaml
+common:
+  # Do not use the self-signed CA generated in the cluster
+  sgctl_certificates_enabled: false
+  # Sign all certificates with your own CA instead
+  ca_certificates_enabled: true
+  # Password of the CA private key (key.pem); omit if the key is not encrypted
+  ca_password: passca222
+  # Directory (relative to the chart root) that contains the "ca" subfolder with crt.pem and key.pem
+  certificates_directory: "examples/common/setup_custom_ca/secrets"
 ```
-$ helm install -f examples/setup_custom_ca/values.yaml sg-elk ./ 
+
+### Explanation
+
+  * **`sgctl_certificates_enabled` / `ca_certificates_enabled`** — these two PKI modes are mutually exclusive. Turning off the first and turning on the second switches from the in-cluster self-signed CA to your own CA.
+  * **`ca_password`** — the password protecting the CA private key. Leave it empty if `key.pem` is not encrypted.
+  * **`certificates_directory`** — the directory whose `ca` subfolder holds `crt.pem` and `key.pem`.
+
+## 2\. Provide the CA Files
+
+Place your CA certificate and key into the `ca` subfolder:
+
+```
+examples/common/setup_custom_ca/secrets/ca/crt.pem
+examples/common/setup_custom_ca/secrets/ca/key.pem
 ```
 
+## 3\. Install
 
- To get access to Kibana:
-  * Run minikube tunnel in a different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.sg-helm.example.com in your `etc/hosts` file
-  * Access https://kibana.sg-helm.example.com with default user `admin` and password extracted by this command `kubectl get secrets sg-elk-search-guard-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d`
+To install this usage example, go to your `search-guard-flx-helm-charts` folder and run:
 
-To uninstall this usage example, run this command:
 ```
-$ helm uninstall sg-elk  
+helm install -f examples/common/setup_custom_ca/values.yaml sg-elk ./
+```
+
+Get the `admin` user password to access the cluster:
+
+```
+kubectl get secrets sg-elk-search-guard-flx-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d
+```
+
+To uninstall this usage example, run:
+
+```
+helm uninstall sg-elk
 ```

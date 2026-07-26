@@ -1,10 +1,5 @@
 #  Enable sgctl.sh POD in kubernetes cluster
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/enable_sgctl_cli/values.yaml) sets up a protected 4-node Elasticsearch cluster with the sgctl tool in a separate Pod [Configuration variables](https://docs.search-guard.com/latest/sgctl-examples#using-sgctl-to-configure-search-guard)
-
-
-
-
 The sgctl can be used to manage configuration variables, an example of which can be found [here](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/configuration_variables/values.yaml) 
 
 

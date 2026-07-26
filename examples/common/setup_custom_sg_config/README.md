@@ -1,31 +1,71 @@
-#  Setup with custom Elasticsearch and Search Guard configuration
+# Setup with Custom Elasticsearch and Search Guard Configuration
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/setup_custom_sg_config/values.yaml) 
-sets up protected 4-nodes Elasticsearch cluster with custom configuration for Elasticsearch and Search Guard Suite plugin.
+This example sets up a cluster with **custom Elasticsearch configuration** (additional `elasticsearch.yml` settings) and **custom Search Guard configuration** (an additional user, a role, and a role mapping). It shows the two configuration surfaces the chart exposes: `common.config` for Elasticsearch and `common.users` / `common.roles` / `common.rolesmapping` for Search Guard.
 
-The difference from the basic setup is that an additional `config.http` section in `elasticsearch.yml` and an additional user `demouser` in the Search Guard configuration files are provisioned.
+## 1\. The `values.yaml` Structure
 
-You can add additional custom configuration for Elasticsearch to the `custom.config` section 
-and for Search Guard configuration to `common.users`, `common.roles`, `common.rolesmapping` sections in [the configuration file](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/setup_custom_sg_config/values.yaml).
+### The `common.config` Section (Elasticsearch)
 
-The security in the Elasticsearch cluster is provided by self-signed certificates for transport layer communication and for the Ingress services.
+Anything under `common.config` is added to `elasticsearch.yml` on every node.
 
-
-To install this usage example, go to your `search-guard-helm` folder with pre-installed dependencies and do:
+```yaml
+common:
+  config:
+    http:
+      compression: false
+      cors:
+        enabled: false
+        allow-origin: "*"
+    index.codec: best_compression
 ```
-$ helm install -f examples/setup_custom_sg_config/values.yaml sg-elk ./
-```
-You can check the password of newly created user by running: 
-```
-kubectl get secrets sg-elk-search-guard-helm-passwd-secret -o jsonpath="{.data.SG_BEATSUSER_PWD}" | base64 -d
+
+### The Search Guard Sections (`users`, `rolesmapping`, `roles`)
+
+These define an additional internal user, a role, and the mapping between them.
+
+```yaml
+common:
+  # Additional users, maps to sg_internal_users.yml
+  users:
+    demouser:
+      hash: ${envbc.SG_BEATSUSER_PWD}
+      backend_roles:
+        - beatsreader
+  # Additional role mappings, maps to sg_roles_mapping.yml
+  rolesmapping:
+    sg_read_beats:
+      backend_roles:
+        - beatsreader
+  # Additional roles, maps to sg_roles.yml
+  roles:
+    sg_read_beats:
+      cluster_permissions:
+        - SGS_CLUSTER_COMPOSITE_OPS_RO
+      index_permissions:
+        - index_patterns:
+            - "*beat*"
+          allowed_actions:
+            - SGS_READ
 ```
 
-To get access to Kibana:
-  * Run minikube tunnel in a different window
-  * Get Kibana external IP by `kubectl get svc|grep LoadBalancer|awk '{print $4}'` and assign it to kibana.sg-helm.example.com in your `etc/hosts` file
-  * Access https://kibana.example.com with default user `admin` and password extracted by this command `kubectl get secrets sg-elk-search-guard-helm-passwd-secret -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d`
+> **Note:** The `hash` value is a `${envbc.SG_..._PWD}` placeholder, not a real hash. Search Guard resolves it at load time from a randomly generated password that is stored in the `-passwd-secret` Secret.
 
-To uninstall this usage example, run this command:
+## 2\. Install
+
+To install this usage example, go to your `search-guard-flx-helm-charts` folder and run:
+
 ```
-$ helm uninstall sg-elk  
+helm install -f examples/common/setup_custom_sg_config/values.yaml sg-elk ./
+```
+
+## 3\. Get the Password of the Created User
+
+```
+kubectl get secrets sg-elk-search-guard-flx-passwd-secret -o jsonpath="{.data.SG_BEATSUSER_PWD}" | base64 -d
+```
+
+To uninstall this usage example, run:
+
+```
+helm uninstall sg-elk
 ```

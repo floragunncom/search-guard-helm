@@ -494,7 +494,7 @@ master:
     requests:
       cpu: 1500m
       memory: 2000Mi
-# The datacontent node is part of the content tier, with long data retention.
+# The datacontent node is part of the content tier with long data retention.
 # Enabling datacontent will create a dedicated StatefulSet in the cluster
 datacontent:
   enabled: false

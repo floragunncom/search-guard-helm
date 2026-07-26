@@ -26,8 +26,7 @@ must render cleanly. Reproduce it locally:
 for v in $(find examples -name values.yaml); do helm template . -f "$v" > /dev/null || echo "FAIL $v"; done
 ```
 
-Note `examples/common/azure_repository/values.yml` uses a `.yml` extension and is therefore *not*
-covered by that loop.
+All example overlays use the `values.yaml` extension, so they are all covered by that loop.
 
 ### Integration tests (minikube)
 

@@ -1,7 +1,5 @@
 # Using Configuration variables in helm charts
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/configuration_variables/values.yaml) sets up a protected 4-node Elasticsearch cluster by providing helm configuration using [Configuration variables](https://docs.search-guard.com/latest/configuration-password-handling)
-
 The following example describes how to use [Configuration variables](https://docs.search-guard.com/latest/configuration-password-handling) for storing sensitive SearchGuard configuration data in a secure index.
 
 This example configuration allows for the storage of licenses and JWT configuration [SearchGuard JWT Documentation] https://docs.search-guard.com/latest/json-web-tokens using SearchGuard Configuration variables.
