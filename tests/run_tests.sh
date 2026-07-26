@@ -23,5 +23,6 @@ fi
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/scale_cluster" "" "8"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/setup_field_anonymization" "" "8"
 "$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/enable_data_content_node" "" "10"
+"$SCRIPT_DIR/upgrade.sh" "$NSP" "$SCRIPT_DIR/../examples/common/dynamic_data_nodes" "" "13" "scripts/remove_data_sts.sh"
 echo "Finished $(date '+%Y-%m-%d %H:%M:%S')"
 
