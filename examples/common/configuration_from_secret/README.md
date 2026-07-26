@@ -1,6 +1,6 @@
 # Configuration from secret
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/examples/common/configuration_from_secret/values.yaml) sets up protected 4-nodes Elasticsearch cluster by providing helm configuration from Kubernetes secret.
+This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-helm/-/blob/master/examples/common/configuration_from_secret/values.yaml) sets up a protected 4-node Elasticsearch cluster by providing helm configuration from a Kubernetes secret.
 
 
 This configuration allows storing all or part of the SearchGuard configuration files in Kubernetes secrets.
@@ -25,7 +25,7 @@ and update the Helm Charts
 helm upgrade  -f examples/configuration_from_secret/values.yaml sg-elk ./ 
 ```
 
-After completing the installation or update of a helm chart, ``*.yml` files located in the` secret `sg-elk-search-guard-flx-sg-dynamic-configuration-secret` will add, or in the case of these files already existing in the configuration, replace their content.
+After completing the installation or update of a helm chart, the `*.yml` files located in the secret `sg-elk-search-guard-flx-sg-dynamic-configuration-secret` will be added, or, in the case of files that already exist in the configuration, their content will be replaced.
 
 
 

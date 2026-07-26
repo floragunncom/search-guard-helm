@@ -1,6 +1,6 @@
 # Using Configuration variables in helm charts
 
-This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/configuration_variables/values.yaml) sets up protected 4-nodes Elasticsearch cluster by providing helm configuration using [Configuration variables](https://docs.search-guard.com/latest/configuration-password-handling)
+This usage example [configuration](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/configuration_variables/values.yaml) sets up a protected 4-node Elasticsearch cluster by providing helm configuration using [Configuration variables](https://docs.search-guard.com/latest/configuration-password-handling)
 
 The following example describes how to use [Configuration variables](https://docs.search-guard.com/latest/configuration-password-handling) for storing sensitive SearchGuard configuration data in a secure index.
 
@@ -11,7 +11,7 @@ To apply this configuration, the following steps must be taken:
 
 * Activate the configuration SearchGuard Helm Configuration [values.yml](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/examples/common/enable_sgctl_cli/values.yaml), which will enable access to the sgctl tool. After applying this configuration, a new POD will be created, providing access to the sgctl.sh tool.
 
-* Add the license and configuration, perform the following steps:
+* To add the license and configuration, perform the following steps:
 
 * Copy the `keys.json` configuration file to the POD with sgctl (for production environments, change the data in the file and store it in a secure place):
 
@@ -47,7 +47,7 @@ Created
 * Create a license configuration variable to store the license:
 
 ```
-/usr/share/sg/sgctl/sgctl.sh add-var license replace_with_the_valid_base64_endcoded_SearchGuard_license --encrypt  \
+/usr/share/sg/sgctl/sgctl.sh add-var license replace_with_the_valid_base64_encoded_SearchGuard_license --encrypt  \
   -h $DISCOVERY_SERVICE  \
   --key /sgcerts/key.pem \
   --cert /sgcerts/crt.pem \

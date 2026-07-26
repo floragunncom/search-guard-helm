@@ -1,7 +1,7 @@
 #  Setup with field anonymization
 
 
-Example [configuration](https://docs.search-guard.com/latest/field-anonymization) use of a new field anonymization implementation, which provides better efficiency and functionality. However, this implementation can only be used if you have completely updated your cluster to Search Guard FLX and it is available from version FLX 1.0
+Example [configuration](https://docs.search-guard.com/latest/field-anonymization) demonstrating the use of the new field anonymization implementation, which provides better efficiency and functionality. However, this implementation can only be used if you have completely updated your cluster to Search Guard FLX, and it is available from version FLX 1.0
 
 
 
@@ -19,9 +19,9 @@ Create a connection to port 9200:
 export POD_NAME=$(kubectl get pods -l "component=sg-elk-search-guard-flx,role=client" -o jsonpath="{.items[0].metadata.name}")
 kubectl port-forward  $POD_NAME 9200:9200
 ```
-Open the secon terminal.
+Open a second terminal.
 
-Retrieve for the user `admin` using the command:
+Retrieve the password for the user `admin` using the command:
 
 ```
 export SG_ADMIN_PWD=$(kubectl get secrets sg-elk-search-guard-flx-passwd-secret  -o jsonpath="{.data.SG_ADMIN_PWD}" | base64 -d)

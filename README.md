@@ -48,7 +48,7 @@ In these repositories, tags are published in the following format: `sgversion-es
 
 `sg-kubectl-h4` has been replaced by `search-guard-flx-cluster-config`
 
-For the last repository listed above, a change was introduced that removes the need to build a new image for every Kubernetes patch version. This means that for Kubernetes `1.31`, you no longer need to build images for `1.31.0, 1.31.1, 1.31.2` building only the `1.31` version is enough.
+For the last repository listed above, a change was introduced that removes the need to build a new image for every Kubernetes patch version. This means that for Kubernetes `1.31`, you no longer need to build images for `1.31.0, 1.31.1, 1.31.2`. Building only the `1.31` version is enough.
 
 Additionally, the `-flx` suffix has been removed from the docker tags. This should be taken into account when setting `common.sgversion` and `common.sgkibanaversion` in `values.yaml`.
 
@@ -61,7 +61,7 @@ With the release of Search Guard plugin version 2.0.0, the versioning of the Hel
 Search Guard 2.x is not backwards compatible with previous versions. If you want to upgrade from version 1.x.x to 2.x or higher, you need to follow some additional steps described [here](docs/sg-2x-upgrade.md).
 
 
-## Important Notes for Search Guard FLX 1.5.0/1.6.0 release
+## Important Notes for Search Guard FLX 1.5.0 release
 
 Due to technical constraints, multi tenancy is not available in this version of Search Guard. We are working on this issue and will reintroduce multi tenancy in the next release of Search Guard. <br>
 If you use the Helm charts for this version, the value:
@@ -80,7 +80,7 @@ will be set in the Kibana configuration file, and the `sg_frontend_multi_tenancy
 * Optional: Minikube. Please follow [Minikube installation steps][].
 
 If you use Minikube, make sure that the VM has enough memory and CPUs assigned.
-We recommend at least 8 GB and 4 CPUs. By default, we deploy 4 pods by default (1 master, 2 data, 1 client and 1 Kibana).
+We recommend at least 8 GB and 4 CPUs. By default, we deploy 4 pods (1 master, 2 data, 1 client and 1 Kibana).
 
 To change Minikube resource configuration: 
 ```
