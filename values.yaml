@@ -1,5 +1,9 @@
 ## Search Guard FLX 4 and Elasticsearch 9
 
+## The #{var:} syntax is supported in this file.
+## See https://docs.search-guard.com/latest/configuration-password-handling
+## See examples/common/configuration_variables
+
 common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
@@ -334,6 +338,23 @@ common:
 
   custom_elasticsearch_keystore:
     enabled: false
+
+## See examples/common/custom_secrets
+#  env_secrets:
+#    - envName: COMMON_CUSTOM_SECRET
+#      secretName: common-custom-secret
+#      secretKey: secret
+#    - envName: COMMON_CUSTOM_PASSWORD
+#      secretName: common-custom-secret
+#      secretKey: password
+
+## See https://docs.search-guard.com/latest/field-anonymization
+## See examples/common/field_anonymization
+#  fieldAnonymization:
+#    use_impl: flx
+#    field_anonymization:
+#      salt: XXXXX
+
 
 client:
 
@@ -702,6 +723,15 @@ kibana:
     requests:
       cpu: 1500m
       memory: 2500Mi
+
+## See examples/common/custom_secrets
+#  env_secrets:
+#    - envName: COMMON_CUSTOM_SECRET
+#      secretName: common-custom-secret
+#      secretKey: secret
+#    - envName: COMMON_CUSTOM_PASSWORD
+#      secretName: common-custom-secret
+#      secretKey: password
 
 ## Incoming port of the service
 service:
