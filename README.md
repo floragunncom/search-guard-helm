@@ -292,8 +292,9 @@ and the upgrade fails.
 ## Configuration parameters
 
 The table lists the most commonly used parameters. [values.yaml][] is the authoritative and fully
-commented reference. The defaults below are the ones from [values.yaml][]; [values-flx-7.yaml][] is a
-complete example of the same values set up for an Elasticsearch 7 deployment, so its defaults differ.
+commented reference, and the defaults below are the ones from it. `values.yaml` targets Elasticsearch 9;
+for an Elasticsearch 7 or 8 deployment, apply the matching overlay from `examples/elk_7`,
+`examples/elk_8` or `examples/elk_9`, which changes some of these defaults.
 
 | Parameter | Description | Default value |
 |------|------|------|
@@ -302,10 +303,10 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | client.heapSize | Heap size limit for client nodes | 1g |
 | client.labels | Metadata to attach to client nodes | null |
 | client.processors | Elasticsearch processors configuration on client nodes. **Elasticsearch 7 only**, ignored on 8 and higher | 1 |
-| client.replicas | Stable number of client replica Pods running at any given time | 2 |
-| client.resources.limits.cpu | CPU limits for client nodes | 1 |
+| client.replicas | Stable number of client replica Pods running at any given time | 1 |
+| client.resources.limits.cpu | CPU limits for client nodes | 1500m |
 | client.resources.limits.memory | Memory limits for client nodes | 2000Mi |
-| client.resources.requests.cpu | CPU resources requested on cluster start for client nodes | 800m |
+| client.resources.requests.cpu | CPU resources requested on cluster start for client nodes | 1500m |
 | client.resources.requests.memory | Memory resources requested on cluster start for client nodes | 2000Mi |
 | client.roles | Elasticsearch node roles for client nodes | transform, remote_cluster_client, ingest |
 | client.storage | Storage size for client nodes | 2Gi |
@@ -328,7 +329,9 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | common.docker_registry.password | Password of the docker registry account | null |
 | common.docker_registry.server | Docker registry address | null |
 | common.docker_registry.username | Login of the docker registry account | null |
-| common.elkversion | Version of Elasticsearch and Kibana in the ES cluster | 9.4.2 |
+| common.elkversion | Version of Elasticsearch and Kibana in the ES cluster | 9.4.3 |
+| common.env_secrets | Inject environment variables into all node pods from Kubernetes Secrets (see examples/common/custom_secrets) | null |
+| common.fieldAnonymization | Field anonymization configuration in sg_authz_dlsfls.yml (see examples/common/setup_field_anonymization) | null |
 | common.frontend_authc | Kibana frontend authentication configuration in sg_frontend_authc.yml | basic |
 | common.frontend_multi_tenancy_enabled | Enable Kibana multi tenancy | false |
 | common.images.cluster_config_base_image | Docker image name with kubectl installed, used by the helper jobs and init containers | search-guard-flx-cluster-config |
@@ -371,10 +374,10 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | data.heapSize | Heap size limit for data nodes | 1g |
 | data.labels | Metadata to attach to data nodes | null |
 | data.processors | Elasticsearch processors configuration on data nodes. **Elasticsearch 7 only**, ignored on 8 and higher | 1 |
-| data.replicas | Stable number of data replica Pods running at any given time | 2 |
-| data.resources.limits.cpu | CPU limits for data nodes | 1 |
+| data.replicas | Stable number of data replica Pods running at any given time | 1 |
+| data.resources.limits.cpu | CPU limits for data nodes | 1500m |
 | data.resources.limits.memory | Memory limits for data nodes | 2000Mi |
-| data.resources.requests.cpu | CPU resources requested on cluster start for data nodes | 800m |
+| data.resources.requests.cpu | CPU resources requested on cluster start for data nodes | 1500m |
 | data.resources.requests.memory | Memory resources requested on cluster start for data nodes | 2000Mi |
 | data.roles | Elasticsearch node roles for data nodes | data, remote_cluster_client |
 | data.storage | Storage size for data nodes | 4Gi |
@@ -385,9 +388,9 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | datacontent.heapSize | Heap size limit for data_content nodes | 1g |
 | datacontent.labels | Metadata to attach to data_content nodes | null |
 | datacontent.replicas | Stable number of data_content replica Pods running at any given time | 2 |
-| datacontent.resources.limits.cpu | CPU limits for data_content nodes | 1 |
+| datacontent.resources.limits.cpu | CPU limits for data_content nodes | 1500m |
 | datacontent.resources.limits.memory | Memory limits for data_content nodes | 2000Mi |
-| datacontent.resources.requests.cpu | CPU resources requested on cluster start for data_content nodes | 800m |
+| datacontent.resources.requests.cpu | CPU resources requested on cluster start for data_content nodes | 1500m |
 | datacontent.resources.requests.memory | Memory resources requested on cluster start for data_content nodes | 2000Mi |
 | datacontent.storage | Storage size for data_content nodes | 2Gi |
 | datacontent.storageClass | Storage class for data_content nodes if you use a non-default storage class | default |
@@ -397,9 +400,9 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | kibana.httpPort | Port to be exposed by the Kibana service in the cluster | 5601 |
 | kibana.labels | Metadata to attach to kibana nodes | null |
 | kibana.replicas | Stable number of kibana replica Pods running at any given time. Set to 0 to deploy without Kibana | 1 |
-| kibana.resources.limits.cpu | CPU limits for kibana nodes | 1 |
+| kibana.resources.limits.cpu | CPU limits for kibana nodes | 1500m |
 | kibana.resources.limits.memory | Memory limits for kibana nodes | 2500Mi |
-| kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 800m |
+| kibana.resources.requests.cpu | CPU resources requested on cluster start for kibana nodes | 1500m |
 | kibana.resources.requests.memory | Memory resources requested on cluster start for kibana nodes | 2500Mi |
 | kibana.serviceType | Type of the Kibana service exposed in the ES cluster | ClusterIP |
 | kibana.storage | Storage size for kibana nodes | 2Gi |
@@ -409,10 +412,10 @@ complete example of the same values set up for an Elasticsearch 7 deployment, so
 | master.heapSize | Heap size limit for master nodes | 1g |
 | master.labels | Metadata to attach to master nodes | null |
 | master.processors | Elasticsearch processors configuration for master nodes. **Elasticsearch 7 only**, ignored on 8 and higher | 1 |
-| master.replicas | Stable number of master replica Pods running at any given time. Must be an odd number | 3 |
-| master.resources.limits.cpu | CPU limits for master nodes | 1 |
+| master.replicas | Stable number of master replica Pods running at any given time. Must be an odd number | 1 |
+| master.resources.limits.cpu | CPU limits for master nodes | 1500m |
 | master.resources.limits.memory | Memory limits for master nodes | 2000Mi |
-| master.resources.requests.cpu | CPU resources requested on cluster start for master nodes | 800m |
+| master.resources.requests.cpu | CPU resources requested on cluster start for master nodes | 1500m |
 | master.resources.requests.memory | Memory resources requested on cluster start for master nodes | 2000Mi |
 | master.roles | Elasticsearch node roles for master nodes | master, remote_cluster_client |
 | master.storage | Storage size for master nodes | 2Gi |
@@ -512,4 +515,3 @@ limitations under the License.
 [setup with custom CA certificate]: https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/tree/main/examples/common/setup_custom_ca
 [Storage type]: https://kubernetes.io/docs/concepts/storage/storage-classes/
 [values.yaml]: https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/values.yaml
-[values-flx-7.yaml]: https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/blob/main/values-flx-7.yaml

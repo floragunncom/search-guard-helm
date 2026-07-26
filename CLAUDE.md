@@ -8,7 +8,9 @@ A single Helm chart (`search-guard-flx`) that deploys a Search Guard FLX protect
 Kibana cluster. There are no subcharts and no `dependencies:` in `Chart.yaml` — `helm dependency
 update` (mentioned in the README) is a no-op. Alongside the chart: `docker/` (image build scripts),
 `examples/` (values overlays, also used as test fixtures), `tests/` (bash integration tests against
-minikube), `values.yaml` (ES 8/9) and `values-flx-7.yaml` (ES 7).
+minikube), and `values.yaml` (the defaults, targeting ES 9). There is no separate root values file
+per ES major; ES-version overlays live in `examples/elk_7`, `examples/elk_8` and `examples/elk_9`.
+The shipped defaults are dev-scale — every node group defaults to `replicas: 1`.
 
 ## Commands
 
@@ -97,7 +99,8 @@ normalize this at the top of the file:
 
 Inside such a `range`, the root context is `$`, not `.`. Any new node-group template — and any job
 that counts replicas (`cluster-upgrade.yaml`, `cluster-post-install-setup.yaml`) — must follow this
-idiom or multi-group configurations break.
+idiom or multi-group configurations break. `examples/common/dynamic_data_nodes` is the reference
+multi-group `data` configuration (one StatefulSet per data tier).
 
 ### Pod restarts are driven by a Job, not by Kubernetes
 
@@ -158,14 +161,22 @@ resolves at load time — the hashes in `sg-dynamic-configuration.yaml` are neve
 * **kubectl inside containers** — the `cluster-config` image is used as an init container that copies
   the `kubectl` binary into an emptyDir shared with the main container
   (`searchguard.kubectl-init-container`). ES/sgctl containers rely on it for the secret patching above.
+* **Env vars from Secrets** — `common.env_secrets` (all pods) and per-node-group `env_secrets` inject
+  environment variables from Kubernetes Secrets via `secretKeyRef`, through the
+  `searchguard.common-secrets` / `searchguard.local-secrets` helpers in `_helpers.tpl`. See
+  `examples/common/custom_secrets`. The chart does not create those Secrets — they must pre-exist.
+* **Elasticsearch keystore** — `common.custom_elasticsearch_keystore` runs a script (with
+  `extraEnvs`, typically from a Secret) to populate the ES keystore, e.g. for Azure snapshot
+  credentials; see `examples/common/azure_repository`.
 
 ### Version branching
 
 `searchguard.elk-version` and `searchguard.sg-major-version` take `substr 0 1` of
 `common.elkversion` / `common.sgversion`, so templates branch on the major version string
-(e.g. `processors:` is only emitted for ES 7). ES 7 users get `values-flx-7.yaml`; a version bump
-touches `common.elkversion`, `sgversion`, `sgkibanaversion` and `sgctl_version` in **both** values
-files.
+(e.g. `processors:` is only emitted for ES 7). `values.yaml` defaults to ES 9; ES 7 and ES 8 users
+apply the matching overlay from `examples/elk_7` or `examples/elk_8`. A version bump touches
+`common.elkversion`, `sgversion`, `sgkibanaversion` and `sgctl_version` in `values.yaml` **and** in
+the ES-version overlays under `examples/elk_7`, `examples/elk_8` and `examples/elk_9`.
 
 `Chart.yaml` carries a `kubeVersion` range; widening supported Kubernetes versions means editing
 that range *and* adding a `cluster_config_versions` entry in `docker/build_multiarch.sh`.
@@ -179,6 +190,7 @@ that range *and* adding a `cluster_config_versions` entry in `docker/build_multi
   `kill -9 $(pgrep -f "kubectl port-forward")` before starting their own forward on 9200 — a manual
   port-forward running in another shell will be killed.
 * **`common.es_upgrade_order=true` deadlocks with `master.replicas=1`** — master and non-master
-  dependency conditions block each other.
+  dependency conditions block each other. Note the shipped `values.yaml` now defaults
+  `master.replicas` to 1, so raise it to an odd number ≥ 3 before enabling the upgrade order.
 * Resource names are all `{{ template "searchguard.fullname" }}` = `<release>-<chart-name>`, and the
   scripts, examples and pre/post-upgrade assertions hardcode the `sg-elk` prefix.
