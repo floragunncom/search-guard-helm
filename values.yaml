@@ -1,14 +1,14 @@
+## Search Guard FLX 4 and Elasticsearch 9
+
+## The #{var:} syntax is supported in this file.
+## See https://docs.search-guard.com/latest/configuration-password-handling
+## See examples/common/configuration_variables
+
 common:
   ## Elasticsearch cluster name, maps to cluster.name
   cluster_name: "searchguard"
 
-  ## Docker images used in Kubernetes cluster. Default ones are OSS images provided by Search Guard
-  ## If you use custom images for ES, Kibana and sg-admin insatnces, please, use these naming convention for them:
-  ## - for SG Admin image: <images.repository>/<images.provider>/<images.sgadmin_base_image>:<elkversion>-<sgversion>
-  ## - for Elasticsearch OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-oss-<sgversion>
-  ## - for Elasticsearch non-OSS image:  <images.repository>/<images.provider>/<images.elasticsearch_base_image>:<elkversion>-<sgversion>
-  ## - for Kibana OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-oss-<sgversion>
-  ## - for Kibana non-OSS image:  <images.repository>/<images.provider>/<images.kibana_base_image>:<elkversion>-<sgversion>
+  ## Docker images
   images:
     repository: "docker.io"
     provider: "floragunncom"
@@ -17,7 +17,7 @@ common:
     sgctl_base_image: "search-guard-flx-sgctl"
     cluster_config_base_image: "search-guard-flx-cluster-config"
 
-  ## Fill in server, username, password, email to authenticate to private docker registry or specify pre-provisioned imagePullSecret with required data
+  ## Fill in server, username, password, email to authenticate to a private docker registry, or specify a pre-provisioned imagePullSecret with the required data
   docker_registry:
     enabled: false
     # server: https://index.docker.io/v1/
@@ -32,24 +32,26 @@ common:
   pullPolicy: IfNotPresent
 
   ## Elasticsearch and Kibana version
-  ## See whats available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "9.4.2"
+  ## See what's available: https://hub.docker.com/r/floragunncom/search-guard-flx-elasticsearch/tags
+  elkversion: "9.4.3"
 
   ## Search Guard plugin version
+  ## See what's available: https://hub.docker.com/r/floragunncom/search-guard-flx-elasticsearch/tags
   sgversion: "4.1.2"
 
-  ## Search Guard Kibana plugin version
-  ## See whats available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
+  ## Search Guard Kibana plugin version, typically the same version as sgversion
+  ## See what's available: https://hub.docker.com/r/floragunncom/search-guard-flx-kibana/tags
   sgkibanaversion: "4.1.2"
 
+  ## See what's available: https://hub.docker.com/r/floragunncom/search-guard-flx-sgctl/tags
   sgctl_version: 4.1.2
 
-  ## If true then install also all free and basic x-pack features
-  ## If false then only the "oss" version of Elasticsearch and Kibana gets installed 
+  ## If true, also install all free and basic X-Pack features
+  ## If false, only the "oss" version of Elasticsearch and Kibana is installed
   xpack_basic: true
 
   ## DN of the admin certificate
-  ## See https://docs.search-guard.com/latest/sgadmin#configuring-the-admin-certificate
+  ## See https://docs.search-guard.com/latest/configuring-tls#configuring-admin-certificates
   admin_dn:
     - "CN=admin,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
@@ -61,25 +63,25 @@ common:
   nodes_dn:
     - "CN=*-esnode,OU=Ops,O=Example Com\\, Inc.,DC=example,DC=com"
 
-  ## Enable or disable Search Guard enterprise modules
-  ## If you run Search Guard in production you need to obtain a license
-  ## when set to 'true'
+  ## Enable or disable the Search Guard enterprise modules
+  ## If you run Search Guard in production, you need to obtain a license
+  ## when this is set to 'true'
   sg_enterprise_modules_enabled: true
   
-  ## Run automatically sgctl whenever necessary 
+  ## Run sgctl automatically whenever necessary 
   update_sgconfig_on_change: true
 
-  ## Restart pods automatically when their configuration was changed
+  ## Restart pods automatically when their configuration has changed
   restart_pods_on_config_change: true
   
-  ## Enable Pod Disruption budget feature for ES and Kibana pods. See more https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  ## Enable the Pod Disruption Budget feature for ES and Kibana pods. See https://kubernetes.io/docs/tasks/run-application/configure-pdb/
   pod_disruption_budget_enable: true
   
-  ## After obtaining a Search Guard license, you can add it here. If you don't have a license, please, specify "none"
+  ## After obtaining a Search Guard license, you can add it here. If you don't have a license, please specify "none"
   license: none
   
-  ## By default the jobs that generated certificate are removed after completion by cleanup jobs starting every minute.
-  ## By enabling debug_job_mode you suspend cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
+  ## By default, the jobs that generate the certificates are removed after completion by cleanup jobs starting every minute.
+  ## By enabling debug_job_mode, you can suspend the cleanup jobs and investigate the results of the sgctl-preinstall and sgctl-postinstall jobs
   debug_job_mode: false
 
   remove_initial_master_nodes_after_install: true
@@ -114,22 +116,22 @@ common:
      #     - clients.local
 
 
-  ## Defines the service type for all elasticsearch outward-facing (non-discovery) client services.
+  ## Defines the service type for all Elasticsearch outward-facing (non-discovery) client services.
   ## This does not apply to Kibana.
-  ## WARNING: Setting this to 'LoadBalancer' will probably expose elasticsearch to the outside/internet
+  ## WARNING: Setting this to 'LoadBalancer' will probably expose Elasticsearch to the outside/internet
   serviceType: ClusterIP
   # serviceType: NodePort
   # serviceType: LoadBalancer
 
-  ## static node port for client services. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  ## Static node port for client services. If omitted, a random one is chosen. Only applies if serviceType == NodePort
   ## This does not apply to Kibana.
   # nodePort: 30007
 
-  ## load balancer ip for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  ## Load balancer IP for client services. Only applies when serviceType == LoadBalancer and supported by the cloud provider
   ## This does not apply to Kibana.
   # loadBalancerIp: 192.0.2.127
 
-  ## AWS specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  ## AWS-specific ELB annotations for client services (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
   # service_annotations:
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
   #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
@@ -138,17 +140,17 @@ common:
   #   ... see below for more options
 
   ## PKI approaches are specified with the following keys:
-  ## Set sgctl_certificates_enabled if certificates are self-signed and generated by SG TLS tool
+  ## Set sgctl_certificates_enabled if certificates are self-signed and generated by the SG TLS tool
   sgctl_certificates_enabled: true
   
-  ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by cluster to generate all certificates for nodes and services
+  ## Set ca_certificates_enabled to true if CA cert and key are copied to ../keys/ca/ folder and used by the cluster to generate all certificates for nodes and services
   ca_certificates_enabled: false
   
 
-  # Create pods with installed sgctl.sh tool
+  # Create a pod with the sgctl.sh tool installed
   sgctl_cli: false
 
-  #To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
+  # To activate dynamic configuration stored in secrets, use the configuration described in the file examples/common/configuration_from_secret
   sg_dynamic_configuration_from_secret:
     enabled: false
     secret_name: "sg-dynamic-configuration-secret"
@@ -197,7 +199,7 @@ common:
   #       - beatsreader
 
 
-  ## Configure additional rolemappings (maps to sg_roles_mapping.yml)
+  ## Configure additional role mappings (maps to sg_roles_mapping.yml)
   rolesmapping:
     # demo roles:
     SGS_ALL_ACCESS:
@@ -222,7 +224,7 @@ common:
       users:
       - "kibanaserver"
 
-  ## Configure additional role (maps to sg_roles.yml)
+  ## Configure additional roles (maps to sg_roles.yml)
   # roles:
   #   sg_read_beats:
   #     cluster_permissions:
@@ -273,7 +275,7 @@ common:
   # enable default frontend_multi_tenancy configuration for FLX 2 and above
   frontend_multi_tenancy_enabled: false
 
-  # custom configuation for frontend_multi_tenancy, for FLX 2 and above overwrite settings frontend_multi_tenancy_enabled
+  # custom configuration for frontend_multi_tenancy, for FLX 2 and above overwrite settings frontend_multi_tenancy_enabled
   # frontend_multi_tenancy:
   #   enabled: true
   #   server_user: kibanaserver
@@ -300,7 +302,7 @@ common:
   #   max_validity: "1y"                 # Omit this to have keys with unlimited lifetime
   #   max_tokens_per_user: 100
 
-  ## tolerations for all pods which are not master, client, data or kibana
+  ## Tolerations for all pods which are not master, client, data or kibana
   # tolerations:
   #  - key: "key1"
   #    operator: "Equal"
@@ -311,7 +313,7 @@ common:
   #    value: "value1"
   #    effect: "NoExecute"
 
-  ## node affinity for all pods which are not master, client, data or kibana
+  ## Node affinity for all pods which are not master, client, data or kibana
   # nodeAffinity:
   #   requiredDuringSchedulingIgnoredDuringExecution:
   #     nodeSelectorTerms:
@@ -332,10 +334,27 @@ common:
 ## Client/ingest nodes can execute pre-processing pipelines, composed of
 ## one or more ingest processors. Depending on the type of operations performed
 ## by the ingest processors and the required resources, it may make sense to
-## have dedicated ingest nodes, that will only perform this specific task.
+## have dedicated ingest nodes that only perform this specific task.
 
   custom_elasticsearch_keystore:
     enabled: false
+
+## See examples/common/custom_secrets
+#  env_secrets:
+#    - envName: COMMON_CUSTOM_SECRET
+#      secretName: common-custom-secret
+#      secretKey: secret
+#    - envName: COMMON_CUSTOM_PASSWORD
+#      secretName: common-custom-secret
+#      secretKey: password
+
+## See https://docs.search-guard.com/latest/field-anonymization
+## See examples/common/field_anonymization
+#  fieldAnonymization:
+#    use_impl: flx
+#    field_anonymization:
+#      salt: XXXXX
+
 
 client:
 
@@ -345,7 +364,7 @@ client:
     - ingest
 
   ## For production we recommend at least 2 replicas
-  replicas: 2
+  replicas: 1
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   ## 'soft' will do this "best effort"
   ## For production we recommend setting this to 'hard'
@@ -355,19 +374,19 @@ client:
   ## Set storageClass if non-default storage is used.
   # storageClass:
 
-  ## For production we recommend to set this to at least 4g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 4g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   tolerations:
@@ -398,7 +417,7 @@ client:
             - key-1
 
 ## Data nodes hold the shards that contain the documents you have indexed. Data
-## nodes handle data related operations like CRUD, search, and aggregations.
+## nodes handle data-related operations like CRUD, search, and aggregations.
 ## These operations are I/O-, memory-, and CPU-intensive. It is important to
 ## monitor these resources and to add more data nodes if they are overloaded.
 ##
@@ -411,7 +430,7 @@ data:
     - remote_cluster_client
 
   ## For production we recommend at least 2 replicas
-  replicas: 2
+  replicas: 1
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   ## 'soft' will do this "best effort"
   ## For production we recommend setting this to 'hard'
@@ -420,19 +439,19 @@ data:
   ## Set storageClass if non-default storage is used.
   # storageClass: "gp2"
   
-  ## For production we recommend to set this to at least 8g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 8g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   # tolerations:
@@ -473,7 +492,7 @@ master:
     - remote_cluster_client
 
   ## For production we recommend at least 3 replicas. Number must be odd.
-  replicas: 3
+  replicas: 1
   ## 'hard' means that pods will only be scheduled if there are enough nodes for them and that they will never end up on the same node. 
   ## 'soft' will do this "best effort"
   ## For production we recommend setting this to 'hard'
@@ -482,24 +501,25 @@ master:
   ## Set storageClass if non-default storage is used.
   # storageClass: "gp2"
   
-  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
-  processors: 1
+  ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  #processors: 1
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
-# The datacontent node is a part of content tier with  long data retention.
-# Enabling datacontent will create dedicated statefulset in the cluster
+# The datacontent node is part of the content tier with long data retention.
+# Enabling datacontent will create a dedicated StatefulSet in the cluster
 datacontent:
   enabled: false
+  #processors: 1
   roles:
     - data_content
     - remote_cluster_client
@@ -514,18 +534,18 @@ datacontent:
   ## Set storageClass if non-default storage is used.
   # storageClass: "gp2"
 
-  ## For production we recommend to set this to at least 2g and adjust the memory limits and requests accordingly
+  ## For production we recommend setting this to at least 2g and adjust the memory limits and requests accordingly
   heapSize: 1g
   ## More info on what this setting does is in the config map. Only change this
-  ## if you set the cpu limit to over 1 full cpu. This settings is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
+  ## if you set the cpu limit to over 1 full cpu. This setting is only relevant for Elasticsearch 7 and ignored on Elasticsearch 8.
   labels: {}
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2000Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2000Mi
 
   # tolerations:
@@ -575,13 +595,13 @@ kibana:
   # serviceType: NodePort
   # serviceType: LoadBalancer
 
-  ## static node port. If omitted a random one is chosen. Only applies if serviceType == NodePort
+  ## Static node port. If omitted, a random one is chosen. Only applies if serviceType == NodePort
   # nodePort: 30007
 
-  ## load balancer ip. Only applies when serviceType == LoadBalancer and supported by the cloud provider
+  ## Load balancer IP. Only applies when serviceType == LoadBalancer and supported by the cloud provider
   # loadBalancerIp: 192.0.2.127
 
-  ## AWS specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
+  ## AWS-specific ELB annotations (https://kubernetes.io/docs/concepts/services-networking/service/#ssl-support-on-aws)
   # service_annotations:
   #   service.beta.kubernetes.io/aws-load-balancer-internal: "true"
   #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: (https|http|ssl|tcp)
@@ -647,7 +667,7 @@ kibana:
   #   ## Security groups defined here can be shared between services.
   #   service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: "sg-53fae93f,sg-42efd82e"
 
-  #   ## A comma separated list of key-value pairs which are used
+  #   ## A comma-separated list of key-value pairs which are used
   #   ## to select the target nodes for the load balancer
   #   service.beta.kubernetes.io/aws-load-balancer-target-node-labels: "ingress-gw,gw-name=public-api"
 
@@ -680,7 +700,7 @@ kibana:
 
   readinessProbe:
     httpGet:
-      ## path might need to be changed when server.basePath is set 
+      ## Path might need to be changed when server.basePath is set 
       path: api/status
       port: http
       scheme: HTTPS
@@ -698,11 +718,20 @@ kibana:
   annotations: {}
   resources:
     limits:
-      cpu: 1
+      cpu: 1500m
       memory: 2500Mi
     requests:
-      cpu: 800m
+      cpu: 1500m
       memory: 2500Mi
+
+## See examples/common/custom_secrets
+#  env_secrets:
+#    - envName: COMMON_CUSTOM_SECRET
+#      secretName: common-custom-secret
+#      secretKey: secret
+#    - envName: COMMON_CUSTOM_PASSWORD
+#      secretName: common-custom-secret
+#      secretKey: password
 
 ## Incoming port of the service
 service:
@@ -711,8 +740,8 @@ service:
 
 ## Kubernetes Role-based access control
 ## https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-## Use "true" for first time installation for certain release in certain cluster/namespace
-## Use "false" for second+ time installations for certain release in certain cluster/namespace
+## Use "true" for the first installation of a given release in a given cluster/namespace
+## Use "false" for any subsequent installation of that release in the same cluster/namespace
 rbac:
   create: true
 

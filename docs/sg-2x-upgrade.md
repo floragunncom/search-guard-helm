@@ -4,7 +4,7 @@ Search Guard 2.0.0 is not backwards compatible with previous versions. If you wa
 
 ## How to check if Multi-Tenancy is enabled
 To verify if Multi-Tenancy is enabled, please check the Kibana configuration file and the existence of indices dedicated to each tenant.
-(For future information, please refer to the [documentation](https://docs.search-guard.com/latest/kibana-multi-tenancy)).
+(For further information, please refer to the [documentation](https://docs.search-guard.com/latest/kibana-multi-tenancy)).
 
 ## Upgrading environments with disabled Multi-Tenancy 
 The upgrade procedure for environments with disabled Multi-Tenancy is straightforward, but if you are using Kibana, it may be necessary to change the Kibana users' roles. Search Guard provides predefined roles for users who are authorized to access the Kibana interface, such as `SGS_KIBANA_USER`, `SGS_KIBANA_USER_NO_GLOBAL_TENANT`, `SGS_KIBANA_USER_NO_DEFAULT_TENANT`. However, if Multi-Tenancy is not enabled, users with these roles cannot access the Kibana user interface when Search Guard is upgraded to version 2.0.0. Instead, the system administrator should assign or map the `SGS_KIBANA_USER_NO_MT` role to users accessing Kibana.
@@ -19,7 +19,7 @@ Roles can be customized by editing the ```.Values.common.rolesmapping``` value i
 > Before starting Search Guard's upgrade from version 1.x.x to a newer version along with Search Guard 2.0.0, you need to back up your whole cluster. Furthermore, it is strongly advised that the upgrade procedure is tested first in a test environment containing a copy of the production cluster. If everything goes well, repeat the same procedure for the production cluster. The upgrade procedure can only be performed when an upgraded environment works with installed Search Guard 1.4.0 or 1.6.0 for Elasticsearch 8.7.x.
 > ### Troubleshooting
 > In case of any issues, if the cluster encounters problems, the administrator should consider reverting to the previously backed-up version.
-> ### Disable automatic sgctl confguration update
+> ### Disable automatic sgctl configuration update
 > During the update, sgctl should be turned off. Make sure the parameter `.Values.common.update_sgconfig_on_change` is set to false.
 > ```
 > common:
@@ -39,7 +39,7 @@ The upgrade procedure should first be carried out in the test environment, which
    Preparing a backup is crucial due to Elasticsearch's inability to downgrade the cluster node. Therefore, if the upgrade procedure is not accomplished, you will need backups to restore the cluster to its previous version. Please use the following [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/snapshots-take-snapshot.html) to create the cluster backup. Additionally, the system administrator should follow [Search Guard backup and restore guidance](https://docs.search-guard.com/latest/search-guard-index-maintenance#backup-and-restore) to perform the backup of the Search Guard configuration. It is also worth testing if the created backups can be restored.
 
 2. Upgrade Search Guard to version 1.4.0 or 1.6.0 and Elasticsearch to version 8.7.1 using helm upgrade
-   For the helm upgrade command,add the parameter `--timeout=1h`  
+   For the helm upgrade command, add the parameter `--timeout=1h`  
    In the case of highly distributed environments, the value of the `--timeout` parameter should be appropriately increased
 
     The example Helm charts values for Search Guard 1.6.0 and Elasticsearch 8.7.1 
@@ -55,15 +55,15 @@ The upgrade procedure should first be carried out in the test environment, which
 
     
 3. Stop Kibana\
-    The Kibana should not work during further steps related to the upgrade.
+    Kibana should not be running during the further steps of the upgrade.
 
     Use the following command to stop the Kibana pod(s)
     ```
     kubectl -n <namespace> scale sts -l role=kibana --replicas=0
     ```
-    and verify if the kibana pod was removed.
+    and verify that the Kibana pod was removed.
 
-    Edit helm charts values yaml and set the number of replicas to `0` and activate `sgctl` pod and execute `helm upgrade`
+    Edit the helm charts values yaml, set the number of replicas to `0`, activate the `sgctl` pod, and execute `helm upgrade`
     
     ```yml
     kibana:
@@ -73,10 +73,10 @@ The upgrade procedure should first be carried out in the test environment, which
       update_sgconfig_on_change: false
     ```
   
-4. Upgrade Search Guard and the Elasticsearch\
+4. Upgrade Search Guard and Elasticsearch\
    Before performing the current step, you must review the Elasticsearch documentation for the proper version and check which additional steps and measures are required to upgrade Elasticsearch. Then, you can upgrade Elasticsearch and Search Guard on your cluster node. The upgrade procedure is described in the [Search Guard upgrade guide](https://docs.search-guard.com/latest/upgrading#upgrading-elasticsearch-and-search-guard).
    
-   For the helm charts edit the `.Values.common` attributes. The following parameters needs to be set up during the upgrade:
+   For the helm charts edit the `.Values.common` attributes. The following parameters need to be set during the upgrade:
     `.Values.common.kibana.replicas` with value `0`
     `.Values.common.sgctl_cli`  with `true`
     `.Values.common.update_sgconfig_on_change` with `false`
@@ -95,7 +95,7 @@ The upgrade procedure should first be carried out in the test environment, which
    ```   
 
 5. Migrate frontend data\
-   The data structures used by the Multi-Tenancy implementation in SearchGuard 1.x.x and 2.0.0 are distinct. Therefore, running a data migration process is necessary to move Kibana Saved Objects (entities like data views and dashboards stored by Kibana in Elasticsearch). To conduct the data migration process, you need an up-to-date version of the `sgctl` tool. To carry out the data migration process, execute the command `sgctl special start-mt-data-migration-from-8.7`. The command execution should be above a few minutes, depending on the number of tenants defined in your environment and the volume of data stored in the Kibana indices. You can check the status of the data migration process using the command `sgctl special get-mt-data-migration-state-from-8.7`. Please note that Multi-Tenancy is disabled by default in the Search Guard 2.0.0 or newer. The command used for data migration will enable the Multi-Tenancy if needed.
+   The data structures used by the Multi-Tenancy implementation in SearchGuard 1.x.x and 2.0.0 are distinct. Therefore, running a data migration process is necessary to move Kibana Saved Objects (entities like data views and dashboards stored by Kibana in Elasticsearch). To conduct the data migration process, you need an up-to-date version of the `sgctl` tool. To carry out the data migration process, execute the command `sgctl special start-mt-data-migration-from-8.7`. The command execution may take a few minutes, depending on the number of tenants defined in your environment and the volume of data stored in the Kibana indices. You can check the status of the data migration process using the command `sgctl special get-mt-data-migration-state-from-8.7`. Please note that Multi-Tenancy is disabled by default in Search Guard 2.0.0 or newer. The command used for data migration will enable Multi-Tenancy if needed.
    
    When the parameter `.Values.common.sgctl_cli` is set to `true`, a pod will be created from which the `sgctl` command will be accessible.
    To access `sgctl` from within the pod, execute the following command:
@@ -157,7 +157,7 @@ The upgrade procedure should first be carried out in the test environment, which
     ```
     
 8. Verify Kibana users' role assignment\
-    The role names intended for use in a Multi-Tenancy-enabled environment have not been modified between the 1.x.x and 2.0.0 versions of Search Guard. However, the role definitions were changed. Therefore, if you are using custom roles that allow users to access Kibana, you should upgrade your role definitions. Each user needs access to at least one tenant. Otherwise, the user lacking any tenant access cannot log into Kibana. This is especially important in the context of private tenant removal or when you deprive users of global tenant access. The privilege of accessing the global tenant can be revoked by disabling the global tenant in the Multi-Tenancy configuration file (`sg_frontend_multi_tenancy.yml`) or when you do not assign to your users a role, which grants access to the global tenant. The build-in role `SGS_KIBANA_USER` allows the global tenant access, whereas the role `SGS_KIBANA_USER_NO_GLOBAL_TENANT` does not.
+    The role names intended for use in a Multi-Tenancy-enabled environment have not been modified between the 1.x.x and 2.0.0 versions of Search Guard. However, the role definitions were changed. Therefore, if you are using custom roles that allow users to access Kibana, you should upgrade your role definitions. Each user needs access to at least one tenant. Otherwise, the user lacking any tenant access cannot log into Kibana. This is especially important in the context of private tenant removal or when you deprive users of global tenant access. The privilege of accessing the global tenant can be revoked by disabling the global tenant in the Multi-Tenancy configuration file (`sg_frontend_multi_tenancy.yml`) or when you do not assign to your users a role, which grants access to the global tenant. The built-in role `SGS_KIBANA_USER` allows the global tenant access, whereas the role `SGS_KIBANA_USER_NO_GLOBAL_TENANT` does not.
 
 9. Start Kibana
 
@@ -166,7 +166,7 @@ The upgrade procedure should first be carried out in the test environment, which
     ```
     kubectl -n <namespace> scale sts -l role=kibana --replicas=<number of replicas>   
     ```
-    and restore previous the number of kibana replicas in Helm values:
+    and restore the previous number of kibana replicas in Helm values:
     ```yml
     kibana:
       replicas: <number of replicas>   
@@ -177,7 +177,7 @@ The upgrade procedure should first be carried out in the test environment, which
 
 ***
 
-Please take into consideration that Kibana in version 8.8.0 or newer uses some additional indices. You may need to adjust your backup strategy accordingly. Some indices used by the Kibana are listed below
+Please take into consideration that Kibana in version 8.8.0 or newer uses some additional indices. You may need to adjust your backup strategy accordingly. Some indices used by Kibana are listed below
 * `.kibana` 
 * `.kibana_analytics`
 * `.kibana_ingest`

@@ -1,0 +1,31 @@
+suite: resource naming (fullname prefix)
+# Guards searchguard.fullname = <release>-<chart>. Scripts, examples and the
+# pre/post-upgrade assertions all hardcode this prefix, so a change here would
+# break the whole repo.
+# NB: no suite-level `templates:` list here on purpose - the StatefulSets
+# `include` sg-static-configuration.yaml, and restricting the template set would
+# make that include fail. Select the template per test with `template:` instead.
+release:
+  name: rel
+  namespace: default
+tests:
+  - it: names the client Service <release>-<chart>-clients
+    template: templates/client-service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-search-guard-flx-clients
+
+  - it: names the data StatefulSet <release>-<chart>-data
+    template: templates/data-statefulset.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-search-guard-flx-data
+
+  - it: names the master StatefulSet <release>-<chart>-master
+    template: templates/master-statefulset.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: rel-search-guard-flx-master

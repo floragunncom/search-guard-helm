@@ -34,7 +34,7 @@ The Search Guard FLX protected Elasticsearch cluster has been installed.
         https://KI_NODE_IP:KI_NODE_PORT
 {{ else if contains "LoadBalancer" .Values.common.serviceType }}
     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-          You can watch the status of by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "searchguard.fullname" . }}'
+          You can watch the status by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "searchguard.fullname" . }}'
 
     * Get address of LoadBalancer services
 
@@ -66,7 +66,7 @@ The Search Guard FLX protected Elasticsearch cluster has been installed.
         - Kibana at https://127.0.0.1:5601
 {{ end }}
 
-    NOTE: Please, give Helm charts few minutes to complete startup process for all pods. This is expected that Kibana pod startup time is higher than other pods.
+    NOTE: Please give the Helm charts a few minutes to complete the startup process for all pods. It is expected that the Kibana pod startup time is higher than for other pods.
 
 
 

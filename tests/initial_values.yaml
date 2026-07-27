@@ -1,5 +1,6 @@
-common:
-  elkversion: "9.1.7"
-  sgctl_version: "4.0.0"
-  sgkibanaversion: "4.0.0"
-  sgversion: "4.0.0"
+master:
+  replicas: 3
+data:
+  replicas: 2
+client:
+  replicas: 2

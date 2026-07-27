@@ -2,8 +2,8 @@
 
 
 
-The datacontent node is a part of content tier with  long data retention. 
-Enabling datacontent will create dedicated statefulset in the cluster
+The datacontent node is part of the content tier with long data retention. 
+Enabling datacontent will create a dedicated StatefulSet in the cluster
 
 
 To install this usage example, go to your `search-guard-helm` folder with pre-installed dependencies and do:

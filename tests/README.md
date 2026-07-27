@@ -1,6 +1,6 @@
 # Run tests
 
-## Run tests local on minikube
+## Run tests locally on minikube
 
 1. Make sure minikube is installed
 2. Run `./prepare_minikube.sh` and wait until provisioned

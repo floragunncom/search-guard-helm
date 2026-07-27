@@ -1,13 +1,24 @@
+# workflow:rules decides whether a pipeline is created *at all*. The rules are
+# evaluated top to bottom and the first match wins; if nothing matches, the push
+# produces no pipeline. Only "always" and "never" are meaningful here, and a rule
+# without an explicit "when" defaults to "always".
+#
+# Which jobs then run inside that pipeline is decided separately, by the rules on
+# each individual job.
 workflow:
   rules:
+    # Tag pushes. $CI_COMMIT_TAG is set only on tag pipelines, and this is the
+    # release pipeline: validate_release and publish_helm select on the same
+    # variable. Spelled out because this entry used to read "when: never", which
+    # suppressed tag pipelines completely and made a tag-driven release impossible.
+    # With the catch-all below it is now documentation rather than a real gate.
     - if: $CI_COMMIT_TAG
-      when: never
+    # Everything else - branch pushes and merge requests - still gets a pipeline,
+    # but only the validation and test jobs are selected in it; nothing publishes.
     - when: always
-    
+
 .common-config: &common-config
  - |
-   git config --global user.name "${GITLAB_USER_NAME}"
-   git config --global user.email "${GITLAB_USER_EMAIL}"  
    chart_file="Chart.yaml"
    chart_name=$(grep '^name:' Chart.yaml | awk '{print $2}')
    helm_user="helm"
@@ -26,23 +37,72 @@ workflow:
    fi
             
    helm_channel=stable
-   helm_repo_url=https://${server_host}/api/v4/projects/$helm_project_id/packages/helm/$helm_channel 
-   git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
-   chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
+   helm_repo_url=https://${server_host}/api/v4/projects/$helm_project_id/packages/helm/$helm_channel
    if [ ! -f "$chart_file" ]; then
     echo "[ERROR] Chart file $chart_file not exist"
     exit 1
-   fi 
+   fi
+   # On a release pipeline the tag is the source of truth for the version and for
+   # the mode. Chart.yaml is stamped from it in publish_helm, so whatever is
+   # currently committed there is only a fallback for non-tag pipelines.
+   #
+   #   4.1.2-flx       -> release_mode=release, chart_version=4.1.2
+   #                      publishes to the helm repo, commits to $RELEASE_BRANCH
+   #   4.1.2-flx-test  -> release_mode=test,    chart_version=4.1.2
+   #                      publishes nothing,    commits to $TEST_BRANCH
+   #
+   # The case is fail-closed on purpose: an unrecognised tag aborts rather than
+   # falling through to the publishing path.
+   if [ -n "${CI_COMMIT_TAG}" ]; then
+     case "${CI_COMMIT_TAG}" in
+       *-flx-test)
+         release_mode="test"
+         chart_version="${CI_COMMIT_TAG%-flx-test}"
+         ;;
+       *-flx)
+         release_mode="release"
+         chart_version="${CI_COMMIT_TAG%-flx}"
+         ;;
+       *)
+         echo "[ERROR] Tag ${CI_COMMIT_TAG} is neither <version>-flx nor <version>-flx-test"
+         exit 1
+         ;;
+     esac
+   else
+     release_mode="none"
+     chart_version=$(grep '^version:' $chart_file | awk -F ': ' '{print $2}')
+   fi
+   # Resolved configuration, echoed so a job log is self-contained when debugging.
+   # Never echo $access_token or the origin URL it is embedded in.
+   echo "[INFO] ===== Resolved CI configuration ====="
+   echo "[INFO] helm            : $(helm version --short 2>/dev/null)"
+   echo "[INFO] chart_file      : $chart_file"
+   echo "[INFO] chart_name      : $chart_name"
+   echo "[INFO] chart_version   : $chart_version"
+   echo "[INFO] release_mode    : $release_mode"
+   echo "[INFO] commit tag      : ${CI_COMMIT_TAG:-<none, not a tag pipeline>}"
+   echo "[INFO] commit sha      : ${CI_COMMIT_SHA:-<none>}"
+   echo "[INFO] project path    : ${CI_PROJECT_PATH:-<none>}"
+   echo "[INFO] server host     : $server_host"
+   echo "[INFO] helm repo name  : $helm_repo_name"
+   echo "[INFO] helm repo url   : $helm_repo_url"
+   echo "[INFO] ====================================="
+
    if helm repo list | grep -q "$helm_repo_name"; then
+     echo "[INFO] Removing already registered helm repo $helm_repo_name"
      helm repo remove $helm_repo_name
-   fi    
-          
+   fi
+
+   echo "[INFO] Adding helm repo $helm_repo_name -> $helm_repo_url"
    helm repo add --username $helm_user --password $access_token $helm_repo_name  $helm_repo_url
+   echo "[INFO] Updating helm repo index"
    helm repo update
+   echo "[INFO] Registered helm repos:"
+   helm repo list
            
       
 image: 
-  name: alpine/helm:3.18.3
+  name: alpine/helm:4.2.3
   entrypoint: [""]   
   
 
@@ -54,88 +114,356 @@ stages:
   - Publish
   - Test
 
+# Proves the chart still renders. Runs in *every* pipeline - branches, merge
+# requests and tags - and is a prerequisite of publish_helm.
+#
+# It renders the chart twice over:
+#   1. with the defaults from values.yaml
+#   2. once per examples/**/values.yaml overlay, so a broken example is caught too
+#
+# This is purely a templating check: it proves the Go templates expand and produce
+# syntactically valid YAML. It does not contact a cluster and does not check the
+# manifests against the Kubernetes API schema, so a chart that renders here can
+# still be rejected by kubectl. Verifying that the cluster actually comes up is
+# the job of integration_minikube.
 validate_helm:
   tags:
-    - build    
+    - build
   stage: Validate
   script:
 
     - |
       set -e
-      if ! helm template . > /dev/null 2>&1; then
+      echo "[INFO] helm: $(helm version --short 2>/dev/null)"
+      echo "[INFO] ===== Rendering chart with default values ====="
+      # Only stdout is discarded: helm's own error goes to stderr and stays in the
+      # job log, so a failure below says what actually went wrong.
+      if ! helm template . > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered for default values"
-          exit 1      
+          exit 1
       fi
-      for custom_value in $(find examples -name values.yaml) ; do
-        if ! helm template . -f $custom_value > /dev/null 2>&1; then
+      echo "[INFO]   OK: default values"
+
+      # Both spellings, otherwise an overlay named values.yml is silently skipped.
+      examples_list=$(find examples \( -name values.yaml -o -name values.yml \) | sort)
+      echo "[INFO] ===== Rendering chart with $(echo "$examples_list" | wc -l | tr -d ' ') example overlays ====="
+      for custom_value in $examples_list ; do
+        echo "[INFO] Rendering with $custom_value"
+        if ! helm template . -f $custom_value > /dev/null; then
           echo "[ERROR] Helm template cannot be rendered with $custom_value values"
           exit 1
         fi
+        echo "[INFO]   OK: $custom_value"
       done
       echo "[INFO] Validation completed successfully"
 
+# Runs the helm-unittest suites in unittests/. Pure template-logic checks (no
+# cluster, no API server) that render in milliseconds - the fast complement to
+# integration_minikube. Runs in every pipeline.
+#
+# Started as allow_failure so it cannot block MRs while the suite is young;
+# remove allow_failure once the team is happy to treat it as a required gate.
+#
+# helm-unittest is installed at job time. Helm 4 verifies plugin signatures by
+# default and the plugin ships none, so --verify=false is required (same reason
+# the publish_helm cm-push install disables verification). The plugin version is
+# pinned so a plugin release cannot change behaviour under us; bump it
+# deliberately and re-run the suite when upgrading the helm image.
+helm_unittest:
+  tags:
+    - build
+  stage: Validate
+  allow_failure: true
+  script:
+    - |
+      set -e
+      echo "[INFO] helm: $(helm version --short 2>/dev/null)"
+      helm plugin install https://github.com/helm-unittest/helm-unittest --version v1.1.2 --verify=false
+      helm unittest -f 'unittests/*_test.yaml' .
+
+# Checks that a release is safe to publish, before publish_helm does anything
+# irreversible. Runs *only* on tag pipelines, so branches and merge requests skip
+# it entirely.
+#
+# Two guards, either of which aborts the pipeline:
+#   1. the tag is well-formed. The released version and the mode are derived from
+#      the tag (see .common-config) and the version is stamped into Chart.yaml by
+#      publish_helm, so a malformed tag would produce a wrongly versioned chart.
+#   2. that version has not been published before. The helm repo is append-only
+#      in practice, so re-publishing an existing version would either be rejected
+#      or overwrite an already released chart.
+#
+# Both guards also run for "-flx-test" tags, so a test run is a faithful rehearsal
+# of the real thing. Since test mode never publishes, testing 4.1.3-flx-test and
+# then releasing 4.1.3-flx both pass guard 2.
 validate_release:
   tags:
-    - build  
+    - build
   stage: Validate
+  rules:
+    - if: $CI_COMMIT_TAG
   script:
-    - *common-config  
+    - *common-config
     - |
       set -e
-      if git tag -l | grep -q "^$chart_version$"; then
-        echo "[ERROR] Tag for version $chart_version already exist"
+      # Guard 1: the tag defines the released version and the mode. It must look
+      # like "4.1.2-flx" for a real release or "4.1.2-flx-test" for a test run.
+      echo "[INFO] ===== Guard 1: tag format ====="
+      echo "[INFO] Checking tag '$CI_COMMIT_TAG' against ^[0-9]+\.[0-9]+\.[0-9]+-flx(-test)?$"
+      if ! echo "$CI_COMMIT_TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-flx(-test)?$'; then
+        echo "[ERROR] Tag $CI_COMMIT_TAG has an unexpected format"
+        echo "[ERROR] Expected <major>.<minor>.<patch>-flx        for a release, e.g. 4.1.2-flx"
+        echo "[ERROR]       or <major>.<minor>.<patch>-flx-test   for a test run, e.g. 4.1.2-flx-test"
         exit 1
       fi
-      
-      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version) 
-      if [ ! "$chart_exist" == "[]" ]; then
-       echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+      echo "[INFO]   OK: tag $CI_COMMIT_TAG -> chart version $chart_version, mode: $release_mode"
+      if [ "$release_mode" = "test" ]; then
+        echo "[INFO]   This is a TEST run: nothing will be published to $helm_repo_url"
+      else
+        echo "[INFO]   This is a REAL release: the chart will be published to $helm_repo_url"
       fi
-      
+
+      # Guard 2: refuse to republish a version that is already in the helm repo.
+      # "helm search repo" prints "[]" as JSON when nothing matches the version.
+      echo "[INFO] ===== Guard 2: version not published yet ====="
+      echo "[INFO] Searching $helm_repo_name for version $chart_version"
+      chart_exist=$(helm search repo  $helm_repo_name -o json --version $chart_version)
+      echo "[INFO] Search result: $chart_exist"
+      if [ ! "$chart_exist" == "[]" ]; then
+        echo "[ERROR] Version $chart_version already exist in $helm_repo_url"
+        echo "[ERROR] Publishing it again would overwrite an already released chart."
+        echo "[ERROR] Tag a new version instead."
+        exit 1
+      fi
+      echo "[INFO]   OK: version $chart_version is not published yet"
+
       echo "[INFO] Validation completed successfully"
+
 publish_helm:
   needs:
-    - validate_helm  
+    - validate_helm
     - validate_release
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_TAG
   tags:
-    - build  
+    - build
   stage: Publish
+  variables:
+    # Branch that carries the version bump produced by a real release.
+    RELEASE_BRANCH: main
+    # Scratch branch used by test runs. It is rebuilt from the tagged commit on
+    # every test run, so anything previously on it is discarded.
+    #
+    # Must not collide with an existing branch namespace: git stores refs as files,
+    # so a branch "foo/bar" makes refs/heads/foo a directory and a branch named
+    # "foo" can then never be created. Plain "test" is unusable here for exactly
+    # that reason - test/15-multiple-data-tiers-test-publish already exists.
+    TEST_BRANCH: ci-release-test
   script:
-    - *common-config  
+    - *common-config
     - |
       set -e
-      if ! helm plugin list | grep -q "cm-push"; then
-        helm plugin install https://github.com/chartmuseum/helm-push
+      echo "[INFO] ===== Installing the cm-push helm plugin ====="
+      if helm plugin list | grep -q "cm-push"; then
+        echo "[INFO] cm-push is already installed:"
+        helm plugin list
+      else
+        # Helm 4 verifies plugin signatures by default. chartmuseum/helm-push is
+        # installed straight from its git repository and ships no signature, so
+        # verification has to be switched off or the install fails with
+        # "plugin source does not support verification".
+        echo "[INFO] Installing cm-push from https://github.com/chartmuseum/helm-push"
+        helm plugin install --verify=false https://github.com/chartmuseum/helm-push
+        echo "[INFO] Installed plugins:"
+        helm plugin list
       fi
-      echo "[INFO] Executing helm package"
-      helm package .  
-      echo "[INFO] Executing helm cm-push"
-      helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
-      echo "[INFO] Published $chart_version version for $helm_repo_name"
-                      
-      git tag "$chart_version-flx"
-      git push origin $chart_version-flx    
-      echo "[INFO] Published tags"
+
+      echo "[INFO] ===== Publishing $CI_COMMIT_TAG (version $chart_version, mode $release_mode) ====="
+
+      # Stamp the version extracted from the tag into Chart.yaml before packaging,
+      # so the packaged chart always carries exactly the tagged version.
+      echo "[INFO] ===== Stamping the version into $chart_file ====="
+      echo "[INFO] $chart_file before:"
+      grep '^version:' "$chart_file" | sed 's/^/[INFO]   /'
+      sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
+      echo "[INFO] $chart_file after:"
+      grep '^version:' "$chart_file" | sed 's/^/[INFO]   /'
+      echo "[INFO] Full diff against the tagged commit:"
+      git --no-pager diff -- "$chart_file" | sed 's/^/[INFO]   /'
+
+      echo "[INFO] ===== Packaging the chart ====="
+      helm package .
+      echo "[INFO] Packaged artifacts in $(pwd):"
+      ls -l *.tgz | sed 's/^/[INFO]   /'
+
+      # The only step a test run skips: nothing ever reaches the helm repo.
+      if [ "$release_mode" = "release" ]; then
+        echo "[INFO] ===== Pushing the chart to $helm_repo_name ====="
+        echo "[INFO] helm cm-push $chart_name-$chart_version.tgz $helm_repo_name ($helm_repo_url)"
+        helm cm-push  $chart_name-$chart_version.tgz $helm_repo_name
+        echo "[INFO] Published version $chart_version to $helm_repo_name"
+        echo "[INFO] Verifying it is now visible in the repo index:"
+        helm repo update > /dev/null
+        helm search repo $helm_repo_name --version $chart_version | sed 's/^/[INFO]   /'
+      else
+        echo "[INFO] ===== TEST MODE: not pushing anything ====="
+        echo "[INFO] Skipping: helm cm-push $chart_name-$chart_version.tgz $helm_repo_name"
+        echo "[INFO] Nothing has been published to $helm_repo_url"
+        echo "[INFO] The packaged chart is kept as a job artifact for inspection:"
+        ls -l $chart_name-$chart_version.tgz | sed 's/^/[INFO]   /'
+        echo "[INFO] Chart.yaml as packaged:"
+        tar -xOf $chart_name-$chart_version.tgz $chart_name/Chart.yaml 2>/dev/null | sed 's/^/[INFO]   /' || true
+      fi
+
+      # Commit the stamped version back. A tag pipeline runs on a detached HEAD, so
+      # restore the working tree, check the target branch out explicitly and re-apply
+      # the change there.
+      echo "[INFO] ===== Committing the version back to git ====="
+      git config --global user.name "${GITLAB_USER_NAME:-gitlab-ci}"
+      git config --global user.email "${GITLAB_USER_EMAIL:-noreply@floragunn.com}"
+      echo "[INFO] Committing as $(git config --global user.name) <$(git config --global user.email)>"
+      # The token is embedded in this URL, so it is deliberately never echoed.
+      git remote set-url origin https://helm:$access_token@${server_host}/${CI_PROJECT_PATH}.git
+      echo "[INFO] Restoring $chart_file to the tagged state before switching branches"
+      git checkout -- "$chart_file"
+
+      if [ "$release_mode" = "release" ]; then
+        # Real release: add the version bump on top of the release branch.
+        target_branch="$RELEASE_BRANCH"
+        echo "[INFO] Release mode: committing on top of '$target_branch'"
+        echo "[INFO] Fetching origin/$target_branch"
+        git fetch origin "+refs/heads/${target_branch}:refs/remotes/origin/${target_branch}"
+        git checkout -B "$target_branch" "refs/remotes/origin/${target_branch}"
+        force_push=""
+      else
+        # Test run: rebuild the scratch branch from the tagged commit, so every
+        # rehearsal is a clean reproduction instead of drifting run after run.
+        target_branch="$TEST_BRANCH"
+        echo "[INFO] Test mode: rebuilding scratch branch '$target_branch' from $CI_COMMIT_SHA"
+        echo "[INFO] Anything previously on '$target_branch' will be discarded"
+        git checkout -B "$target_branch" "$CI_COMMIT_SHA"
+        force_push="--force"
+      fi
+      echo "[INFO] Now on: $(git rev-parse --abbrev-ref HEAD) at $(git rev-parse --short HEAD)"
+
+      # Refs are stored as files, so a branch "<target>/something" turns
+      # refs/heads/<target> into a directory and the push below would be rejected
+      # with a bare "refname conflict". Detect that here and say what to do.
+      echo "[INFO] Checking that '$target_branch' is free of refname conflicts"
+      ref_conflicts=$(git ls-remote --heads origin "${target_branch}/*" | awk '{print $2}' | sed 's|refs/heads/||')
+      if [ -n "$ref_conflicts" ]; then
+        echo "[ERROR] Cannot push to branch '$target_branch': these branches already"
+        echo "[ERROR] occupy that name as a namespace, so it cannot exist as a branch:"
+        echo "$ref_conflicts" | sed 's/^/[ERROR]   /'
+        echo "[ERROR] Either delete them, or set a different branch name in the"
+        echo "[ERROR] RELEASE_BRANCH / TEST_BRANCH variable of the publish_helm job."
+        exit 1
+      fi
+      echo "[INFO]   OK: no branch occupies '${target_branch}/*'"
+
+      sed -i "s|^version:.*|version: ${chart_version}|" "$chart_file"
+
+      if git diff --quiet -- "$chart_file"; then
+        echo "[INFO] $chart_file is already at $chart_version, no version commit needed"
+      else
+        echo "[INFO] Staging the version change:"
+        git --no-pager diff -- "$chart_file" | sed 's/^/[INFO]   /'
+        git add "$chart_file"
+        # [ci skip] keeps this push from starting another pipeline.
+        git commit -m "Set chart version to $chart_version for $CI_COMMIT_TAG [ci skip]"
+        echo "[INFO] Created commit $(git rev-parse --short HEAD): $(git log -1 --format=%s)"
+      fi
+
+      echo "[INFO] Pushing HEAD to $target_branch ${force_push:+(force)}"
+      git push $force_push origin "HEAD:${target_branch}"
+      echo "[INFO] Updated $target_branch to version $chart_version"
+      echo "[INFO] ===== Summary ====="
+      echo "[INFO] tag            : $CI_COMMIT_TAG"
+      echo "[INFO] mode           : $release_mode"
+      echo "[INFO] chart version  : $chart_version"
+      echo "[INFO] published      : $([ "$release_mode" = "release" ] && echo "yes -> $helm_repo_url" || echo "no (test run)")"
+      echo "[INFO] branch updated : $target_branch"
       echo "[INFO] Completed successfully"
+  artifacts:
+    name: "$CI_COMMIT_TAG"
+    paths:
+      - "*.tgz"
+    expire_in: 30 days
 
 integration_minikube:
   stage: Test
   tags:
-    - test-large
+    - test-minikube
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    #- if: $CI_COMMIT_BRANCH == "ci/integration-minikube-tests-v2"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $RUN_MINIKUBE_TESTS == "true"
   variables:
     # Built from gh/docker-images (alpine-minikube/): ships dockerd,
     # minikube, kubectl, helm and the tools used by tests/*.sh.
     # The tag is updated automatically by the docker-images pipeline.
-    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260612"
+    SG_MINIKUBE_IMAGE: "floragunncom/alpine-minikube:260723-194229"
     MINIKUBE_PROFILE: "multinode"
-    MINIKUBE_K8S_VERSION: "v1.34.1"
     TEST_NS: "integtests"
+  # Every combination below runs as its own job. Each one boots a full 3-node
+  # minikube (up to 24 GB / 12 CPU), so they must land on separate machines:
+  # keep the "test-minikube" runners at concurrent = 1, otherwise two jobs share
+  # a host and both write /builds/docker-data with their own dockerd.
+  #
+  # TEST_SCRIPT - literal command line run at the end of the script below: the
+  #               script plus any arguments it takes. The run_tests*.sh scripts
+  #               accept
+  #                 $1 = comma separated helm --set values
+  #                 $2 = whether to run the ES/Kibana version upgrade step
+  #               Do not quote the arguments, they are word-split as-is:
+  #               "./tests/run_tests.sh common.elkversion=9.4.2 false"
+  #
+  # K8S_TRACK   - which Kubernetes release to boot. Resolved to a concrete patch
+  #               version at run time, see "Resolving the Kubernetes version" in
+  #               the script below. Kubernetes maintains the three most recent
+  #               minors, so these three tracks always cover exactly the
+  #               maintained set and never need editing when a new Kubernetes
+  #               minor is released. Counting goes backwards from the newest, so
+  #               latest-2 is the *oldest* release still maintained:
+  #
+  #                 track     | meaning                      | resolved 2026-07-25
+  #                 ----------+------------------------------+--------------------
+  #                 latest    | newest stable minor          | v1.36.3
+  #                 latest-1  | one minor older              | v1.35.7
+  #                 latest-2  | two minors older, the oldest | v1.34.10
+  #                           | one still maintained         |
+  #
+  #               The versions in the last column are only an illustration of what
+  #               the tracks resolved to on that date. They move on their own as
+  #               Kubernetes publishes new patches: once 1.37 is released the same
+  #               three tracks resolve to 1.37 / 1.36 / 1.35 with no change here.
+  #
+  #               A literal "vX.Y.Z" is also accepted, to pin a single entry, for
+  #               example "v1.34.10" to reproduce a failure on one exact version.
+  #
+  # The version cannot be a matrix dimension directly: GitLab expands the matrix
+  # when the pipeline is created, so the values have to be static in this file.
+  # The track name is static, the version it resolves to is not.
+  # Each list below is expanded as a cross product, and the entries are then
+  # added up. Current ELK is exercised on every maintained Kubernetes; the older
+  # ELK lines only on latest-1, which keeps the run at 5 jobs instead of 9.
+  parallel:
+    matrix:
+      # Current ELK against all three maintained Kubernetes releases.
+      - TEST_SCRIPT:
+          - "./tests/run_tests.sh"
+        K8S_TRACK:
+          - "latest"
+          - "latest-1"
+          - "latest-2"
+      # Older ELK lines: one Kubernetes release is enough, they are not where a
+      # Kubernetes regression would show up first. latest-1 rather than latest,
+      # so a brand new Kubernetes minor cannot break these two first.
+      - TEST_SCRIPT:
+          - "./tests/run_tests_elk_7.sh"
+          - "./tests/run_tests_elk_8.sh"
+        K8S_TRACK:
+          - "latest-1"
   image:
     name: $SG_MINIKUBE_IMAGE
     entrypoint: [""]
@@ -176,6 +504,73 @@ integration_minikube:
       fi
       docker info | grep -E "Storage Driver|Cgroup" || true
 
+      # ---------- Resolving the Kubernetes version ----------
+      # K8S_TRACK names a release track, not a version, because matrix values are
+      # fixed when the pipeline is created. dl.k8s.io publishes the current patch
+      # of every maintained minor as a plain text marker file:
+      #   stable.txt       -> newest stable overall, e.g. v1.36.3
+      #   stable-1.35.txt  -> newest patch of 1.35,  e.g. v1.35.7
+      # Kubernetes maintains the newest three minors, so latest / latest-1 /
+      # latest-2 derived from stable.txt is exactly the maintained set.
+      echo "[INFO] ===== Resolving the Kubernetes version ====="
+      echo "[INFO] K8S_TRACK: $K8S_TRACK"
+      k8s_marker() { curl -sSL --fail --max-time 30 "https://dl.k8s.io/release/$1" 2>/dev/null || true; }
+
+      case "$K8S_TRACK" in
+        v*)
+          # Explicit pin, used as-is.
+          MINIKUBE_K8S_VERSION="$K8S_TRACK"
+          echo "[INFO] Pinned version, no lookup performed"
+          ;;
+        latest|latest-1|latest-2)
+          k8s_latest="$(k8s_marker stable.txt)"
+          if ! echo "$k8s_latest" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "[ERROR] Could not resolve the newest Kubernetes release from dl.k8s.io"
+            echo "[ERROR] stable.txt returned: $(echo "$k8s_latest" | head -c 200)"
+            exit 1
+          fi
+          k8s_major="$(echo "${k8s_latest#v}" | cut -d. -f1)"
+          k8s_minor="$(echo "$k8s_latest" | cut -d. -f2)"
+          echo "[INFO] Newest stable Kubernetes: $k8s_latest (minor ${k8s_major}.${k8s_minor})"
+          case "$K8S_TRACK" in
+            latest)   k8s_want="$k8s_minor" ;;
+            latest-1) k8s_want="$((k8s_minor - 1))" ;;
+            latest-2) k8s_want="$((k8s_minor - 2))" ;;
+          esac
+          MINIKUBE_K8S_VERSION="$(k8s_marker "stable-${k8s_major}.${k8s_want}.txt")"
+          if ! echo "$MINIKUBE_K8S_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "[ERROR] No stable release published for ${k8s_major}.${k8s_want}"
+            echo "[ERROR] stable-${k8s_major}.${k8s_want}.txt returned: $(echo "$MINIKUBE_K8S_VERSION" | head -c 200)"
+            exit 1
+          fi
+          ;;
+        *)
+          echo "[ERROR] Unknown K8S_TRACK '$K8S_TRACK'"
+          echo "[ERROR] Expected latest, latest-1, latest-2 or a literal vX.Y.Z"
+          exit 1
+          ;;
+      esac
+      export MINIKUBE_K8S_VERSION
+      echo "[INFO] $K8S_TRACK resolves to Kubernetes $MINIKUBE_K8S_VERSION"
+
+      # The chart declares the Kubernetes range it supports. If the resolved
+      # version falls outside it, helm will refuse to install later on with a
+      # kubeVersion error, so say why up front.
+      chart_kube_range="$(grep '^kubeVersion:' Chart.yaml | cut -d: -f2- | tr -d ' "' || true)"
+      echo "[INFO] Chart.yaml kubeVersion: ${chart_kube_range:-<not declared>}"
+      k8s_upper="$(echo "$chart_kube_range" | grep -oE '<[[:space:]]*[0-9]+\.[0-9]+' | tr -dc '0-9.' || true)"
+      if [ -n "$k8s_upper" ]; then
+        k8s_res_mm="$(echo "${MINIKUBE_K8S_VERSION#v}" | cut -d. -f1,2)"
+        # The bound is exclusive ("< 1.37.0-0"), so 1.37 itself is already out of
+        # range: warn when the resolved minor sorts at or above the bound. sort -V
+        # puts the higher version last, and an equal pair also ends with it.
+        if [ "$(printf '%s\n%s\n' "$k8s_upper" "$k8s_res_mm" | sort -V | tail -1)" = "$k8s_res_mm" ]; then
+          echo "[WARN] Kubernetes $MINIKUBE_K8S_VERSION is at or above the chart's upper bound ($k8s_upper)."
+          echo "[WARN] helm install will fail on kubeVersion. Widen kubeVersion in Chart.yaml"
+          echo "[WARN] once this Kubernetes release is supported."
+        fi
+      fi
+
       # Ensure minikube uses the docker driver.
       minikube config set driver docker -p "$MINIKUBE_PROFILE"
 
@@ -183,8 +578,14 @@ integration_minikube:
       ./tests/prepare_minikube.sh "$MINIKUBE_K8S_VERSION"
       kubectl config use-context "$MINIKUBE_PROFILE"
 
-      # Run integration tests with default script arguments.
-      ./tests/run_tests.sh
+      # Run the integration tests. TEST_SCRIPT is a literal command line coming
+      # from the matrix, so it is deliberately left unquoted: the arguments have
+      # to word-split into separate parameters for the test script.
+      echo "[INFO] ===== Running integration tests ====="
+      echo "[INFO] TEST_SCRIPT          : $TEST_SCRIPT"
+      echo "[INFO] MINIKUBE_K8S_VERSION : $MINIKUBE_K8S_VERSION"
+      # shellcheck disable=SC2086
+      $TEST_SCRIPT
   after_script:
     - |
       echo "[INFO] Integration test diagnostics"
@@ -224,5 +625,9 @@ integration_minikube:
     expire_in: 7 days
     paths:
       - ci-artifacts/
+  cache:
+    key: minikube-cache
+    paths:
+      - .minikube/cache
 
 

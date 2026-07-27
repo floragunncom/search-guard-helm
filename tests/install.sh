@@ -2,12 +2,12 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 NSP="$1"
-CUSTOM_HELM_VALUES=${5:-}
+CUSTOM_HELM_VALUES=${6:-}
 
 
 CONTEXT="$(kubectl config current-context)"
 
-if [ "$4" != "nocontext" ]; then
+if [ "$5" != "nocontext" ]; then
   if [ "$CONTEXT" != "multinode" ] && [ "$CONTEXT" != "kind-kind" ]; then
     echo "Assume AWS ($CONTEXT)"
     OVERRIDE="$SCRIPT_DIR/initial_values_aws.yaml"
@@ -37,11 +37,11 @@ echo ""
 echo ""
 #--debug 
 if [ -n "$CUSTOM_HELM_VALUES" ]; then
-  echo "---------------------- Installing via helm $2 $3 and using custom helm values $CUSTOM_HELM_VALUES  ... --------------------------------------------------------------------------------------------------"
-  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" --set $CUSTOM_HELM_VALUES
+  echo "---------------------- Installing via helm $2 $3 $4 OVERRIDE=$OVERRIDE and using custom helm values $CUSTOM_HELM_VALUES  ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$4" -f "$OVERRIDE" --set $CUSTOM_HELM_VALUES
 else
-  echo "---------------------- Installing via helm $2 $3 ... --------------------------------------------------------------------------------------------------"
-  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$OVERRIDE" 
+  echo "---------------------- Installing via helm $2 $3 $4 OVERRIDE=$OVERRIDE ... --------------------------------------------------------------------------------------------------"
+  helm install sg-elk "$SCRIPT_DIR/.." --create-namespace  --wait --timeout 30m0s -n ${NSP} -f "$2" -f "$3" -f "$4" -f "$OVERRIDE"
 fi
 retVal=$?
 
@@ -77,9 +77,9 @@ POD_NAME=$(kubectl get pods -n ${NSP} -l "component=sg-elk-search-guard-flx,role
 kubectl port-forward -n ${NSP} $POD_NAME 9200:9200 &
 #kubectl port-forward -n ${NSP} $KPOD_NAME 5601:5601 &
 sleep 5
-until curl --fail -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&wait_for_nodes=7&pretty"; do
-     echo "Wait for port forward ... ($?)"
-     curl -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?pretty"
+until curl --fail -Ss -k -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?wait_for_status=green&wait_for_no_initializing_shards=true&wait_for_no_relocating_shards=true&wait_for_nodes=7&pretty"; do
+     echo "Wait for port forward or nodes ... ($?)"
+     curl -k -Ss -u "admin:$SG_ADMIN_PWD" "https://localhost:9200/_cluster/health?pretty"
      sleep 5
 done
 

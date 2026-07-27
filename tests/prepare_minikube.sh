@@ -1,11 +1,11 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-VERSION=${1:-"v1.36.1"}
+K8S_VERSION=${1:-"v1.36.1"}
 killall -9 minikube
 killall -9 kubectl
 killall -9 helm
 
-echo "****** Preparing minikube version $VERSION *****"
+echo "****** Preparing minikube $(minikube version --short) for Kubernetes version $K8S_VERSION *****"
 
 PROFILE=multinode
 minikube config set memory 8192 -p "$PROFILE"
@@ -16,7 +16,7 @@ FORCE_ARG=""
 if [ "$(id -u)" -eq 0 ]; then
   FORCE_ARG="--force"
 fi
-minikube start --kubernetes-version "$VERSION"  --container-runtime=containerd  --nodes 3 -p "$PROFILE" --wait=true $FORCE_ARG
+minikube start --kubernetes-version "$K8S_VERSION"  --container-runtime=containerd  --nodes 3 -p "$PROFILE" --wait=true $FORCE_ARG
 
 #fix minikube issues with hostpath permissions on multicluster nodes
 #https://github.com/kubernetes/minikube/issues/12165
@@ -81,4 +81,4 @@ if [ "${CI:-}" != "true" ]; then
   minikube dashboard -p "$PROFILE" &
 fi
 
-echo "******* Created minikube version $VERSION ******"
+echo "******* Created minikube version $K8S_VERSION ******"

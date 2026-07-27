@@ -145,7 +145,7 @@ data:
     admin:
       reserved: true
       # Do not change the hash here!
-      # It will be automatically replaced by auto generated password
+      # It will be automatically replaced by an auto-generated password
       hash: ${envbc.SG_ADMIN_PWD}
       backend_roles:
         - admin
@@ -153,13 +153,13 @@ data:
     kibanaserver:
       reserved: true
       # Do not change the hash here!
-      # It will be automatically replaced by auto generated password
+      # It will be automatically replaced by an auto-generated password
       hash: ${envbc.SG_KIBANASERVER_PWD}
 
     kibanaro: 
       reserved: true
       # Do not change the hash here!
-      # It will be automatically replaced by auto generated password
+      # It will be automatically replaced by an auto-generated password
       hash: ${envbc.SG_KIBANARO_PWD}
       backend_roles:
         - kibanauser
