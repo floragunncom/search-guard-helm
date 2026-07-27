@@ -8,7 +8,7 @@ killall -9 helm
 echo "****** Preparing minikube $(minikube version --short) for Kubernetes version $K8S_VERSION *****"
 
 PROFILE=multinode
-minikube config set memory 8192 -p "$PROFILE"
+minikube config set memory 12288 -p "$PROFILE"
 minikube config set cpus 4 -p "$PROFILE"
 minikube delete -p "$PROFILE"
 set -e
@@ -76,6 +76,24 @@ fi
 
 minikube -p "$PROFILE" addons enable metrics-server
 minikube -p "$PROFILE" addons enable ingress
+
+# Resource diagnostics: --memory/--cpus are applied *per node*, so with
+# --nodes 3 the requested totals are 3x the configured per-node values
+# (e.g. 8192Mi/4cpu -> ~24Gi/12cpu). Print the real per-node Capacity and
+# Allocatable the scheduler sees, so every run records the resource picture.
+echo "******* minikube resource diagnostics ($PROFILE) *******"
+minikube node list -p "$PROFILE" || true
+echo "--- node Capacity / Allocatable (cpu, memory) ---"
+kubectl get nodes -o custom-columns=\
+'NODE:.metadata.name,'\
+'CAP_CPU:.status.capacity.cpu,CAP_MEM:.status.capacity.memory,'\
+'ALLOC_CPU:.status.allocatable.cpu,ALLOC_MEM:.status.allocatable.memory' || true
+echo "--- per-node-container docker limits (memory bytes, nano cpus) ---"
+for node in $(minikube node list -p "$PROFILE" 2>/dev/null | awk '{print $1}'); do
+  printf '%s: ' "$node"
+  docker inspect "$node" --format '{{.HostConfig.Memory}} bytes, {{.HostConfig.NanoCpus}} nanocpus' 2>/dev/null || echo "n/a"
+done
+echo "*********************************************************"
 
 if [ "${CI:-}" != "true" ]; then
   minikube dashboard -p "$PROFILE" &

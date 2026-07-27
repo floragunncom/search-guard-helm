@@ -8,7 +8,6 @@ data:
     storage: 3Gi
     storageClass: local-path 
     heapSize: 1g
-    processors: 1
     labels: {}
     annotations: {}
     resources:
@@ -27,7 +26,6 @@ data:
     storage: 3Gi
     storageClass: local-path 
     heapSize: 1g
-    processors: 1
     labels: {}
     annotations: {}
     resources:
@@ -46,7 +44,6 @@ data:
     storage: 3Gi
     storageClass: local-path 
     heapSize: 1g
-    processors: 1
     labels: {}
     annotations: {}
     resources:
@@ -65,7 +62,6 @@ data:
     storage: 3Gi
     storageClass: local-path 
     heapSize: 1g
-    processors: 1
     labels: {}
     annotations: {}
     resources:
@@ -85,7 +81,6 @@ data:
     storage: 3Gi
     storageClass: local-path 
     heapSize: 1g
-    processors: 1
     labels: {}
     annotations: {}
     resources:
