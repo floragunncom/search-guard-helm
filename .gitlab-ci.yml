@@ -173,7 +173,7 @@ helm_unittest:
   tags:
     - build
   stage: Validate
-  allow_failure: true
+  #allow_failure: true
   script:
     - |
       set -e

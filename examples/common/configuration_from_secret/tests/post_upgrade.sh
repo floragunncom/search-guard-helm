@@ -15,7 +15,7 @@ fi
 
 waitport 9200
 
-curl --fail-with-body -i  -k https://127.0.0.1:9200/_searchguard/authinfo -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMiwicm9sZXMiOiJhZG1pbiJ9.eTgf-bQfD9XSF2mHsumdbAMoSVwLYoytv2K5LkRDJyQ"
+curl -Ss --fail-with-body -i  -k https://127.0.0.1:9200/_searchguard/authinfo -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMiwicm9sZXMiOiJhZG1pbiJ9.eTgf-bQfD9XSF2mHsumdbAMoSVwLYoytv2K5LkRDJyQ"
 
 
 if [ $? -ne 0 ]; then
