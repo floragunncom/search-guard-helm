@@ -392,6 +392,7 @@ publish_helm:
 
 integration_minikube:
   stage: Test
+  retry: 2
   tags:
     - test-minikube
   rules:
