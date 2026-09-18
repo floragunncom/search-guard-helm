@@ -12,4 +12,4 @@ common:
   ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
   sgkibanaversion: "4.1.1"
 
-  sgctl_version: 4.1.1
+  sgctl_version: "4.1.1"

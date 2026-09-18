@@ -26,7 +26,8 @@
 
 ## Status
 
-This repo is considered GA status and supports Search Guard FLX for Elasticsearch 7, 8 and 9.
+This repo is considered GA status and supports [Search Guard FLX](https://docs.search-guard.com/latest/search-guard-versions) for Elasticsearch 7, 8 and 9. 
+Find [all available chart releases here](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/packages).
 
 Search Guard Classic is not supported anymore. For Classic refer to [Classic Helm Charts (EOL)](https://git.floragunn.com/search-guard/search-guard-helm).
 
