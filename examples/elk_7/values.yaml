@@ -19,6 +19,6 @@ common:
   ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
   sgkibanaversion: "1.6.0-flx"
 
-  sgctl_version: 1.6.0
+  sgctl_version: "1.6.0"
 
   frontend_multi_tenancy_enabled: false

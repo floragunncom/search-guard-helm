@@ -26,7 +26,8 @@
 
 ## Status
 
-This repo is considered GA status and supports Search Guard FLX for Elasticsearch 7, 8 and 9.
+This repo is considered GA status and supports [Search Guard FLX](https://docs.search-guard.com/latest/search-guard-versions) for Elasticsearch 7, 8 and 9. 
+Find [all available chart releases here](https://git.floragunn.com/search-guard/search-guard-flx-helm-charts/-/packages).
 
 Search Guard Classic is not supported anymore. For Classic refer to [Classic Helm Charts (EOL)](https://git.floragunn.com/search-guard/search-guard-helm).
 
@@ -73,9 +74,9 @@ will be set in the Kibana configuration file, and the `sg_frontend_multi_tenancy
 
 ## Requirements
 
-* Kubernetes 1.32 or later (Minikube and kops managed AWS Kubernetes cluster are tested).
+* Kubernetes 1.33 or later (Minikube and kops managed AWS Kubernetes cluster are tested).
   The supported range is declared as `kubeVersion` in `Chart.yaml`.
-* Helm (v.3.8 or later). Please follow [Helm installation steps][] for your OS.
+* Helm (v.3.19 or later, Helm 4 recommended). Please follow [Helm installation steps][] for your OS.
 * kubectl. Please check [kubectl installation guide][]
 * Optional: Minikube. Please follow [Minikube installation steps][].
 
