@@ -74,9 +74,9 @@ will be set in the Kibana configuration file, and the `sg_frontend_multi_tenancy
 
 ## Requirements
 
-* Kubernetes 1.32 or later (Minikube and kops managed AWS Kubernetes cluster are tested).
+* Kubernetes 1.33 or later (Minikube and kops managed AWS Kubernetes cluster are tested).
   The supported range is declared as `kubeVersion` in `Chart.yaml`.
-* Helm (v.3.8 or later). Please follow [Helm installation steps][] for your OS.
+* Helm (v.3.19 or later, Helm 4 recommended). Please follow [Helm installation steps][] for your OS.
 * kubectl. Please check [kubectl installation guide][]
 * Optional: Minikube. Please follow [Minikube installation steps][].
 
