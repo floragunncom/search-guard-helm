@@ -1,7 +1,7 @@
 common:
   ## Elasticsearch and Kibana version
   ## See what's available: https://hub.docker.com/r/floragunncom/sg-elasticsearch/tags
-  elkversion: "9.5.2"
+  elkversion: "9.5.6"
 
   ## Search Guard plugin version
   sgversion: "4.2.0"
@@ -10,4 +10,4 @@ common:
   ## See what's available: https://hub.docker.com/r/floragunncom/sg-kibana/tags
   sgkibanaversion: "4.2.0"
 
-  sgctl_version: "4.2.0"
+  sgctl_version: "4.2.1"
