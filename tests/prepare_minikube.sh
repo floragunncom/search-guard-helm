@@ -116,11 +116,6 @@ for node in $(minikube node list -p "$PROFILE" 2>/dev/null | awk '{print $1}'); 
     cap_gib=$(awk "BEGIN{printf \"%.1f\", $dock_mem/1073741824}")
     host_gib=$(awk "BEGIN{printf \"%.1f\", $host_bytes/1073741824}")
     printf '%s: mem cgroup cap: %sGi of %sGi host, %s\n' "$node" "$cap_gib" "$host_gib" "$cpu_note"
-    if [ "$dock_mem" -lt "$host_bytes" ]; then
-      echo "  [WARN] node is memory-capped at ${cap_gib}Gi but the host has ${host_gib}Gi."
-      echo "  [WARN] The app cannot use ~$(awk "BEGIN{printf \"%.1f\", ($host_bytes-$dock_mem)/1073741824}")Gi of available RAM on this node."
-      echo "  [WARN] For max headroom set 'minikube config set memory max' (or 'no-limit') instead of a fixed value."
-    fi
   fi
 done
 echo "*********************************************************"
